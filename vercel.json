@@ -1,1 +1,6 @@
-{ "version": 2, "builds": [], "routes": [{"src": "/(.*)", "dest": "/$1"}] }
+{
+  "version": 2,
+  "routes": [
+    { "src": "^/$", "dest": "/v2.html" }
+  ]
+}
