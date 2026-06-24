@@ -16,7 +16,9 @@ Existem **três versões**:
 ### Novidades da V3 (sobre a V2)
 - **Tema claro:** fundo `#EEECE6`, acento magenta (`#C8185C`). Tokens em `:root`.
 - **Sidebar enxuta:** painel fixo `.panel-fixed` "Pincel" com cor + paleta (compacta) + opacidade
-  + tamanho **sempre visíveis**; só "Textura do Traço" (`#texAcc`) colapsa.
+  + tamanho + **Estabilizador + Suavização Vetorial** sempre visíveis; só "Textura do Traço"
+  (`#texAcc`) colapsa. "Imagem de Referência" também virou `.panel-fixed` (sem colapsar).
+  Só "Falhas na Tinta" permanece `.acc` colapsável.
 - **Grupos de traços:** `stroke.groupId`; `state.multiSel` (Set de índices), `state.nextGroupId`.
   Ctrl/Shift+clique nos blocos da timeline multi-seleciona → botão **Agrupar** (`#tlGroupBtn`).
   Helpers `groupsMap()`, `groupColor(gid)`, `renderGroupBar()`, `syncGroupsUI()`. Chips de grupo
@@ -25,6 +27,11 @@ Existem **três versões**:
   margin=10)` + `downloadCanvas()`. `confirmExport` agora: imagem principal (1920×1080, ou
   cropada no conteúdo se `#cropContent` marcado) **+** 1 PNG por grupo cropado com 10px de margem.
 - **Defaults de export animado:** GIF/`state.anim.gifScale` = **1920**; FPS/`state.anim.fps` = **30**.
+- **GIF/WebM por escopo:** `exportGif(job)` / `exportWebM(job)` aceitam `{strokes,label,crop}`.
+  `runAnimExport(format)` lê `#animScope` (Canvas/Grupos/Ambos) + `#animCrop` e dispara os jobs
+  em sequência (await; o GIF tem `_gifBusy`). Helpers `revealsFor(list,p,e)` (reveals re-baseados
+  ao subconjunto), `renderAnimatedList()`, `jobViewport(list,crop)` (full-frame ou bbox+10px).
+  GIF mantém densidade `gifScale/1920`; WebM é 1:1. Grupos cropados saem com nome `-g<id>`.
 - **Timeline:** Sequencial/Juntos viraram segmented (`.seg`/`.seg-btn`, classe `.active` marca o
   modo) com `ⓘ` explicativo (`#tlInfoPop`). Toggle **esconder/mostrar** a timeline na action bar
   (`#tlToggleBtn` → classe `.tl-off` no `.dock`; `state.tlVisible`).

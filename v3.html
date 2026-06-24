@@ -247,10 +247,13 @@
   .tl-lane { position: relative; height: 20px; border-radius: 5px; background: rgba(0,0,0,0.04); }
   .tl-block { position: absolute; top: 0; height: 100%; min-width: 8px; border-radius: 5px; cursor: grab; box-shadow: 0 0 0 1px rgba(0,0,0,0.3) inset; display: flex; align-items: center; gap: 4px; padding-left: 6px; overflow: hidden; font-size: 10px; font-weight: 800; color: rgba(0,0,0,0.55); user-select: none; transition: box-shadow 0.1s ease; }
   .tl-block:hover { box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset; }
+  .tl-block.grouped { box-shadow: 0 0 0 2px var(--gcolor); padding-left: 10px; }
+  .tl-block.grouped::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--gcolor); border-radius: 5px 0 0 5px; }
   .tl-block.dragging { cursor: grabbing; box-shadow: 0 0 0 2px var(--accent); z-index: 4; }
   .tl-block.selected { box-shadow: 0 0 0 2px var(--accent), 0 0 10px rgba(200,24,92,0.35); }
   .tl-block.multi { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent); outline: 1px dashed rgba(255,255,255,0.7); outline-offset: -3px; z-index: 3; }
-  .tl-gtag { font-size: 8px; font-weight: 800; padding: 1px 4px; border-radius: 4px; background: rgba(255,255,255,0.85); color: #1C1A17; letter-spacing: 0.3px; flex-shrink: 0; }
+  .tl-lane.in-group { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); }
+  .tl-gtag { font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 999px; background: rgba(255,255,255,0.85); color: #1C1A17; letter-spacing: 0.3px; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,0.5); }
   .tl-playhead { position: absolute; top: 6px; bottom: 6px; width: 2px; background: var(--accent); left: 8px; pointer-events: none; opacity: 0; box-shadow: 0 0 6px rgba(200,24,92,0.6); z-index: 5; }
   .tl-playhead.show { opacity: 1; }
   .tl-hint { font-size: 9px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
@@ -262,7 +265,7 @@
   /* export column */
   .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .export-grid .btn-ghost, .export-grid .btn-primary { width: 100%; padding: 11px 8px; font-size: 12px; }
-  .export-opts { margin-top: 9px; border-top: 1px solid var(--border-2); padding-top: 9px; }
+  .export-opts { margin-top: 7px; border-top: 1px solid var(--border-2); padding-top: 7px; }
   .webm-bg-row { display: flex; align-items: center; gap: 10px; }
   .webm-bg-row .pick-btn { width: 38px; height: 34px; }
 
@@ -348,6 +351,15 @@
         </div>
         <input type="range" id="size" min="1" max="60" value="8" />
 
+        <div class="slider-row">
+          <span>Estabilizador do Movimento</span><span class="val" id="mouseSmoothVal">50%</span>
+        </div>
+        <input type="range" id="mouseSmooth" min="0" max="100" value="50" />
+        <div class="slider-row">
+          <span>Suavização Vetorial</span><span class="val" id="vectorSmoothVal">0%</span>
+        </div>
+        <input type="range" id="vectorSmooth" min="0" max="100" value="0" />
+
         <div class="sub-acc collapsed" id="texAcc">
             <button class="sub-head">Textura do Traço <span class="hint" id="texHint">1/2</span> <span class="acc-arrow">▼</span></button>
             <div class="sub-body">
@@ -366,21 +378,6 @@
             </div>
           </div>
         </div>
-
-      <!-- SUAVIZAÇÃO -->
-      <div class="acc collapsed" data-acc="suav">
-        <button class="acc-head"><span class="acc-ic">✨</span> Suavização <span class="acc-arrow">▼</span></button>
-        <div class="acc-body">
-          <div class="slider-row">
-            <span>Estabilizador do Movimento</span><span class="val" id="mouseSmoothVal">50%</span>
-          </div>
-          <input type="range" id="mouseSmooth" min="0" max="100" value="50" />
-          <div class="slider-row">
-            <span>Suavização Vetorial</span><span class="val" id="vectorSmoothVal">0%</span>
-          </div>
-          <input type="range" id="vectorSmooth" min="0" max="100" value="0" />
-        </div>
-      </div>
 
       <!-- FALHAS -->
       <div class="acc collapsed" data-acc="falhas">
@@ -404,20 +401,18 @@
         </div>
       </div>
 
-      <!-- REFERÊNCIA -->
-      <div class="acc collapsed" data-acc="ref">
-        <button class="acc-head"><span class="acc-ic">🖼</span> Imagem de Referência <span class="acc-arrow">▼</span></button>
-        <div class="acc-body">
-          <div class="img-actions">
-            <button class="btn-ghost" id="loadImgBtn">Carregar</button>
-            <button class="btn-ghost danger" id="removeImgBtn">Remover</button>
-          </div>
-          <input type="file" id="imgInput" accept="image/*" style="display:none;" />
-          <div class="slider-row" style="margin-top:14px;">
-            <span>Opacidade Ref.</span><span class="val" id="refOpVal">40%</span>
-          </div>
-          <input type="range" id="refOp" min="0" max="100" value="40" />
+      <!-- REFERÊNCIA (fixo, sem colapsar) -->
+      <div class="panel-fixed">
+        <div class="panel-fixed-title"><span class="acc-ic">🖼</span> Imagem de Referência</div>
+        <div class="img-actions">
+          <button class="btn-ghost" id="loadImgBtn">Carregar</button>
+          <button class="btn-ghost danger" id="removeImgBtn">Remover</button>
         </div>
+        <input type="file" id="imgInput" accept="image/*" style="display:none;" />
+        <div class="slider-row" style="margin-top:14px;">
+          <span>Opacidade Ref.</span><span class="val" id="refOpVal">40%</span>
+        </div>
+        <input type="range" id="refOp" min="0" max="100" value="40" />
       </div>
 
     </aside>
@@ -535,24 +530,32 @@
         <button class="btn-ghost" id="webmBtn">WebM</button>
       </div>
       <div class="export-opts">
-        <div class="anim-field" style="margin:0 0 10px;">
-          <label for="animScale">Tamanho do GIF</label>
-          <select id="animScale">
-            <option value="1920" selected>1920 × 1080</option>
-            <option value="1280">1280 × 720</option>
-            <option value="960">960 × 540</option>
-            <option value="640">640 × 360</option>
-            <option value="480">480 × 270</option>
-          </select>
-        </div>
-        <div class="anim-field" style="margin:0;">
-          <label for="webmBg">Fundo do WebM</label>
-          <div class="webm-bg-row">
-            <label class="pick-btn" id="webmBgPick" style="background:#FFFFFF;">
-              <input type="color" id="webmBg" value="#FFFFFF" />
-            </label>
-            <span class="anim-note">WebM não tem transparência.</span>
+        <div class="anim-note" style="margin:0 0 7px;">GIF / WebM</div>
+        <div class="anim-row2" style="margin-bottom:8px;">
+          <div class="anim-field" style="margin:0;">
+            <label for="animScope">O que salvar</label>
+            <select id="animScope">
+              <option value="all" selected>Canvas</option>
+              <option value="groups">Grupos</option>
+              <option value="both">Ambos</option>
+            </select>
           </div>
+          <div class="anim-field" style="margin:0;">
+            <label for="animScale">Tamanho GIF</label>
+            <select id="animScale">
+              <option value="1920" selected>1920×1080</option>
+              <option value="1280">1280×720</option>
+              <option value="960">960×540</option>
+              <option value="640">640×360</option>
+              <option value="480">480×270</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <label class="anim-check" id="animCropRow" style="margin:0;" title="Recorta no conteúdo com 10px de margem"><input type="checkbox" id="animCrop" /> Cropar (10px)</label>
+          <label class="pick-btn" id="webmBgPick" title="Fundo do WebM" style="background:#FFFFFF; width:34px; height:30px;">
+            <input type="color" id="webmBg" value="#FFFFFF" />
+          </label>
         </div>
       </div>
     </div>
@@ -1585,6 +1588,42 @@ function renderAnimated(c, progress, easing) {
   }
 }
 
+/* v3: reveals over an ARBITRARY stroke list, re-based so the subset's own
+   earliest start is t=0 and it fills the whole duration. For the full list it
+   matches strokeReveals(); for a group it yields a self-contained animation. */
+function revealsFor(strokeList, progress, easing) {
+  const ease = EASING[easing] || EASING.linear;
+  ensureAnimDefaults();
+  const durs = strokeList.map(strokeDur);
+  let minStart = Infinity;
+  strokeList.forEach(s => { minStart = Math.min(minStart, s.animStart || 0); });
+  if (!isFinite(minStart)) minStart = 0;
+  let end = 1;
+  strokeList.forEach((s, i) => { end = Math.max(end, (s.animStart || 0) - minStart + durs[i]); });
+  const tc = ease(Math.max(0, Math.min(1, progress))) * end;
+  return strokeList.map((s, i) => Math.max(0, Math.min(durs[i], tc - ((s.animStart || 0) - minStart))));
+}
+
+/* v3: draw a stroke list at given reveals onto context `c` (already transformed). */
+function renderAnimatedList(c, strokeList, reveals) {
+  for (let i = 0; i < strokeList.length; i++) {
+    const s = strokeList[i], r = reveals[i];
+    if (r <= 0) continue;
+    if (r >= strokeDur(s)) drawStroke(c, s);
+    else { const partial = truncatePts(vectorize(s), r); if (partial.length >= 1) drawStroke(c, s, partial); }
+  }
+}
+
+/* v3: viewport (canvas-space rect) for an export job — full frame or cropped to
+   the strokes' content bbox + margin. Returns {x,y,w,h} or null if empty. */
+function jobViewport(strokeList, crop, margin = 10) {
+  if (!crop) return { x: 0, y: 0, w: 1920, h: 1080 };
+  const bb = contentBBox(strokeList);
+  if (!bb) return null;
+  return { x: bb.minX - margin, y: bb.minY - margin,
+           w: (bb.maxX - bb.minX) + 2 * margin, h: (bb.maxY - bb.minY) + 2 * margin };
+}
+
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // Invalidate any cached vector whose smoothing keys no longer match
@@ -2188,6 +2227,11 @@ function timelineAxis() {
 /* ---------- v3: GROUPS ---------- */
 const GROUP_COLORS = ['#C8185C', '#2E86DE', '#16A085', '#E67E22', '#8E44AD', '#D81B60', '#00838F', '#6D4C41'];
 function groupColor(gid) { return GROUP_COLORS[(gid - 1) % GROUP_COLORS.length]; }
+function hexToRgba(hex, a) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
 // Map<groupId, number[]> — group id → list of stroke indices (ignores ungrouped).
 function groupsMap() {
   const m = new Map();
@@ -2219,6 +2263,7 @@ function renderTimeline() {
     const dur = strokeDur(s);
     const block = document.createElement('div');
     let cls = 'tl-block';
+    if (s.groupId != null) cls += ' grouped';
     if (i === state.selectedStrokeIdx) cls += ' selected';
     if (state.multiSel.has(i)) cls += ' multi';
     block.className = cls;
@@ -2230,10 +2275,15 @@ function renderTimeline() {
     num.textContent = i + 1;
     block.appendChild(num);
     if (s.groupId != null) {
+      const gc = groupColor(s.groupId);
+      block.style.setProperty('--gcolor', gc);
+      lane.classList.add('in-group');
+      lane.style.background = hexToRgba(gc, 0.12);
       const tag = document.createElement('span');
       tag.className = 'tl-gtag';
       tag.textContent = 'G' + s.groupId;
-      tag.style.color = groupColor(s.groupId);
+      tag.style.background = gc;
+      tag.style.color = '#fff';
       block.appendChild(tag);
     }
     lane.appendChild(block);
@@ -2558,8 +2608,10 @@ function lzwEncode(minCodeSize, indices) {
 }
 
 let _gifBusy = false;
-async function exportGif() {
-  if (state.strokes.length === 0) { showToast('Nada para animar'); return; }
+async function exportGif(job) {
+  job = job || { strokes: state.strokes, label: '', crop: false };
+  const strokeList = job.strokes;
+  if (!strokeList || strokeList.length === 0) { showToast('Nada para animar'); return; }
   // Guard against concurrent exports: lzwEncode reuses a single global
   // dictionary (LZW_DICT), so two exports running at once would clobber each
   // other and corrupt the stream. One at a time.
@@ -2569,19 +2621,22 @@ async function exportGif() {
   stopPreview();
   const easing = state.anim.easing;
   const fps = state.anim.fps;
-  const W = state.anim.gifScale, H = Math.round(W * 9 / 16);
-  const sx = W / 1920;
+  // v3: viewport = full frame, or cropped to this job's content bbox + margin.
+  const vp = jobViewport(strokeList, job.crop);
+  if (!vp) { showToast('Nada para animar'); return; }
+  const k = state.anim.gifScale / 1920;          // same pixel density as a full-canvas export
+  const W = Math.max(1, Math.round(vp.w * k)), H = Math.max(1, Math.round(vp.h * k));
+  // Maps canvas space → output: scale by k, offset so vp's top-left is at 0,0.
+  const setVp = (c) => c.setTransform(k, 0, 0, k, -k * vp.x, -k * vp.y);
   // Persistent base layer accumulates COMPLETED strokes (drawn once each);
-  // each frame only redraws the single active (growing) stroke. Frames are
-  // rendered directly at GIF resolution, so arc rasterization is far cheaper
-  // than rendering at 1920×1080 and downscaling every frame.
+  // each frame only redraws the single active (growing) stroke.
   const base = document.createElement('canvas'); base.width = W; base.height = H;
   const bctx = base.getContext('2d');
   const gif = document.createElement('canvas'); gif.width = W; gif.height = H;
   const gctx = gif.getContext('2d');
-  const durs = state.strokes.map(strokeDur);
+  const durs = strokeList.map(strokeDur);
   const drawScaled = (c, stroke, pts) => {
-    c.setTransform(sx, 0, 0, sx, 0, 0);
+    setVp(c);
     drawStroke(c, stroke, pts);
     c.setTransform(1, 0, 0, 1, 0, 0);
   };
@@ -2591,18 +2646,18 @@ async function exportGif() {
   // correct layering even when strokes start/overlap arbitrarily on the timeline.
   let bakedUpTo = 0;
   const frameData = (p) => {
-    const reveals = strokeReveals(p, easing);
-    while (bakedUpTo < state.strokes.length && reveals[bakedUpTo] >= durs[bakedUpTo]) {
-      drawScaled(bctx, state.strokes[bakedUpTo]);
+    const reveals = revealsFor(strokeList, p, easing);
+    while (bakedUpTo < strokeList.length && reveals[bakedUpTo] >= durs[bakedUpTo]) {
+      drawScaled(bctx, strokeList[bakedUpTo]);
       bakedUpTo++;
     }
     gctx.setTransform(1, 0, 0, 1, 0, 0);
     gctx.clearRect(0, 0, W, H);
     gctx.drawImage(base, 0, 0);
-    for (let i = bakedUpTo; i < state.strokes.length; i++) {
+    for (let i = bakedUpTo; i < strokeList.length; i++) {
       const r = reveals[i];
       if (r <= 0) continue;
-      const s = state.strokes[i];
+      const s = strokeList[i];
       const pts = r >= durs[i] ? vectorize(s) : truncatePts(vectorize(s), r);
       if (pts.length >= 1) drawScaled(gctx, s, pts);
     }
@@ -2617,7 +2672,7 @@ async function exportGif() {
 
   // Palette from a full render of every stroke (all colors that appear),
   // then reset the base layer for the incremental frame loop.
-  for (const s of state.strokes) drawScaled(bctx, s);
+  for (const s of strokeList) drawScaled(bctx, s);
   const palette = buildPalette(bctx.getImageData(0, 0, W, H).data, 255);
   bctx.clearRect(0, 0, W, H);
   const realCount = palette.length;
@@ -2675,9 +2730,10 @@ async function exportGif() {
     await new Promise(r => setTimeout(r));
   }
   bytes.push(0x3B);
-  download(new Blob([new Uint8Array(bytes)], { type: 'image/gif' }), `doodle-anim-${Date.now()}.gif`);
+  const suffix = job.label ? '-' + job.label : '';
+  download(new Blob([new Uint8Array(bytes)], { type: 'image/gif' }), `doodle-anim${suffix}-${Date.now()}.gif`);
   render();
-  showToast(`GIF ${W}×${H} · ${N} quadros exportado(s)`);
+  showToast(`GIF${job.label ? ' ' + job.label : ''} ${W}×${H} · ${N} quadros`);
   } catch (err) {
     console.error(err);
     showToast('Erro ao gerar o GIF');
@@ -2685,52 +2741,90 @@ async function exportGif() {
     _gifBusy = false;
   }
 }
-document.getElementById('gifBtn').addEventListener('click', () => { exportGif(); });
+document.getElementById('gifBtn').addEventListener('click', () => { runAnimExport('gif'); });
 
 /* ============================================================
    WebM EXPORT — native MediaRecorder over a solid background
    (browser WebM alpha is unreliable). Real-time rAF playback.
    ============================================================ */
-function exportWebM() {
-  if (state.strokes.length === 0) { showToast('Nada para animar'); return; }
-  if (typeof MediaRecorder === 'undefined') { showToast('WebM não suportado neste navegador'); return; }
-  stopPreview();
-  const W = 1920, H = 1080;
-  const c = document.createElement('canvas'); c.width = W; c.height = H;
-  const cx = c.getContext('2d');
-  const fps = state.anim.fps;
-  const stream = c.captureStream(fps);
-  let mime = 'video/webm;codecs=vp9';
-  if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8';
-  if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
-  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12000000 });
-  const chunks = [];
-  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
-  rec.onstop = () => {
-    download(new Blob(chunks, { type: 'video/webm' }), `doodle-anim-${Date.now()}.webm`);
-    showToast(`WebM ${W}×${H} exportado`);
-  };
-  const dur = Math.max(100, state.anim.duration * 1000);
-  const hold = state.anim.holdMs;
-  const interval = 1000 / fps;
-  rec.start();
-  showToast('Gravando WebM…');
-  // Drive with setTimeout (works even if the tab is backgrounded, where
-  // requestAnimationFrame would be throttled and could stall the capture).
-  const t0 = performance.now();
-  const frame = () => {
-    const el = performance.now() - t0;
-    const p = Math.min(1, el / dur);
-    cx.globalCompositeOperation = 'source-over';
-    cx.fillStyle = state.anim.webmBg;
-    cx.fillRect(0, 0, W, H);
-    renderAnimated(cx, p, state.anim.easing);
-    if (el < dur + hold) setTimeout(frame, interval);
-    else setTimeout(() => rec.stop(), 120);
-  };
-  frame();
+function exportWebM(job) {
+  return new Promise((resolve) => {
+    job = job || { strokes: state.strokes, label: '', crop: false };
+    const strokeList = job.strokes;
+    if (!strokeList || strokeList.length === 0) { showToast('Nada para animar'); return resolve(); }
+    if (typeof MediaRecorder === 'undefined') { showToast('WebM não suportado neste navegador'); return resolve(); }
+    stopPreview();
+    const vp = jobViewport(strokeList, job.crop);
+    if (!vp) { showToast('Nada para animar'); return resolve(); }
+    // WebM stays at native canvas density (1:1); round to even dims for codecs.
+    const W = Math.max(2, Math.round(vp.w / 2) * 2), H = Math.max(2, Math.round(vp.h / 2) * 2);
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const cx = c.getContext('2d');
+    const fps = state.anim.fps;
+    const stream = c.captureStream(fps);
+    let mime = 'video/webm;codecs=vp9';
+    if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8';
+    if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12000000 });
+    const chunks = [];
+    rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      const suffix = job.label ? '-' + job.label : '';
+      download(new Blob(chunks, { type: 'video/webm' }), `doodle-anim${suffix}-${Date.now()}.webm`);
+      showToast(`WebM${job.label ? ' ' + job.label : ''} ${W}×${H} exportado`);
+      render();
+      resolve();
+    };
+    const dur = Math.max(100, state.anim.duration * 1000);
+    const hold = state.anim.holdMs;
+    const interval = 1000 / fps;
+    rec.start();
+    showToast('Gravando WebM' + (job.label ? ' ' + job.label : '') + '…');
+    // Drive with setTimeout (works even if the tab is backgrounded, where
+    // requestAnimationFrame would be throttled and could stall the capture).
+    const t0 = performance.now();
+    const frame = () => {
+      const el = performance.now() - t0;
+      const p = Math.min(1, el / dur);
+      cx.setTransform(1, 0, 0, 1, 0, 0);
+      cx.globalCompositeOperation = 'source-over';
+      cx.fillStyle = state.anim.webmBg;
+      cx.fillRect(0, 0, W, H);
+      cx.setTransform(1, 0, 0, 1, -vp.x, -vp.y);   // crop offset (k=1)
+      renderAnimatedList(cx, strokeList, revealsFor(strokeList, p, state.anim.easing));
+      cx.setTransform(1, 0, 0, 1, 0, 0);
+      if (el < dur + hold) setTimeout(frame, interval);
+      else setTimeout(() => rec.stop(), 120);
+    };
+    frame();
+  });
 }
-document.getElementById('webmBtn').addEventListener('click', () => { exportWebM(); });
+document.getElementById('webmBtn').addEventListener('click', () => { runAnimExport('webm'); });
+
+/* v3: dispatch animated export (GIF/WebM) over the chosen scope: full canvas
+   and/or each group, with optional content crop. */
+function animExportJobs() {
+  const scope = document.getElementById('animScope').value;   // all | groups | both
+  const crop = document.getElementById('animCrop').checked;
+  const gm = groupsMap();
+  const jobs = [];
+  const wantCanvas = (scope === 'all' || scope === 'both' || gm.size === 0);
+  const wantGroups = (scope === 'groups' || scope === 'both') && gm.size > 0;
+  if (wantCanvas) jobs.push({ strokes: state.strokes, label: '', crop });
+  if (wantGroups) for (const [gid, idxs] of gm) {
+    jobs.push({ strokes: idxs.map(i => state.strokes[i]), label: 'g' + gid, crop });
+  }
+  return jobs;
+}
+async function runAnimExport(format) {
+  if (state.strokes.length === 0) { showToast('Nada para animar'); return; }
+  const jobs = animExportJobs();
+  for (const job of jobs) {
+    if (format === 'gif') await exportGif(job);
+    else await exportWebM(job);
+  }
+  if (jobs.length > 1) showToast(`${jobs.length} ${format.toUpperCase()}(s) exportado(s)`);
+}
 
 /* ---------- TOAST ---------- */
 let toastTimer = null;
