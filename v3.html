@@ -196,7 +196,7 @@
   .dock-col { padding: 12px 14px; min-height: 0; overflow: hidden; }
   .dock-col input[type="range"] { margin: 4px 0 9px; }
   .dock-col + .dock-col { border-left: 1px solid var(--border-2); }
-  .dock-title { font-size: 10px; letter-spacing: 2px; color: var(--muted-2); text-transform: uppercase; font-weight: 700; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .dock-title { font-size: 10px; letter-spacing: 2px; color: var(--muted-2); text-transform: uppercase; font-weight: 700; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
   .dock-title .help-btn { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted-2); font-size: 11px; cursor: pointer; line-height: 1; }
   .dock-title .help-btn:hover { color: var(--accent); border-color: var(--accent); }
 
@@ -270,8 +270,8 @@
 
   /* export column */
   .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .export-grid .btn-ghost, .export-grid .btn-primary { width: 100%; padding: 11px 8px; font-size: 12px; }
-  .export-opts { margin-top: 7px; border-top: 1px solid var(--border-2); padding-top: 7px; }
+  .export-grid .btn-ghost, .export-grid .btn-primary { width: 100%; padding: 8px 8px; font-size: 12px; }
+  .export-opts { margin-top: 5px; border-top: 1px solid var(--border-2); padding-top: 5px; }
   .webm-bg-row { display: flex; align-items: center; gap: 10px; }
   .webm-bg-row .pick-btn { width: 38px; height: 34px; }
 
@@ -541,7 +541,7 @@
         <button class="btn-ghost" id="webmBtn">WebM</button>
       </div>
       <div class="export-opts">
-        <div class="anim-note" style="margin:0 0 7px;">GIF / WebM</div>
+        <label class="anim-check" id="gifPosterRow" style="margin:0 0 7px;" title="O primeiro frame do GIF mostra o desenho já pronto (bom p/ documentos estáticos)"><input type="checkbox" id="gifPoster" checked /> GIF: 1º frame = desenho pronto</label>
         <div class="anim-row2" style="margin-bottom:8px;">
           <div class="anim-field" style="margin:0;">
             <label for="animScope">O que salvar</label>
@@ -2832,15 +2832,20 @@ async function exportGif(job) {
     bytes.push(0x00);
   };
 
-  // v3: POSTER frame — the FINAL drawing as frame 0, so static viewers and
-  // document thumbnails (which show the first frame) display the completed art.
-  // Disposal=2 ("restore to background" = transparent here) clears it before the
-  // reveal plays, so playback and looping still animate cleanly from empty.
-  gctx.setTransform(1, 0, 0, 1, 0, 0);
-  gctx.clearRect(0, 0, W, H);
-  for (const s of strokeList) drawScaled(gctx, s);
-  quantize(gctx.getImageData(0, 0, W, H).data);
-  emitFrame(baseDelay, 2);
+  // v3: POSTER frame (optional, toggled by #gifPoster) — the FINAL drawing as
+  // frame 0, so static viewers and document thumbnails (which show the first
+  // frame) display the completed art. Disposal=2 ("restore to background" =
+  // transparent here) clears it before the reveal plays, so playback and looping
+  // still animate cleanly from empty.
+  const posterEl = document.getElementById('gifPoster');
+  const usePoster = posterEl ? posterEl.checked : true;
+  if (usePoster) {
+    gctx.setTransform(1, 0, 0, 1, 0, 0);
+    gctx.clearRect(0, 0, W, H);
+    for (const s of strokeList) drawScaled(gctx, s);
+    quantize(gctx.getImageData(0, 0, W, H).data);
+    emitFrame(baseDelay, 2);
+  }
 
   // Animation frames. Disposal=1 ("do not dispose"): the reveal grows, so frames
   // are cumulative supersets and leaving prior pixels in place is correct.
@@ -2856,7 +2861,7 @@ async function exportGif(job) {
   const suffix = job.label ? '-' + job.label : '';
   download(new Blob([new Uint8Array(bytes)], { type: 'image/gif' }), `doodle-anim${suffix}-${Date.now()}.gif`);
   render();
-  showToast(`GIF${job.label ? ' ' + job.label : ''} ${W}×${H} · ${N + 1} quadros`);
+  showToast(`GIF${job.label ? ' ' + job.label : ''} ${W}×${H} · ${N + (usePoster ? 1 : 0)} quadros`);
   } catch (err) {
     console.error(err);
     showToast('Erro ao gerar o GIF');

@@ -36,7 +36,9 @@ Existem **três versões**:
   `disposal=2` (restore to background = transparente) para limpar antes do reveal animar. Assim
   thumbnails/documentos estáticos (que mostram o frame 0) exibem a arte pronta; no play mostra o
   full rapidinho → limpa → anima → full → loop. Total de frames = `N+1`. Helpers internos no
-  `exportGif`: `quantize(data)` e `emitFrame(delay, disposal)`.
+  `exportGif`: `quantize(data)` e `emitFrame(delay, disposal)`. **Opcional:** checkbox `#gifPoster`
+  (default ligado) liga/desliga o poster; desligado volta ao comportamento original (N frames,
+  começa vazio).
 - **Timeline:** Sequencial/Juntos viraram segmented (`.seg`/`.seg-btn`, classe `.active` marca o
   modo) com `ⓘ` explicativo (`#tlInfoPop`). Toggle **esconder/mostrar** a timeline na action bar
   (`#tlToggleBtn` → classe `.tl-off` no `.dock`; `state.tlVisible`).
