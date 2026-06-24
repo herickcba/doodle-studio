@@ -1,6 +1,6 @@
 {
   "version": 2,
   "routes": [
-    { "src": "^/$", "dest": "/v2.html" }
+    { "src": "^/$", "dest": "/v3.html" }
   ]
 }

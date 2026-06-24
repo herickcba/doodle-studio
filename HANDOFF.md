@@ -8,9 +8,26 @@
 
 **Doodle Studio** é uma ferramenta de desenho vetorial animado 100% offline, em arquivo único HTML/CSS/JS — sem build, sem dependências externas, sem CDN. Tudo roda no browser diretamente abrindo o arquivo.
 
-Existem **duas versões**:
+Existem **três versões**:
 - `index.html` — **V1 (NUNCA MODIFICAR).** Versão estável de referência.
-- `v2.html` — **V2 (versão ativa).** Redesign de UX mantendo 100% da lógica da V1.
+- `v2.html` — **V2 (checkpoint).** Redesign de UX mantendo 100% da lógica da V1.
+- `v3.html` — **V3 (versão ativa).** Cópia da V2 + grupos, export cropado, sidebar enxuta, timeline melhor.
+
+### Novidades da V3 (sobre a V2)
+- **Tema claro:** fundo `#EEECE6`, acento magenta (`#C8185C`). Tokens em `:root`.
+- **Sidebar enxuta:** painel fixo `.panel-fixed` "Pincel" com cor + paleta (compacta) + opacidade
+  + tamanho **sempre visíveis**; só "Textura do Traço" (`#texAcc`) colapsa.
+- **Grupos de traços:** `stroke.groupId`; `state.multiSel` (Set de índices), `state.nextGroupId`.
+  Ctrl/Shift+clique nos blocos da timeline multi-seleciona → botão **Agrupar** (`#tlGroupBtn`).
+  Helpers `groupsMap()`, `groupColor(gid)`, `renderGroupBar()`, `syncGroupsUI()`. Chips de grupo
+  com "×" para excluir; clique no chip re-seleciona os traços. Tags `G{n}` nos blocos.
+- **Export PNG cropado:** `contentBBox(strokeList)` + `renderCropPNG(strokeList, colorOverride,
+  margin=10)` + `downloadCanvas()`. `confirmExport` agora: imagem principal (1920×1080, ou
+  cropada no conteúdo se `#cropContent` marcado) **+** 1 PNG por grupo cropado com 10px de margem.
+- **Defaults de export animado:** GIF/`state.anim.gifScale` = **1920**; FPS/`state.anim.fps` = **30**.
+- **Timeline:** Sequencial/Juntos viraram segmented (`.seg`/`.seg-btn`, classe `.active` marca o
+  modo) com `ⓘ` explicativo (`#tlInfoPop`). Toggle **esconder/mostrar** a timeline na action bar
+  (`#tlToggleBtn` → classe `.tl-off` no `.dock`; `state.tlVisible`).
 
 ---
 
