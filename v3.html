@@ -162,7 +162,12 @@
   /* selected stroke recolor info */
   .stroke-selected-info { display: none; align-items: center; gap: 8px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 10px; margin-bottom: 12px; font-size: 12px; color: var(--accent); letter-spacing: 0.5px; font-weight: 700; }
   .stroke-selected-info.show { display: flex; }
-  .stroke-selected-info .deselect-btn { margin-left: auto; background: none; border: 1px solid var(--accent); color: var(--accent); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; font-family: inherit; }
+  .stroke-selected-info .ssi-actions { margin-left: auto; display: flex; gap: 5px; }
+  .stroke-selected-info .ssi-btn { background: var(--surface); border: 1px solid var(--accent); color: var(--accent); width: 26px; height: 24px; border-radius: 6px; cursor: pointer; font-size: 12px; line-height: 1; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+  .stroke-selected-info .ssi-btn:hover { background: var(--accent); color: #fff; }
+  .stroke-selected-info .ssi-btn.danger { border-color: var(--danger); color: var(--danger); }
+  .stroke-selected-info .ssi-btn.danger:hover { background: var(--danger); color: #fff; }
+  .stroke-selected-info .deselect-btn { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; font-family: inherit; }
 
   /* ============ CANVAS AREA ============ */
   .canvas-area { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #EEECE6; background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.07) 1px, transparent 0); background-size: 22px 22px; }
@@ -253,6 +258,7 @@
   .tl-block.selected { box-shadow: 0 0 0 2px var(--accent), 0 0 10px rgba(200,24,92,0.35); }
   .tl-block.multi { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent); outline: 1px dashed rgba(255,255,255,0.7); outline-offset: -3px; z-index: 3; }
   .tl-lane.in-group { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); }
+  .tl-lane.drop-target { box-shadow: inset 0 0 0 2px var(--accent); background: var(--accent-soft) !important; }
   .tl-gtag { font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 999px; background: rgba(255,255,255,0.85); color: #1C1A17; letter-spacing: 0.3px; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,0.5); }
   .tl-playhead { position: absolute; top: 6px; bottom: 6px; width: 2px; background: var(--accent); left: 8px; pointer-events: none; opacity: 0; box-shadow: 0 0 6px rgba(200,24,92,0.6); z-index: 5; }
   .tl-playhead.show { opacity: 1; }
@@ -326,7 +332,12 @@
 
       <div class="stroke-selected-info" id="strokeSelectedInfo">
         <span>Traço selecionado</span>
-        <button class="deselect-btn" id="deselectBtn">Deselecionar</button>
+        <span class="ssi-actions">
+          <button class="ssi-btn" id="layerUpBtn" title="Subir camada (z-order)">⬆</button>
+          <button class="ssi-btn" id="layerDownBtn" title="Descer camada (z-order)">⬇</button>
+          <button class="ssi-btn danger" id="deleteStrokeBtn" title="Excluir traço (Del)">🗑</button>
+        </span>
+        <button class="deselect-btn" id="deselectBtn">Fechar</button>
       </div>
 
       <!-- PINCEL (fixo: cor + opacidade + tamanho sempre visíveis) -->
@@ -456,9 +467,9 @@
         <button class="play-big" id="resetAnimBtn">↺ Início</button>
       </div>
       <div class="slider-row">
-        <span>Duração</span><span class="val" id="animDurVal">4.0s</span>
+        <span>Duração</span><span class="val" id="animDurVal">2.0s</span>
       </div>
-      <input type="range" id="animDur" min="5" max="150" value="40" />
+      <input type="range" id="animDur" min="5" max="150" value="20" />
       <div class="anim-row2">
         <div class="anim-field" style="margin:0;">
           <label for="animEasing">Curva</label>
@@ -511,7 +522,7 @@
         <div class="tl-lanes" id="tlLanes"></div>
         <div class="tl-playhead" id="tlPlayhead"></div>
       </div>
-      <div class="tl-hint" id="tlHint">Arraste os blocos p/ posicionar · clique p/ selecionar · <b>Ctrl/Shift+clique</b> p/ multi-selecionar e agrupar.</div>
+      <div class="tl-hint" id="tlHint">Arraste na horizontal p/ posicionar no tempo · <b>vertical</b> p/ trocar de camada · clique p/ selecionar · <b>Ctrl/Shift+clique</b> p/ agrupar.</div>
     </div>
 
     <div class="tl-info-pop" id="tlInfoPop">
@@ -638,7 +649,7 @@ const state = {
   tlVisible: true,        // v3: timeline column shown/hidden
   anim: {
     playing: false,
-    duration: 4,      // seconds
+    duration: 2,      // seconds
     easing: 'linear',
     loop: true,
     holdMs: 600,
@@ -786,17 +797,40 @@ gapSizeSlider.addEventListener('input', () => {
 
 /* ---------- REFERENCE IMAGE ---------- */
 const imgInput = document.getElementById('imgInput');
+// Shared setter so "Carregar" and paste both go through the same path
+// (sets the source, shows it, and applies the current opacity slider).
+function setRefImage(dataUrl) {
+  refImg.src = dataUrl;
+  refImg.style.display = 'block';
+  refImg.style.opacity = +document.getElementById('refOp').value / 100;
+}
 document.getElementById('loadImgBtn').addEventListener('click', () => imgInput.click());
 imgInput.addEventListener('change', e => {
   const f = e.target.files[0];
   if (!f) return;
   const r = new FileReader();
   r.onload = () => {
-    refImg.src = r.result;
-    refImg.style.display = 'block';
+    setRefImage(r.result);
     showToast('Imagem de referência carregada');
   };
   r.readAsDataURL(f);
+});
+// v3: paste an image from the clipboard (print screen / copied image) → use it
+// as the reference image with the current opacity. Only acts on image data.
+document.addEventListener('paste', e => {
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (const it of items) {
+    if (it.type && it.type.indexOf('image') === 0) {
+      const blob = it.getAsFile();
+      if (!blob) continue;
+      const r = new FileReader();
+      r.onload = () => { setRefImage(r.result); showToast('Imagem colada como referência'); };
+      r.readAsDataURL(blob);
+      e.preventDefault();
+      return;
+    }
+  }
 });
 document.getElementById('removeImgBtn').addEventListener('click', () => {
   refImg.src = '';
@@ -909,8 +943,62 @@ document.getElementById('deselectBtn').addEventListener('click', () => {
   deselectStroke();
   render();
 });
+
+/* ---------- v3: delete arbitrary strokes + reorder layers (z-order) ---------- */
+// Remap multiSel + selection by object identity after a structural change.
+function remapSelection(selObj, multiObjs) {
+  if (selObj) {
+    const ni = state.strokes.indexOf(selObj);
+    state.selectedStrokeIdx = ni;
+    if (ni < 0) document.getElementById('strokeSelectedInfo').classList.remove('show');
+  }
+  if (multiObjs) {
+    state.multiSel = new Set();
+    state.strokes.forEach((s, i) => { if (multiObjs.has(s)) state.multiSel.add(i); });
+  }
+}
+function deleteSelection() {
+  // Prefer the multi-selection (grouping); otherwise the single selected stroke.
+  let targets = [];
+  if (state.multiSel.size > 0) targets = [...state.multiSel];
+  else if (state.selectedStrokeIdx >= 0) targets = [state.selectedStrokeIdx];
+  if (!targets.length) return;
+  const objs = new Set(targets.map(i => state.strokes[i]));
+  state.strokes = state.strokes.filter(s => !objs.has(s));
+  state.redo = [];                       // arbitrary delete isn't part of the undo chain
+  state.multiSel.clear();
+  state.selectedStrokeIdx = -1;
+  document.getElementById('strokeSelectedInfo').classList.remove('show');
+  ensureAnimDefaults();
+  render(); renderTimeline();
+  if (typeof updateHistoryButtons === 'function') updateHistoryButtons();
+  showToast(targets.length > 1 ? `${targets.length} traços excluídos` : 'Traço excluído');
+}
+// Move the selected stroke one step in z-order (array order). dir -1 = down, +1 = up.
+function moveSelectedLayer(dir) {
+  const i = state.selectedStrokeIdx;
+  if (i < 0) return;
+  const j = i + dir;
+  if (j < 0 || j >= state.strokes.length) return;
+  const selObj = state.strokes[i];
+  const multiObjs = new Set([...state.multiSel].map(k => state.strokes[k]));
+  const [s] = state.strokes.splice(i, 1);
+  state.strokes.splice(j, 0, s);
+  remapSelection(selObj, multiObjs);
+  render(); renderTimeline();
+}
+document.getElementById('deleteStrokeBtn').addEventListener('click', deleteSelection);
+document.getElementById('layerUpBtn').addEventListener('click', () => moveSelectedLayer(1));
+document.getElementById('layerDownBtn').addEventListener('click', () => moveSelectedLayer(-1));
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { deselectStroke(); render(); }
+  // Delete/Backspace removes the selection — but not while typing in a field.
+  if ((e.key === 'Delete' || e.key === 'Backspace')) {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (state.multiSel.size > 0 || state.selectedStrokeIdx >= 0) { e.preventDefault(); deleteSelection(); }
+  }
 });
 
 /* ============================================================
@@ -2371,10 +2459,10 @@ tlLanes.addEventListener('pointerdown', e => {
   const laneW = block.parentElement.getBoundingClientRect().width || 1;
   tlDrag = {
     idx, block, axis, laneW,
-    startX: e.clientX,
+    startX: e.clientX, startY: e.clientY,
     startVal: state.strokes[idx].animStart || 0,
     dur: strokeDur(state.strokes[idx]),
-    moved: false,
+    moved: false, overIdx: idx,
   };
   block.setPointerCapture(e.pointerId);
   block.classList.add('dragging');
@@ -2406,13 +2494,33 @@ tlLanes.addEventListener('pointermove', e => {
   val = Math.max(0, Math.min(d.axis - d.dur, best));
   state.strokes[d.idx].animStart = val;
   d.block.style.left = (100 * val / d.axis) + '%';
+  // v3: vertical movement → pick a target lane (layer / z-order).
+  const kids = tlLanes.children;
+  let over = d.idx;
+  for (let k = 0; k < kids.length; k++) {
+    const r = kids[k].getBoundingClientRect();
+    if (e.clientY < r.bottom || k === kids.length - 1) { over = k; break; }
+  }
+  d.overIdx = over;
+  for (let k = 0; k < kids.length; k++) kids[k].classList.toggle('drop-target', k === over && over !== d.idx);
 });
 tlLanes.addEventListener('pointerup', e => {
   if (!tlDrag) return;
-  if (tlDrag.moved && typeof setStartMode === 'function') setStartMode(null); // custom positioning
-  tlDrag.block.classList.remove('dragging');
+  const d = tlDrag;
+  if (d.moved && typeof setStartMode === 'function') setStartMode(null); // custom positioning
+  d.block.classList.remove('dragging');
+  // v3: apply layer reorder if dropped on a different lane.
+  if (d.overIdx != null && d.overIdx !== d.idx) {
+    const selObj = state.strokes[d.idx];
+    const multiObjs = new Set([...state.multiSel].map(k => state.strokes[k]));
+    const [s] = state.strokes.splice(d.idx, 1);
+    state.strokes.splice(d.overIdx, 0, s);
+    remapSelection(selObj, multiObjs);
+    showToast('Camada movida');
+  }
   tlDrag = null;
   renderTimeline();
+  render();
 });
 
 // Quick presets (segmented: marks the active mode).

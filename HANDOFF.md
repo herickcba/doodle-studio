@@ -35,6 +35,15 @@ Existem **três versões**:
 - **Timeline:** Sequencial/Juntos viraram segmented (`.seg`/`.seg-btn`, classe `.active` marca o
   modo) com `ⓘ` explicativo (`#tlInfoPop`). Toggle **esconder/mostrar** a timeline na action bar
   (`#tlToggleBtn` → classe `.tl-off` no `.dock`; `state.tlVisible`).
+- **Excluir traço qualquer:** `deleteSelection()` (botão 🗑 na barra de seleção + tecla Del/
+  Backspace) remove o(s) traço(s) selecionado(s) por identidade — não só o último. Não entra no
+  undo (limpa o redo).
+- **Trocar de camada (z-order):** botões ⬆/⬇ na barra de seleção (`moveSelectedLayer(dir)`) **ou**
+  arrastar o bloco na **vertical** na timeline (lane alvo destacada com `.drop-target`). Horizontal
+  continua = `animStart`. `remapSelection()` mantém seleção/multiSel por identidade após reordenar.
+- **Duração padrão:** `state.anim.duration` = **2s** (slider `#animDur` value 20).
+- **Colar imagem (Ctrl+V):** listener `paste` no document → se houver imagem no clipboard,
+  `setRefImage(dataUrl)` a usa como imagem de referência com a opacidade atual (`#refOp`).
 
 ---
 
