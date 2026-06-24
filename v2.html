@@ -6,21 +6,21 @@
 <title>Doodle Studio</title>
 <style>
   :root {
-    --bg: #EEECE6;
-    --surface: #F5F3ED;
-    --surface-2: #E6E4DC;
-    --surface-3: #DAD8CF;
-    --border: #C8C5BC;
-    --border-2: #D6D3CA;
-    --text: #1C1A17;
-    --muted: #7A776E;
-    --muted-2: #524E47;
-    --accent: #C8185C;
-    --accent-2: #E0226E;
-    --accent-soft: rgba(200,24,92,0.10);
+    --bg: #F0F0F1;
+    --surface: #FFFFFF;
+    --surface-2: #F2F2F4;
+    --surface-3: #E8E8EB;
+    --border: #DCDCDF;
+    --border-2: #E6E6E9;
+    --text: #1A1A1C;
+    --muted: #76767C;
+    --muted-2: #4A4A50;
+    --accent: #436AE1;
+    --accent-2: #5A7DE8;
+    --accent-soft: rgba(67,106,225,0.10);
     --danger: #C03040;
-    --radius: 12px;
-    --radius-sm: 9px;
+    --radius: 6px;
+    --radius-sm: 4px;
     --gap: 14px;
     --sidebar-w: 312px;
     --dock-h: 286px;
@@ -33,106 +33,106 @@
     -webkit-font-smoothing: antialiased;
     overflow: hidden; user-select: none;
   }
-  body { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
+  body { display: grid; grid-template-rows: 1fr auto; height: 100vh; }
   button { font-family: inherit; }
   ::-webkit-scrollbar { width: 9px; height: 9px; }
-  ::-webkit-scrollbar-thumb { background: #C0BDB4; border-radius: 8px; }
-  ::-webkit-scrollbar-thumb:hover { background: #AEABA2; }
+  ::-webkit-scrollbar-thumb { background: #C8C8CC; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: #B2B2B8; }
 
   /* ============ HEADER ============ */
   header.topbar {
     display: flex; align-items: center; gap: 18px;
-    padding: 12px 20px; border-bottom: 1px solid var(--border-2); background: #E8E6DF;
+    padding: 12px 20px; border-bottom: 1px solid var(--border-2); background: var(--surface);
   }
   .brand { display: flex; align-items: center; gap: 12px; }
   .logo {
-    width: 40px; height: 40px; border-radius: 11px; background: var(--accent);
+    width: 40px; height: 40px; border-radius: var(--radius); background: var(--accent);
     display: grid; place-items: center; font-size: 20px;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.15) inset, 0 4px 14px rgba(200,24,92,0.22);
   }
-  .brand h1 { margin: 0; font-size: 16px; letter-spacing: 0.5px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
-  .brand small { display: block; font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; font-weight: 600; }
+  .side-brand h1 { margin: 0; font-size: 15px; letter-spacing: 0.5px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .side-brand small { display: block; font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; font-weight: 600; }
   .pill { font-size: 9px; letter-spacing: 1.5px; padding: 2px 7px; border-radius: 999px; background: var(--surface-3); color: var(--muted-2); font-weight: 700; }
   .pill.v2 { background: var(--accent); color: #fff; }
   .header-spacer { flex: 1; }
 
   /* Active brush chip */
   .brush-chip {
-    display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-radius: 11px;
+    display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-radius: var(--radius);
     background: var(--surface-2); border: 1px solid var(--border); cursor: default;
   }
-  .brush-chip .bc-sw { width: 18px; height: 18px; border-radius: 5px; box-shadow: 0 0 0 1px rgba(0,0,0,0.3) inset; }
+  .brush-chip .bc-sw { width: 18px; height: 18px; border-radius: var(--radius-sm); box-shadow: 0 0 0 1px rgba(0,0,0,0.3) inset; }
   .brush-chip .bc-tex { font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: 0.3px; }
   .brush-chip .bc-size { font-size: 11px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
   .brush-chip .bc-label { font-size: 8px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-right: 2px; }
 
   .res-chip {
     display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 0.5px;
-    padding: 8px 13px; border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 13px; border: 1px solid var(--border); border-radius: var(--radius);
     background: var(--surface); color: var(--muted-2); font-variant-numeric: tabular-nums;
   }
 
   /* ============ MAIN ============ */
   main { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 0; }
 
-  aside.tools { border-right: 1px solid var(--border-2); overflow-y: auto; background: #E8E6DF; padding: 12px; }
+  aside.tools { border-right: 1px solid var(--border-2); overflow-y: auto; background: var(--surface); padding: 4px 14px; }
 
-  /* ---------- Accordion ---------- */
-  .acc { border: 1px solid var(--border-2); border-radius: var(--radius); margin-bottom: 10px; background: var(--surface); overflow: hidden; }
+  /* ---------- Accordion (flat, integrated sections) ---------- */
+  .acc { border-bottom: 1px solid var(--border-2); }
+  .acc:last-child { border-bottom: none; }
   .acc-head {
     width: 100%; display: flex; align-items: center; gap: 9px; background: transparent; border: none;
-    color: var(--text); padding: 12px 13px; cursor: pointer; font-size: 12px; font-weight: 700;
-    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--text); padding: 13px 2px; cursor: pointer; font-size: 12px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase; transition: color 0.12s;
   }
-  .acc-head:hover { background: var(--surface-2); }
+  .acc-head:hover { color: var(--accent); }
   .acc-head .acc-ic { font-size: 14px; }
-  .acc-head .acc-arrow { margin-left: auto; color: var(--accent); font-size: 13px; line-height: 1; width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft); border: 1px solid var(--accent); display: inline-flex; align-items: center; justify-content: center; transition: transform 0.15s ease, background 0.12s; }
-  .acc-head:hover .acc-arrow { background: rgba(255,215,0,0.24); }
+  .acc-head .acc-arrow { margin-left: auto; color: var(--muted); font-size: 11px; line-height: 1; transition: transform 0.15s ease, color 0.12s; }
+  .acc-head:hover .acc-arrow { color: var(--accent); }
   .acc.collapsed .acc-arrow { transform: rotate(-90deg); }
-  .acc-body { padding: 4px 13px 14px; }
+  .acc-body { padding: 0 2px 14px; }
   .acc.collapsed .acc-body { display: none; }
   .acc-head .acc-tag { margin-left: auto; font-size: 9px; letter-spacing: 1px; color: var(--muted); background: var(--surface-3); padding: 2px 7px; border-radius: 999px; font-weight: 700; }
   .acc.collapsed .acc-head .acc-arrow { margin-left: 8px; }
   .acc-head .acc-tag + .acc-arrow { margin-left: 8px; }
 
-  /* sub-accordion (texture) */
-  .sub-acc { border: 1px solid var(--border-2); border-radius: var(--radius-sm); margin-top: 12px; background: var(--surface-2); overflow: hidden; }
+  /* sub-section (texture, smoothing) — flat, aligned with parent */
+  .sub-acc { margin-top: 12px; }
   .sub-head {
     width: 100%; display: flex; align-items: center; gap: 8px; background: transparent; border: none;
-    color: var(--muted-2); padding: 10px 11px; cursor: pointer; font-size: 11px; font-weight: 700;
+    color: var(--muted-2); padding: 6px 0; cursor: pointer; font-size: 11px; font-weight: 700;
     letter-spacing: 1.5px; text-transform: uppercase;
   }
-  .sub-head:hover { color: var(--text); }
-  .sub-head .acc-arrow { margin-left: auto; color: var(--accent); font-size: 12px; line-height: 1; width: 24px; height: 24px; border-radius: 7px; background: var(--accent-soft); border: 1px solid var(--accent); display: inline-flex; align-items: center; justify-content: center; transition: transform 0.15s ease, background 0.12s; }
-  .sub-head:hover .acc-arrow { background: rgba(255,215,0,0.24); }
+  .sub-head:hover { color: var(--accent); }
+  .sub-head .acc-arrow { margin-left: auto; color: var(--muted); font-size: 11px; line-height: 1; transition: transform 0.15s ease, color 0.12s; }
+  .sub-head:hover .acc-arrow { color: var(--accent); }
   .sub-acc.collapsed .acc-arrow { transform: rotate(-90deg); }
-  .sub-body { padding: 0 11px 12px; }
+  .sub-body { padding: 4px 0 4px; }
   .sub-acc.collapsed .sub-body { display: none; }
 
   /* ---------- Color ---------- */
   .color-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 10px; }
-  .hex-input { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+  .hex-input { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; }
   .hex-input input { background: transparent; border: none; outline: none; color: var(--text); font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; font-size: 13px; width: 100%; letter-spacing: 0.5px; }
   .hex-input .sw { width: 20px; height: 16px; border-radius: 4px; background: var(--accent); flex-shrink: 0; }
-  .pick-btn { position: relative; width: 42px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--accent); cursor: pointer; overflow: hidden; }
+  .pick-btn { position: relative; width: 42px; height: 38px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--accent); cursor: pointer; overflow: hidden; }
   .pick-btn input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; }
   .palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-  .swatch { aspect-ratio: 1 / 1; border-radius: 10px; cursor: pointer; border: 2px solid transparent; position: relative; transition: transform 0.1s ease; }
+  .swatch { aspect-ratio: 1 / 1; border-radius: var(--radius); cursor: pointer; border: 2px solid transparent; position: relative; transition: transform 0.1s ease; }
   .swatch:hover { transform: scale(1.06); }
-  .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,215,0,0.16); }
+  .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
   /* ---------- Sliders ---------- */
   .slider-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; letter-spacing: 1.5px; color: var(--muted-2); text-transform: uppercase; font-weight: 700; }
   .slider-row .val { color: var(--accent); font-variant-numeric: tabular-nums; }
-  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: #C8C5BC; border-radius: 4px; outline: none; margin: 4px 0 14px; }
-  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 0 2px rgba(200,24,92,0.20); }
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: var(--surface-3); border-radius: 4px; outline: none; margin: 4px 0 12px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 0 2px var(--accent-soft); }
   input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; border: none; }
   .slider-row:not(:first-child) { margin-top: 2px; }
 
   /* ---------- Texture grid ---------- */
   .texture-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .tex-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted-2); padding: 9px 8px; border-radius: 10px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; cursor: pointer; transition: all 0.12s ease; display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: inherit; }
-  .tex-btn:hover { border-color: #3a3a42; color: var(--text); }
+  .tex-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted-2); padding: 9px 8px; border-radius: var(--radius); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; cursor: pointer; transition: all 0.12s ease; display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: inherit; }
+  .tex-btn:hover { border-color: var(--muted); color: var(--text); }
   .tex-btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
   .tex-btn.active.secondary { background: #EDE8FA; border-color: #8B5CF6; color: #6D38D4; box-shadow: 0 0 0 1px rgba(109,56,212,0.15) inset; }
   .tex-btn canvas { width: 100%; height: 22px; background: #fff; border-radius: 4px; }
@@ -140,47 +140,50 @@
 
   /* ---------- Faults ---------- */
   .fault-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
-  .fault-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted-2); padding: 8px 4px; border-radius: 8px; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 700; cursor: pointer; transition: all 0.12s ease; font-family: inherit; }
-  .fault-btn:hover { border-color: #3a3a42; color: var(--text); }
+  .fault-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted-2); padding: 8px 4px; border-radius: var(--radius-sm); font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 700; cursor: pointer; transition: all 0.12s ease; font-family: inherit; }
+  .fault-btn:hover { border-color: var(--muted); color: var(--text); }
   .fault-btn.active { background: #FAE8EB; border-color: #C03040; color: #A02030; }
 
   /* ---------- Buttons ---------- */
-  .btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.12s ease; font-family: inherit; }
+  .btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: var(--radius); font-size: 13px; cursor: pointer; transition: all 0.12s ease; font-family: inherit; }
   .btn-ghost:hover { border-color: var(--border); background: var(--surface-3); }
   .btn-ghost.danger:hover { color: var(--danger); border-color: #E8B0B8; }
-  .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 10px 18px; background: linear-gradient(180deg, var(--accent-2), var(--accent)); color: #fff; font-weight: 800; letter-spacing: 1px; font-size: 13px; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 5px 16px rgba(200,24,92,0.20); transition: transform 0.08s ease; }
-  .btn-primary:hover { transform: translateY(-1px); }
+  .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 10px 18px; background: var(--accent); color: #fff; font-weight: 800; letter-spacing: 1px; font-size: 13px; border: none; border-radius: var(--radius); cursor: pointer; transition: background 0.12s ease; }
+  .btn-primary:hover { background: var(--accent-2); }
   .img-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
   /* selected stroke recolor info */
-  .stroke-selected-info { display: none; align-items: center; gap: 8px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 10px; margin-bottom: 12px; font-size: 12px; color: var(--accent); letter-spacing: 0.5px; font-weight: 700; }
+  .stroke-selected-info { display: none; align-items: center; gap: 8px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius); margin-bottom: 12px; font-size: 12px; color: var(--accent); letter-spacing: 0.5px; font-weight: 700; }
   .stroke-selected-info.show { display: flex; }
   .stroke-selected-info .deselect-btn { margin-left: auto; background: none; border: 1px solid var(--accent); color: var(--accent); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; font-family: inherit; }
 
   /* ============ CANVAS AREA ============ */
-  .canvas-area { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #EEECE6; background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.07) 1px, transparent 0); background-size: 22px 22px; }
-  .action-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border-2); background: rgba(238,236,230,0.85); backdrop-filter: blur(6px); flex-wrap: wrap; }
+  .canvas-area { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg); background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0); background-size: 22px 22px; }
+  .action-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border-2); background: var(--surface); flex-wrap: wrap; }
   .ab-group { display: flex; align-items: center; gap: 6px; }
   .ab-sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
-  .ab-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); height: 34px; padding: 0 11px; border-radius: 9px; font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.12s; }
+  .ab-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); height: 34px; padding: 0 11px; border-radius: var(--radius); font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.12s; }
   .ab-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .ab-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
   .ab-btn.danger:hover:not(:disabled) { border-color: #E8B0B8; color: var(--danger); }
   .ab-btn:disabled { opacity: 0.35; cursor: default; }
   .ab-icon { width: 34px; padding: 0; justify-content: center; font-size: 14px; }
   .zoom-label { font-size: 12px; color: var(--muted-2); min-width: 46px; text-align: center; font-variant-numeric: tabular-nums; }
   .ab-spacer { flex: 1; }
-  .ab-chip { font-size: 11px; letter-spacing: 1px; font-weight: 700; color: var(--muted-2); background: var(--surface-2); border: 1px solid var(--border); padding: 7px 11px; border-radius: 8px; font-variant-numeric: tabular-nums; }
+  .ab-chip { font-size: 11px; letter-spacing: 1px; font-weight: 700; color: var(--muted-2); background: var(--surface-2); border: 1px solid var(--border); padding: 7px 11px; border-radius: var(--radius-sm); font-variant-numeric: tabular-nums; }
   .ab-status { font-size: 10px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
   .ab-status b { color: var(--accent); font-weight: 700; }
 
   .canvas-scroll { flex: 1; min-height: 0; overflow: auto; display: grid; place-items: center; padding: 32px; }
-  .canvas-wrap { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,0.5); touch-action: none; transform-origin: center center; transition: transform 0.12s ease; }
+  .canvas-wrap { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; background: #fff; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,0.10); touch-action: none; transform-origin: center center; transition: transform 0.12s ease; }
   .canvas-wrap canvas, .canvas-wrap .ref-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .ref-img { pointer-events: none; object-fit: contain; opacity: 0.4; }
   #drawCanvas { cursor: crosshair; }
 
   /* ============ BOTTOM DOCK (After Effects) ============ */
-  .dock { height: var(--dock-h); border-top: 1px solid var(--border-2); background: #E8E6DF; display: grid; grid-template-columns: var(--sidebar-w) 1fr 188px; min-height: 0; }
+  .dock { height: var(--dock-h); border-top: 1px solid var(--border-2); background: var(--surface); display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 0; }
+  body.dock-hidden { --dock-h: 0px; }
+  body.dock-hidden .dock { display: none; }
   .dock-col { padding: 12px 14px; min-height: 0; overflow: hidden; }
   .dock-col input[type="range"] { margin: 4px 0 9px; }
   .dock-col + .dock-col { border-left: 1px solid var(--border-2); }
@@ -189,12 +192,12 @@
   .dock-title .help-btn:hover { color: var(--accent); border-color: var(--accent); }
 
   .transport-main { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 9px; }
-  .play-big { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.12s; }
+  .play-big { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 36px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.12s; }
   #playBtn.playing { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
   .play-big:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
   .anim-field { margin: 10px 0; }
   .anim-field > label { display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--muted-2); text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
-  .anim-field select { width: 100%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-radius: 9px; padding: 8px 10px; font-size: 13px; font-family: inherit; outline: none; cursor: pointer; }
+  .anim-field select { width: 100%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 8px 10px; font-size: 13px; font-family: inherit; outline: none; cursor: pointer; }
   .anim-field select:focus { border-color: var(--accent); }
   .anim-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .anim-check { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted-2); letter-spacing: 0.5px; font-weight: 600; cursor: pointer; margin: 7px 0 0; }
@@ -205,20 +208,20 @@
   .dock-tl { display: flex; flex-direction: column; min-height: 0; }
   .tl-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 8px; font-size: 10px; letter-spacing: 2px; color: var(--muted-2); text-transform: uppercase; font-weight: 700; }
   .tl-quick { display: flex; gap: 6px; }
-  .tl-quick button { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted-2); border-radius: 7px; padding: 5px 9px; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.12s; }
+  .tl-quick button { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted-2); border-radius: var(--radius-sm); padding: 5px 9px; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.12s; }
   .tl-quick button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
   .tl-ruler { position: relative; height: 16px; margin: 0 0 4px; border-bottom: 1px solid var(--border-2); }
   .tl-tick { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,0.10); }
   .tl-tick span { position: absolute; top: 1px; left: 3px; font-size: 8px; color: var(--muted); letter-spacing: 0.5px; }
-  .tl-wrap { position: relative; flex: 1; min-height: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px; overflow-y: auto; overflow-x: hidden; background-image: linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px); background-size: 25% 100%; }
+  .tl-wrap { position: relative; flex: 1; min-height: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; overflow-y: auto; overflow-x: hidden; background-image: linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px); background-size: 25% 100%; }
   .tl-empty { font-size: 11px; color: var(--muted); text-align: center; padding: 22px 4px; }
   .tl-lanes { display: flex; flex-direction: column; gap: 5px; }
   .tl-lane { position: relative; height: 20px; border-radius: 5px; background: rgba(0,0,0,0.04); }
   .tl-block { position: absolute; top: 0; height: 100%; min-width: 8px; border-radius: 5px; cursor: grab; box-shadow: 0 0 0 1px rgba(0,0,0,0.3) inset; display: flex; align-items: center; padding-left: 6px; overflow: hidden; font-size: 10px; font-weight: 800; color: rgba(0,0,0,0.55); user-select: none; transition: box-shadow 0.1s ease; }
   .tl-block:hover { box-shadow: 0 0 0 1px rgba(255,255,255,0.25) inset; }
   .tl-block.dragging { cursor: grabbing; box-shadow: 0 0 0 2px var(--accent); z-index: 4; }
-  .tl-block.selected { box-shadow: 0 0 0 2px var(--accent), 0 0 10px rgba(255,215,0,0.35); }
-  .tl-playhead { position: absolute; top: 6px; bottom: 6px; width: 2px; background: var(--accent); left: 8px; pointer-events: none; opacity: 0; box-shadow: 0 0 6px rgba(255,215,0,0.6); z-index: 5; }
+  .tl-block.selected { box-shadow: 0 0 0 2px var(--accent), 0 0 8px var(--accent-soft); }
+  .tl-playhead { position: absolute; top: 6px; bottom: 6px; width: 2px; background: var(--accent); left: 8px; pointer-events: none; opacity: 0; box-shadow: 0 0 6px rgba(67,106,225,0.5); z-index: 5; }
   .tl-playhead.show { opacity: 1; }
   .tl-hint { font-size: 9px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
 
@@ -230,22 +233,22 @@
   .webm-bg-row .pick-btn { width: 38px; height: 34px; }
 
   /* ============ TOAST + MODAL ============ */
-  .toast { position: fixed; bottom: calc(var(--dock-h) + 20px); left: 50%; transform: translateX(-50%) translateY(20px); background: #1C1A17; border: 1px solid #3A3830; color: #F5F3ED; padding: 12px 22px; border-radius: 10px; font-size: 13px; opacity: 0; transition: all 0.25s ease; pointer-events: none; z-index: 100; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
+  .toast { position: fixed; bottom: calc(var(--dock-h) + 20px); left: 50%; transform: translateX(-50%) translateY(20px); background: #1A1A1C; border: 1px solid #34343A; color: #F2F2F4; padding: 12px 22px; border-radius: var(--radius); font-size: 13px; opacity: 0; transition: all 0.25s ease; pointer-events: none; z-index: 100; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.62); z-index: 120; display: none; place-items: center; }
   .modal-overlay.show { display: grid; }
-  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; min-width: 360px; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; min-width: 360px; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
   .modal h3 { margin: 0 0 6px; font-size: 16px; color: var(--text); font-weight: 800; letter-spacing: 0.5px; }
   .modal p { margin: 0 0 16px; font-size: 12px; color: var(--muted-2); line-height: 1.5; }
-  .export-original-row { display: flex; align-items: center; gap: 10px; cursor: pointer; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; margin-bottom: 16px; font-size: 13px; color: var(--text); }
+  .export-original-row { display: flex; align-items: center; gap: 10px; cursor: pointer; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 13px; margin-bottom: 16px; font-size: 13px; color: var(--text); }
   .export-original-row input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
   .export-original-row small { color: var(--muted); }
   .export-colors-label { font-size: 10px; letter-spacing: 1.5px; color: var(--muted-2); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
   .modal-colors { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-  .modal-swatch { width: 42px; height: 42px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.12s; position: relative; }
+  .modal-swatch { width: 42px; height: 42px; border-radius: var(--radius); cursor: pointer; border: 3px solid transparent; transition: all 0.12s; position: relative; }
   .modal-swatch:hover { transform: scale(1.08); }
-  .modal-swatch.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,215,0,0.3); }
+  .modal-swatch.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
   .modal-swatch .remove-color { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; background: #ff4444; color: #fff; font-size: 10px; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; line-height: 1; }
   .modal-swatch:hover .remove-color { display: flex; }
   .modal-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
@@ -253,35 +256,79 @@
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
   /* shortcuts help popover */
-  .help-pop { position: fixed; z-index: 130; display: none; background: #1C1A17; border: 1px solid #3A3830; border-radius: 12px; padding: 14px 16px; box-shadow: 0 16px 50px rgba(0,0,0,0.22); font-size: 12px; color: #9A978E; max-width: 280px; }
+  .help-pop { position: fixed; z-index: 130; display: none; background: #1A1A1C; border: 1px solid #34343A; border-radius: var(--radius); padding: 14px 16px; box-shadow: 0 16px 50px rgba(0,0,0,0.22); font-size: 12px; color: #A0A0A6; max-width: 280px; }
   .help-pop.show { display: block; }
   .help-pop h4 { margin: 0 0 10px; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); }
   .help-pop .kb { display: flex; justify-content: space-between; gap: 16px; margin: 5px 0; }
   .help-pop kbd { background: #2C2A27; border: 1px solid #3A3830; border-radius: 5px; padding: 1px 7px; font-family: ui-monospace, monospace; font-size: 11px; color: #F0EDE6; }
+
+  /* export dropdown popover */
+  .export-pop { position: fixed; z-index: 130; display: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; box-shadow: 0 16px 50px rgba(0,0,0,0.18); width: 240px; }
+  .export-pop.show { display: block; }
+  .export-pop h4 { margin: 0 0 10px; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted-2); }
+
+  /* ---------- Outline icons ---------- */
+  .ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-block; vertical-align: -0.14em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- Sidebar brand (integrated header) ---------- */
+  .side-brand { display: flex; align-items: center; gap: 12px; padding: 12px 2px 10px; }
+  .side-brand .logo { color: #fff; font-size: 20px; }
+  .side-brush { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 2px 12px; border-bottom: 1px solid var(--border-2); margin-bottom: 6px; }
+  .side-brush .brush-chip { flex: 1 1 auto; }
+
+  /* ---------- Bottom dock tab (toggle) ---------- */
+  .dock-tab { position: fixed; bottom: var(--dock-h); left: 50%; transform: translateX(-50%); z-index: 60;
+    display: inline-flex; align-items: center; gap: 7px; background: var(--surface); border: 1px solid var(--border-2);
+    border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; color: var(--muted-2); padding: 5px 18px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    box-shadow: 0 -3px 10px rgba(0,0,0,0.05); transition: color 0.12s, border-color 0.12s, bottom 0.12s ease; font-family: inherit; }
+  .dock-tab:hover { color: var(--accent); border-color: var(--accent); }
+  .dock-tab .ic { font-size: 14px; transition: transform 0.15s ease; }
+  body.dock-hidden .dock-tab .ic { transform: rotate(180deg); }
 </style>
 </head>
 <body>
 
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo">🍌</div>
-      <div>
-        <h1>DOODLE STUDIO <span class="pill v2">V2</span></h1>
-        <small>Harmonized Bezier Curves</small>
-      </div>
-    </div>
-    <div class="header-spacer"></div>
-    <div class="brush-chip" id="brushChip" title="Pincel ativo">
-      <span class="bc-label">Pincel</span>
-      <span class="bc-sw" id="bcSw" style="background:#FD5E6D"></span>
-      <span class="bc-tex" id="bcTex">Giz</span>
-      <span class="bc-size" id="bcSize">8px</span>
-    </div>
-    <div class="res-chip">🖥 <span id="resLabel">1920 x 1080</span></div>
-  </header>
+  <!-- Icon sprite (outline icons) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="ic-doodle" viewBox="0 0 24 24"><path d="M3 16c1.2-3.5 2-6.5 3.5-6.5S8 15 9.5 15s2-9 4-9 2.3 6 3.5 8.5"/><path d="M5 19c3-1.2 11-1.2 14 0"/></symbol>
+    <symbol id="ic-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 1.8 1.8 0 0 0 1.4-3 1.8 1.8 0 0 1 1.4-3H17a4 4 0 0 0 4-4c0-3.3-4-5-9-5z"/><circle cx="7.5" cy="11" r="1"/><circle cx="9.5" cy="7" r="1"/><circle cx="14.5" cy="7" r="1"/></symbol>
+    <symbol id="ic-brush" viewBox="0 0 24 24"><path d="M17 3a2.83 2.83 0 0 1 4 4L9 19l-5 2 2-5L17 3z"/></symbol>
+    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 4 14 11 14 10 22 20 10 13 10 13 2"/></symbol>
+    <symbol id="ic-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L4 21"/></symbol>
+    <symbol id="ic-film" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></symbol>
+    <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></symbol>
+    <symbol id="ic-undo" viewBox="0 0 24 24"><polyline points="3 4 3 10 9 10"/><path d="M4 14a8 8 0 1 0 2-8.5L3 10"/></symbol>
+    <symbol id="ic-redo" viewBox="0 0 24 24"><polyline points="21 4 21 10 15 10"/><path d="M20 14a8 8 0 1 1-2-8.5L21 10"/></symbol>
+    <symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 21 6"/><path d="M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></symbol>
+    <symbol id="ic-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></symbol>
+    <symbol id="ic-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
+    <symbol id="ic-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="ic-play" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></symbol>
+    <symbol id="ic-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol>
+    <symbol id="ic-restart" viewBox="0 0 24 24"><polygon points="19 5 9 12 19 19 19 5"/><line x1="5" y1="5" x2="5" y2="19"/></symbol>
+    <symbol id="ic-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+  </svg>
 
   <main>
     <aside class="tools">
+
+      <div class="side-brand">
+        <div class="logo"><svg class="ic"><use href="#ic-doodle"/></svg></div>
+        <div>
+          <h1>DOODLE STUDIO <span class="pill v2">V2</span></h1>
+          <small>Harmonized Bezier Curves</small>
+        </div>
+      </div>
+      <div class="side-brush">
+        <div class="brush-chip" id="brushChip" title="Pincel ativo">
+          <span class="bc-label">Pincel</span>
+          <span class="bc-sw" id="bcSw" style="background:#FD5E6D"></span>
+          <span class="bc-tex" id="bcTex">Giz</span>
+          <span class="bc-size" id="bcSize">8px</span>
+        </div>
+        <span class="res-chip"><svg class="ic"><use href="#ic-monitor"/></svg> <span id="resLabel">1920 x 1080</span></span>
+      </div>
 
       <div class="stroke-selected-info" id="strokeSelectedInfo">
         <span>Traço selecionado</span>
@@ -290,7 +337,7 @@
 
       <!-- COR -->
       <div class="acc" data-acc="cor">
-        <button class="acc-head"><span class="acc-ic">🎨</span> Cor <span class="acc-arrow">▼</span></button>
+        <button class="acc-head"><span class="acc-ic"><svg class="ic"><use href="#ic-palette"/></svg></span> Cor <span class="acc-arrow"><svg class="ic"><use href="#ic-chevron"/></svg></span></button>
         <div class="acc-body">
           <div class="color-row">
             <div class="hex-input">
@@ -311,7 +358,7 @@
 
       <!-- PINCEL -->
       <div class="acc" data-acc="pincel">
-        <button class="acc-head"><span class="acc-ic">🖌</span> Pincel <span class="acc-arrow">▼</span></button>
+        <button class="acc-head"><span class="acc-ic"><svg class="ic"><use href="#ic-brush"/></svg></span> Pincel <span class="acc-arrow"><svg class="ic"><use href="#ic-chevron"/></svg></span></button>
         <div class="acc-body">
           <div class="slider-row">
             <span>Tamanho do Pincel</span><span class="val" id="sizeVal">8px</span>
@@ -319,7 +366,7 @@
           <input type="range" id="size" min="1" max="60" value="8" />
 
           <div class="sub-acc collapsed" id="texAcc">
-            <button class="sub-head">Textura do Traço <span class="hint" id="texHint">1/2</span> <span class="acc-arrow">▼</span></button>
+            <button class="sub-head">Textura do Traço <span class="hint" id="texHint">1/2</span> <span class="acc-arrow"><svg class="ic"><use href="#ic-chevron"/></svg></span></button>
             <div class="sub-body">
               <div class="texture-grid" id="textureGrid">
                 <button class="tex-btn active" data-tex="giz"><canvas width="120" height="22"></canvas>Giz</button>
@@ -335,27 +382,26 @@
               <div class="anim-note" style="margin-top:8px;">Clique para escolher (até 2 combinadas).</div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- SUAVIZAÇÃO -->
-      <div class="acc collapsed" data-acc="suav">
-        <button class="acc-head"><span class="acc-ic">✨</span> Suavização <span class="acc-arrow">▼</span></button>
-        <div class="acc-body">
-          <div class="slider-row">
-            <span>Estabilizador do Movimento</span><span class="val" id="mouseSmoothVal">50%</span>
+          <div class="sub-acc collapsed" id="suavAcc">
+            <button class="sub-head">Suavização <span class="acc-arrow"><svg class="ic"><use href="#ic-chevron"/></svg></span></button>
+            <div class="sub-body">
+              <div class="slider-row">
+                <span>Estabilizador do Movimento</span><span class="val" id="mouseSmoothVal">50%</span>
+              </div>
+              <input type="range" id="mouseSmooth" min="0" max="100" value="50" />
+              <div class="slider-row">
+                <span>Suavização Vetorial</span><span class="val" id="vectorSmoothVal">0%</span>
+              </div>
+              <input type="range" id="vectorSmooth" min="0" max="100" value="0" />
+            </div>
           </div>
-          <input type="range" id="mouseSmooth" min="0" max="100" value="50" />
-          <div class="slider-row">
-            <span>Suavização Vetorial</span><span class="val" id="vectorSmoothVal">0%</span>
-          </div>
-          <input type="range" id="vectorSmooth" min="0" max="100" value="0" />
         </div>
       </div>
 
       <!-- FALHAS -->
       <div class="acc collapsed" data-acc="falhas">
-        <button class="acc-head"><span class="acc-ic">⚡</span> Falhas na Tinta <span class="hint" id="faultHint">Nenhuma</span> <span class="acc-arrow">▼</span></button>
+        <button class="acc-head"><span class="acc-ic"><svg class="ic"><use href="#ic-zap"/></svg></span> Falhas na Tinta <span class="hint" id="faultHint">Nenhuma</span> <span class="acc-arrow"><svg class="ic"><use href="#ic-chevron"/></svg></span></button>
         <div class="acc-body">
           <div class="fault-grid" id="faultGrid">
             <button class="fault-btn active" data-fault="none">Nenhuma</button>
@@ -371,13 +417,12 @@
             <span>Tamanho da Quebra</span><span class="val" id="gapSizeVal">54%</span>
           </div>
           <input type="range" id="gapSize" min="0" max="100" value="54" />
-          <div class="anim-note">Estes controles também ajustam o espaçamento/deslocamento da textura <b>Patinhas</b>.</div>
         </div>
       </div>
 
       <!-- REFERÊNCIA -->
       <div class="acc collapsed" data-acc="ref">
-        <button class="acc-head"><span class="acc-ic">🖼</span> Imagem de Referência <span class="acc-arrow">▼</span></button>
+        <button class="acc-head"><span class="acc-ic"><svg class="ic"><use href="#ic-image"/></svg></span> Imagem de Referência <span class="acc-arrow"><svg class="ic"><use href="#ic-chevron"/></svg></span></button>
         <div class="acc-body">
           <div class="img-actions">
             <button class="btn-ghost" id="loadImgBtn">Carregar</button>
@@ -396,21 +441,24 @@
     <div class="canvas-area">
       <div class="action-bar">
         <div class="ab-group">
-          <button class="ab-btn" id="undoBtn" title="Desfazer (Ctrl+Z)">↶ Desfazer</button>
-          <button class="ab-btn" id="redoBtn" title="Refazer (Ctrl+Shift+Z)">↷ Refazer</button>
+          <button class="ab-btn" id="undoBtn" title="Desfazer (Ctrl+Z)"><svg class="ic"><use href="#ic-undo"/></svg> Desfazer</button>
+          <button class="ab-btn" id="redoBtn" title="Refazer (Ctrl+Shift+Z)"><svg class="ic"><use href="#ic-redo"/></svg> Refazer</button>
         </div>
         <div class="ab-sep"></div>
-        <button class="ab-btn danger" id="clearBtn" title="Limpar tudo">🗑 Limpar</button>
+        <button class="ab-btn danger" id="clearBtn" title="Limpar tudo"><svg class="ic"><use href="#ic-trash"/></svg> Limpar</button>
         <div class="ab-sep"></div>
         <div class="ab-group">
           <button class="ab-btn ab-icon" id="zoomOutBtn" title="Diminuir zoom">−</button>
           <span class="zoom-label" id="zoomLabel">100%</span>
           <button class="ab-btn ab-icon" id="zoomInBtn" title="Aumentar zoom">+</button>
-          <button class="ab-btn" id="zoomFitBtn" title="Ajustar à tela">⤢ Ajustar</button>
+          <button class="ab-btn" id="zoomFitBtn" title="Ajustar à tela"><svg class="ic"><use href="#ic-maximize"/></svg> Ajustar</button>
         </div>
         <div class="ab-spacer"></div>
         <span class="ab-chip" id="statChip">0 strokes · 0 anchors</span>
         <span class="ab-status">Status: <b id="status">Ready</b></span>
+        <div class="ab-sep"></div>
+        <button class="ab-btn ab-icon" id="helpBtn" title="Atalhos">?</button>
+        <button class="btn-primary" id="openExportBtn" title="Salvar / exportar imagem ou animação" style="padding:8px 14px;"><svg class="ic"><use href="#ic-download"/></svg> Exportar</button>
       </div>
       <div class="canvas-scroll">
         <div class="canvas-wrap" id="canvasWrap">
@@ -424,10 +472,10 @@
   <!-- ============ BOTTOM DOCK ============ -->
   <section class="dock">
     <div class="dock-col">
-      <div class="dock-title">🎬 Animação</div>
+      <div class="dock-title"><svg class="ic"><use href="#ic-film"/></svg> Animação</div>
       <div class="transport-main">
-        <button class="play-big" id="playBtn">▶ Reproduzir</button>
-        <button class="play-big" id="resetAnimBtn">↺ Início</button>
+        <button class="play-big" id="playBtn"><svg class="ic"><use href="#ic-play"/></svg> Reproduzir</button>
+        <button class="play-big" id="resetAnimBtn"><svg class="ic"><use href="#ic-restart"/></svg> Início</button>
       </div>
       <div class="slider-row">
         <span>Duração</span><span class="val" id="animDurVal">4.0s</span>
@@ -462,7 +510,7 @@
 
     <div class="dock-col dock-tl">
       <div class="tl-head">
-        <span>⏱ Linha do Tempo</span>
+        <span><svg class="ic"><use href="#ic-clock"/></svg> Linha do Tempo</span>
         <span class="tl-quick">
           <button id="tlSeqBtn" title="Um após o outro">Sequencial</button>
           <button id="tlTogetherBtn" title="Todos começam juntos">Juntos</button>
@@ -477,37 +525,12 @@
       <div class="tl-hint">Arraste os blocos p/ definir quando cada traço começa · clique para selecionar.</div>
     </div>
 
-    <div class="dock-col">
-      <div class="dock-title">⬇ Exportar <button class="help-btn" id="helpBtn" title="Atalhos">?</button></div>
-      <div class="export-grid">
-        <button class="btn-primary" id="exportBtn">PNG</button>
-        <button class="btn-ghost" id="svgBtn" title="Exportar SVG Vetorial">SVG</button>
-        <button class="btn-ghost" id="gifBtn">GIF</button>
-        <button class="btn-ghost" id="webmBtn">WebM</button>
-      </div>
-      <div class="export-opts">
-        <div class="anim-field" style="margin:0 0 10px;">
-          <label for="animScale">Tamanho do GIF</label>
-          <select id="animScale">
-            <option value="480">480 × 270</option>
-            <option value="640" selected>640 × 360</option>
-            <option value="960">960 × 540</option>
-            <option value="1280">1280 × 720</option>
-            <option value="1920">1920 × 1080</option>
-          </select>
-        </div>
-        <div class="anim-field" style="margin:0;">
-          <label for="webmBg">Fundo do WebM</label>
-          <div class="webm-bg-row">
-            <label class="pick-btn" id="webmBgPick" style="background:#FFFFFF;">
-              <input type="color" id="webmBg" value="#FFFFFF" />
-            </label>
-            <span class="anim-note">WebM não tem transparência.</span>
-          </div>
-        </div>
-      </div>
-    </div>
   </section>
+
+  <button class="dock-tab" id="dockTab" title="Ocultar/mostrar painel de animação e timeline">
+    <svg class="ic"><use href="#ic-chevron"/></svg>
+    <span>Painel</span>
+  </button>
 
   <div class="toast" id="toast"></div>
 
@@ -517,7 +540,39 @@
     <div class="kb"><span>Desfazer</span><kbd>Ctrl+Z</kbd></div>
     <div class="kb"><span>Refazer</span><kbd>Ctrl+Shift+Z</kbd></div>
     <div class="kb"><span>Deselecionar traço</span><kbd>Esc</kbd></div>
+    <div class="kb"><span>Linha reta</span><kbd>Shift + arrastar</kbd></div>
     <div class="kb"><span>Zoom</span><kbd>Ctrl + roda</kbd></div>
+  </div>
+
+  <div class="export-pop" id="exportPop">
+    <h4>Salvar / Exportar</h4>
+    <div class="export-grid">
+      <button class="btn-primary" id="exportBtn">PNG</button>
+      <button class="btn-ghost" id="svgBtn" title="Exportar SVG Vetorial">SVG</button>
+      <button class="btn-ghost" id="gifBtn">GIF</button>
+      <button class="btn-ghost" id="webmBtn">WebM</button>
+    </div>
+    <div class="export-opts">
+      <div class="anim-field" style="margin:0 0 10px;">
+        <label for="animScale">Tamanho do GIF</label>
+        <select id="animScale">
+          <option value="480">480 × 270</option>
+          <option value="640">640 × 360</option>
+          <option value="960">960 × 540</option>
+          <option value="1280">1280 × 720</option>
+          <option value="1920" selected>1920 × 1080</option>
+        </select>
+      </div>
+      <div class="anim-field" style="margin:0;">
+        <label for="webmBg">Fundo do WebM</label>
+        <div class="webm-bg-row">
+          <label class="pick-btn" id="webmBgPick" style="background:#FFFFFF;">
+            <input type="color" id="webmBg" value="#FFFFFF" />
+          </label>
+          <span class="anim-note">WebM não tem transparência.</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="modal-overlay" id="exportModal">
@@ -583,7 +638,7 @@ const state = {
     loop: true,
     holdMs: 600,
     fps: 15,
-    gifScale: 640,    // longest side (px) for GIF export
+    gifScale: 1920,   // longest side (px) for GIF export
     webmBg: '#FFFFFF',
     _raf: null,
     _t0: 0,
@@ -772,6 +827,13 @@ canvas.addEventListener('pointermove', e => {
   if (!state.isDrawing) return;
   e.preventDefault();
   const p = getPos(e);
+  // Shift: constrain to a straight line from the press point to the cursor.
+  if (e.shiftKey) {
+    state.current.raw = [state.current.raw[0], p];
+    state.current._cache = null;
+    render();
+    return;
+  }
   const last = state.current.raw[state.current.raw.length - 1];
   const dx = p.x - last.x, dy = p.y - last.y;
   if (dx*dx + dy*dy < 1.5) return;
@@ -1987,7 +2049,7 @@ document.getElementById('webmBg').addEventListener('input', e => {
 /* ---------- Preview ---------- */
 function setPlayBtn(playing) {
   const b = document.getElementById('playBtn');
-  b.textContent = playing ? '⏸ Pausar' : '▶ Reproduzir';
+  b.innerHTML = playing ? '<svg class="ic"><use href="#ic-pause"/></svg> Pausar' : '<svg class="ic"><use href="#ic-play"/></svg> Reproduzir';
   b.classList.toggle('playing', playing);
 }
 function stopPreview() {
@@ -2537,6 +2599,42 @@ function applyZoom() {
 document.getElementById('zoomInBtn').addEventListener('click', () => { state.zoom *= 1.2; applyZoom(); });
 document.getElementById('zoomOutBtn').addEventListener('click', () => { state.zoom /= 1.2; applyZoom(); });
 document.getElementById('zoomFitBtn').addEventListener('click', () => { state.zoom = 1; applyZoom(); });
+
+/* ---------- Bottom tab: toggle animation/timeline dock (more drawing space) ---------- */
+(() => {
+  const tab = document.getElementById('dockTab');
+  if (!tab) return;
+  tab.addEventListener('click', () => {
+    const hidden = document.body.classList.toggle('dock-hidden');
+    tab.title = hidden ? 'Mostrar painel de animação e timeline' : 'Ocultar painel de animação e timeline';
+  });
+})();
+
+/* ---------- Export dropdown popover ---------- */
+(() => {
+  const openBtn = document.getElementById('openExportBtn');
+  const pop = document.getElementById('exportPop');
+  if (!openBtn || !pop) return;
+  openBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const r = openBtn.getBoundingClientRect();
+    pop.style.top = (r.bottom + 8) + 'px';
+    pop.style.left = 'auto';
+    pop.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+    const showing = pop.classList.toggle('show');
+    openBtn.classList.toggle('active', showing);
+  });
+  // close after triggering an export action (PNG/SVG/GIF/WebM)
+  pop.querySelectorAll('.export-grid button').forEach(b =>
+    b.addEventListener('click', () => { pop.classList.remove('show'); openBtn.classList.remove('active'); })
+  );
+  document.addEventListener('click', e => {
+    if (pop.classList.contains('show') && !pop.contains(e.target) && e.target !== openBtn) {
+      pop.classList.remove('show');
+      openBtn.classList.remove('active');
+    }
+  });
+})();
 document.querySelector('.canvas-scroll').addEventListener('wheel', e => {
   if (!e.ctrlKey) return;          // Ctrl + wheel = zoom; plain wheel = scroll
   e.preventDefault();
