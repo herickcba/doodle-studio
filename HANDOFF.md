@@ -32,6 +32,11 @@ Existem **três versões**:
   em sequência (await; o GIF tem `_gifBusy`). Helpers `revealsFor(list,p,e)` (reveals re-baseados
   ao subconjunto), `renderAnimatedList()`, `jobViewport(list,crop)` (full-frame ou bbox+10px).
   GIF mantém densidade `gifScale/1920`; WebM é 1:1. Grupos cropados saem com nome `-g<id>`.
+- **GIF poster frame:** o **primeiro frame do GIF é o estado FINAL** (desenho completo), com
+  `disposal=2` (restore to background = transparente) para limpar antes do reveal animar. Assim
+  thumbnails/documentos estáticos (que mostram o frame 0) exibem a arte pronta; no play mostra o
+  full rapidinho → limpa → anima → full → loop. Total de frames = `N+1`. Helpers internos no
+  `exportGif`: `quantize(data)` e `emitFrame(delay, disposal)`.
 - **Timeline:** Sequencial/Juntos viraram segmented (`.seg`/`.seg-btn`, classe `.active` marca o
   modo) com `ⓘ` explicativo (`#tlInfoPop`). Toggle **esconder/mostrar** a timeline na action bar
   (`#tlToggleBtn` → classe `.tl-off` no `.dock`; `state.tlVisible`).

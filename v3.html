@@ -2810,21 +2810,17 @@ async function exportGif(job) {
 
   const idx = new Uint8Array(W * H);
   const cache = new Map(); // RGB→index, shared across frames (near-100% hits after frame 1)
-  for (let f = 0; f < N; f++) {
-    const p = N === 1 ? 1 : f / (N - 1);
-    const data = frameData(p);
+  // Quantize an RGBA buffer into the palette indices (transparent where α<128).
+  const quantize = (data) => {
     for (let i = 0, pix = 0; i < data.length; i += 4, pix++) {
       idx[pix] = data[i + 3] < 128
         ? transIndex
         : nearestIndex(palette, data[i], data[i + 1], data[i + 2], cache);
     }
-    const delay = f === N - 1 ? baseDelay + holdCenti : baseDelay;
-    // Graphic Control Extension. Disposal=1 ("do not dispose"): frames are
-    // cumulative supersets (the reveal only grows), so leaving prior pixels
-    // in place is correct and avoids the solid-fill artifact some viewers
-    // produce with disposal=2. Transparency flag on, transparent = transIndex.
-    bytes.push(0x21, 0xF9, 0x04, (1 << 2) | 0x01, delay & 0xff, (delay >> 8) & 0xff, transIndex, 0x00);
-    // Image Descriptor
+  };
+  // Emit the current `idx` as one GIF frame (GCE + image + LZW blocks).
+  const emitFrame = (delay, disposal) => {
+    bytes.push(0x21, 0xF9, 0x04, (disposal << 2) | 0x01, delay & 0xff, (delay >> 8) & 0xff, transIndex, 0x00);
     bytes.push(0x2C); write16(0); write16(0); write16(W); write16(H); bytes.push(0x00);
     bytes.push(minCodeSize);
     const lzw = lzwEncode(minCodeSize, idx);
@@ -2834,6 +2830,25 @@ async function exportGif(job) {
       for (let j = 0; j < len; j++) bytes.push(lzw[o + j]);
     }
     bytes.push(0x00);
+  };
+
+  // v3: POSTER frame — the FINAL drawing as frame 0, so static viewers and
+  // document thumbnails (which show the first frame) display the completed art.
+  // Disposal=2 ("restore to background" = transparent here) clears it before the
+  // reveal plays, so playback and looping still animate cleanly from empty.
+  gctx.setTransform(1, 0, 0, 1, 0, 0);
+  gctx.clearRect(0, 0, W, H);
+  for (const s of strokeList) drawScaled(gctx, s);
+  quantize(gctx.getImageData(0, 0, W, H).data);
+  emitFrame(baseDelay, 2);
+
+  // Animation frames. Disposal=1 ("do not dispose"): the reveal grows, so frames
+  // are cumulative supersets and leaving prior pixels in place is correct.
+  for (let f = 0; f < N; f++) {
+    const p = N === 1 ? 1 : f / (N - 1);
+    quantize(frameData(p));
+    const delay = f === N - 1 ? baseDelay + holdCenti : baseDelay;
+    emitFrame(delay, 1);
     showToast(`Gerando GIF… ${Math.round(((f + 1) / N) * 100)}%`);
     await new Promise(r => setTimeout(r));
   }
@@ -2841,7 +2856,7 @@ async function exportGif(job) {
   const suffix = job.label ? '-' + job.label : '';
   download(new Blob([new Uint8Array(bytes)], { type: 'image/gif' }), `doodle-anim${suffix}-${Date.now()}.gif`);
   render();
-  showToast(`GIF${job.label ? ' ' + job.label : ''} ${W}×${H} · ${N} quadros`);
+  showToast(`GIF${job.label ? ' ' + job.label : ''} ${W}×${H} · ${N + 1} quadros`);
   } catch (err) {
     console.error(err);
     showToast('Erro ao gerar o GIF');
