@@ -68,34 +68,41 @@
     <h2>Como instalar</h2>
 
     <div class="card steps">
-      <h3>🍎 PowerPoint no Mac <span class="tag">desktop</span></h3>
+      <h3>🍎 PowerPoint no Mac <span class="tag">1 clique</span></h3>
       <ol>
-        <li>Baixe o arquivo <code>doodle-studio.xml</code> (botão acima).</li>
-        <li>Coloque-o na pasta de suplementos do PowerPoint (crie se não existir). No Terminal:
-          <pre>mkdir -p ~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef
-cp ~/Downloads/doodle-studio.xml ~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef/</pre>
-        </li>
-        <li>Feche o PowerPoint por completo (<b>Cmd+Q</b>) e reabra.</li>
-        <li>Aba <b>Início</b> ou <b>Inserir</b> → <b>Add-ins</b> → role até <b>Developer Add-ins</b> → clique em <b>Doodle Studio</b>.</li>
+        <li><a href="instalar-mac.zip" download>Baixe o instalador (Mac)</a> e abra o arquivo <code>.zip</code>.</li>
+        <li>No <code>instalar-mac.command</code>, clique com o <b>botão direito → Abrir</b> (na primeira vez o Mac pede confirmação; clique em <b>Abrir</b>).</li>
+        <li>Reabra o PowerPoint: <b>Inserir → Add-ins</b>, role até <b>Developer Add-ins</b> e clique em <b>Doodle Studio</b>.</li>
       </ol>
+      <p style="margin:14px 0 6px;font-size:13px;color:var(--muted-2);font-weight:700;">Prefere o Terminal? Cole esta linha e tecle Enter:</p>
+      <pre>mkdir -p ~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef &amp;&amp; curl -fsSL https://doodle-studio-app.vercel.app/manifest.xml -o ~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef/doodle-studio.xml &amp;&amp; osascript -e 'tell application "Microsoft PowerPoint" to quit'</pre>
     </div>
 
     <div class="card steps">
-      <h3>🌐 PowerPoint na Web <span class="tag">qualquer sistema</span></h3>
+      <h3>🌐 PowerPoint na Web <span class="tag">mais fácil</span></h3>
       <ol>
-        <li>Baixe o arquivo <code>doodle-studio.xml</code>.</li>
+        <li><a href="manifest.xml" download="doodle-studio.xml">Baixe o <code>doodle-studio.xml</code></a>.</li>
         <li>Em <a href="https://powerpoint.office.com" target="_blank" rel="noopener">powerpoint.office.com</a>, abra uma apresentação.</li>
-        <li><b>Inserir → Suplementos → Carregar Meu Suplemento</b> (Upload My Add-in) → selecione o arquivo.</li>
+        <li><b>Inserir → Suplementos → Carregar Meu Suplemento</b> (Upload My Add-in) e selecione o arquivo.</li>
       </ol>
     </div>
 
     <div class="card steps">
       <h3>🪟 PowerPoint no Windows <span class="tag">desktop</span></h3>
+      <p style="margin:0 0 10px;font-size:14px;color:var(--muted-2);">O Windows desktop não tem cópia simples (o "Carregar Meu Suplemento" só existe na Web). Use o catálogo de pasta confiável, uma única vez:</p>
       <ol>
-        <li>O caminho mais simples no Windows é usar o <b>PowerPoint na Web</b> (acima).</li>
-        <li>No desktop, o sideload usa uma “pasta confiável” compartilhada — siga o guia oficial da Microsoft:
-          <a href="https://learn.microsoft.com/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins" target="_blank" rel="noopener">criar catálogo de pasta compartilhada</a>, aponte para a pasta com o <code>doodle-studio.xml</code> e ative em <b>Inserir → Suplementos → Compartilhado</b>.</li>
+        <li><a href="manifest.xml" download="doodle-studio.xml">Baixe o <code>doodle-studio.xml</code></a> e coloque numa pasta, ex.: <code>C:\DoodleStudio</code>.</li>
+        <li>Botão direito na pasta: <b>Propriedades → Compartilhamento → Compartilhar</b>. Anote o caminho de rede (ex.: <code>\\SEU-PC\DoodleStudio</code>).</li>
+        <li>No PowerPoint: <b>Arquivo → Opções → Central de Confiabilidade → Configurações da Central de Confiabilidade → Catálogos de Suplementos Confiáveis</b>. Cole o caminho, clique <b>Adicionar catálogo</b>, marque <b>Mostrar no Menu</b> e <b>OK</b>.</li>
+        <li>Feche e reabra o PowerPoint.</li>
+        <li><b>Início → Add-ins</b> (ou Inserir → Suplementos) → aba <b>Pasta Compartilhada</b> → <b>Doodle Studio</b>.</li>
       </ol>
+      <p class="muted" style="margin:10px 0 0;">Guia oficial: <a href="https://learn.microsoft.com/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins?product=powerpoint" target="_blank" rel="noopener">catálogo de pasta compartilhada</a>.</p>
+    </div>
+
+    <div class="card" style="background:var(--accent-soft);border-color:var(--accent);">
+      <h3 style="color:var(--accent-2);">🚀 Instalar para um time inteiro, sem fricção</h3>
+      <p style="margin:0;font-size:14px;">Para vários usuários instalarem com zero passos, o caminho certo é <b>Implantação Centralizada</b> (um admin do Microsoft 365 publica e o suplemento aparece para todos automaticamente) ou a <b>AppSource</b> (loja do Office, instala com 1 clique). Os métodos acima são para uso individual.</p>
     </div>
 
     <h2>Como usar</h2>
