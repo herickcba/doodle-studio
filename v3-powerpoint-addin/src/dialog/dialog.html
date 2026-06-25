@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doodle Studio — Tela grande</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <link rel="stylesheet" href="../taskpane/taskpane.css" />
+  <link rel="stylesheet" href="dialog.css" />
+</head>
+<body>
+  <!-- Drawing stage -->
+  <div class="stage">
+    <div class="stage-bar">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16c1.2-3.5 2-6.5 3.5-6.5S8 15 9.5 15s2-9 4-9 2.3 6 3.5 8.5"/><path d="M5 19c3-1.2 11-1.2 14 0"/></svg>
+      </div>
+      <h1>Desenhar sobre o slide</h1>
+      <button class="btn" id="bgBtn" title="Usar o slide copiado (Cmd+C) como fundo">📋 Fundo do slide</button>
+      <label class="opacity-ctl">Fundo
+        <input type="range" id="bgOpacity" min="0" max="100" value="55" aria-label="Opacidade do fundo do slide" />
+      </label>
+      <span class="spacer"></span>
+      <button class="btn icon" id="undoBtn" title="Desfazer">↶</button>
+      <button class="btn icon" id="redoBtn" title="Refazer">↷</button>
+      <button class="btn icon danger" id="clearBtn" title="Limpar tudo">⌫</button>
+      <button class="btn" id="cancelBtn">Cancelar</button>
+      <button class="btn primary" id="insertBtn" disabled>Inserir no slide</button>
+    </div>
+    <div class="stage-canvas">
+      <div class="big-wrap">
+        <div class="draw-bg" id="drawBg"></div>
+        <canvas id="drawCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <aside class="dlg-panel">
+    <section class="sec">
+      <div class="sec-head">Cor</div>
+      <div class="palette" id="palette"></div>
+      <div class="row">
+        <input type="text" id="hexInput" class="hex" value="#FD5E6D" maxlength="7" aria-label="Cor em hexadecimal" />
+        <label class="pick" id="pickBtn" style="background:#FD5E6D" title="Seletor de cor">
+          <input type="color" id="colorPicker" value="#FD5E6D" />
+        </label>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-head">Suavização</div>
+      <div class="slabel"><span>Estabilizador do movimento</span><b id="mouseSmoothVal">50%</b></div>
+      <input type="range" id="mouseSmooth" min="0" max="100" value="50" aria-label="Estabilizador do movimento" />
+      <div class="slabel"><span>Suavização vetorial</span><b id="vectorSmoothVal">0%</b></div>
+      <input type="range" id="vectorSmooth" min="0" max="100" value="0" aria-label="Suavização vetorial" />
+    </section>
+
+    <div class="hint">Segure <kbd>Shift</kbd> para linha reta · <kbd>Cmd+V</kbd> cola uma imagem de fundo.</div>
+  </aside>
+
+  <script src="../engine/doodle-engine.js"></script>
+  <script src="../shared/controls.js"></script>
+  <script src="dialog.js"></script>
+</body>
+</html>

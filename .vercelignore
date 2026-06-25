@@ -1,0 +1,5 @@
+.vercel
+.env*
+node_modules
+.claude
+v3-powerpoint-addin

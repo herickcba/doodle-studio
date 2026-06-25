@@ -1,0 +1,21 @@
+/* Big-canvas dialog layout (reuses tokens + control styles from taskpane.css) */
+html, body { height: 100%; }
+body { padding: 0; overflow: hidden; display: flex; }
+
+.stage { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+.stage-bar { display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--border-2); background: var(--surface); }
+.stage-bar .logo { width: 28px; height: 28px; }
+.stage-bar .logo svg { width: 16px; height: 16px; }
+.stage-bar h1 { margin: 0; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 7px; }
+.stage-bar .spacer { flex: 1; }
+.opacity-ctl { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--muted-2); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+.opacity-ctl input[type=range] { width: 110px; margin: 0; }
+
+.stage-canvas { flex: 1; display: grid; place-items: center; padding: 24px; overflow: auto; }
+.big-wrap { position: relative; width: 100%; max-width: min(100%, calc((100vh - 150px) * 16 / 9)); aspect-ratio: 16 / 9; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.12); }
+.big-wrap .draw-bg { position: absolute; inset: 0; background-position: center; background-size: contain; background-repeat: no-repeat; background-color: #fff;
+  background-image: repeating-linear-gradient(45deg, #fafafa 0 12px, #f3f3f5 12px 24px); }
+.big-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+
+.dlg-panel { width: 300px; flex-shrink: 0; border-left: 1px solid var(--border-2); background: var(--surface); overflow-y: auto; padding: 16px 18px 32px; }
+.dlg-panel .sec:first-of-type { border-top: none; padding-top: 0; }

@@ -1,0 +1,503 @@
+/* ============================================================
+   Doodle Engine — extracted from Doodle Studio v2.html
+   Pure vector drawing core (no animation, no timeline).
+   Frame coordinate space is fixed at 1920x1080 (16:9).
+   Exposes window.Doodle.
+   ============================================================ */
+(function (global) {
+  'use strict';
+
+  const FRAME_W = 1920, FRAME_H = 1080;
+
+  const state = {
+    color: '#FD5E6D',
+    opacity: 1,            // 0..1
+    size: 8,               // 1..60
+    textures: ['giz'],     // MVP: giz only (solido kept as fallback)
+    mouseSmoothing: 50,    // 0..100 → Gaussian window
+    vectorSmoothing: 0,    // 0..100 → RDP + Chaikin
+    faultTypes: [],        // subset of ['quebra','falha','respingo']
+    faultLevel: 16,        // 0..100
+    gapSize: 54,           // 0..100
+    strokes: [],
+    redo: [],
+    current: null,
+    isDrawing: false,
+    pointerStart: null,
+  };
+
+  let canvas = null, ctx = null, onChange = null;
+
+  /* ---------------- Vectorization (pure) ---------------- */
+  function bboxDiag(pts) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of pts) {
+      if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+    }
+    return Math.hypot(maxX - minX, maxY - minY);
+  }
+
+  function smoothingParams(mouse, vector, raw) {
+    const diag = bboxDiag(raw);
+    const n = raw.length;
+    const gwinTarget = Math.round((mouse / 100) * 34);
+    const gwinCap = Math.max(0, Math.floor(n * 0.12));
+    const gwin = Math.min(gwinTarget, gwinCap);
+    const epsTarget = Math.pow(vector / 100, 1.35) * 70;
+    const epsCap = Math.max(0, diag * 0.10);
+    const eps = Math.min(epsTarget, epsCap);
+    let iters;
+    if (vector <= 5) iters = 0;
+    else if (vector <= 30) iters = 1;
+    else if (vector <= 60) iters = 2;
+    else if (vector <= 85) iters = 3;
+    else iters = 4;
+    return { gwin, eps, iters };
+  }
+
+  function perpDist(p, a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    if (dx === 0 && dy === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+    const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy);
+    const cx = a.x + t * dx, cy = a.y + t * dy;
+    return Math.hypot(p.x - cx, p.y - cy);
+  }
+
+  function rdp(points, epsilon) {
+    if (points.length < 3 || epsilon <= 0) return points.slice();
+    const end = points.length - 1;
+    let idx = 0, dmax = 0;
+    for (let i = 1; i < end; i++) {
+      const d = perpDist(points[i], points[0], points[end]);
+      if (d > dmax) { dmax = d; idx = i; }
+    }
+    if (dmax > epsilon) {
+      const left = rdp(points.slice(0, idx + 1), epsilon);
+      const right = rdp(points.slice(idx), epsilon);
+      return left.slice(0, -1).concat(right);
+    }
+    return [points[0], points[end]];
+  }
+
+  function gaussianSmooth(pts, windowSize) {
+    if (pts.length < 3 || windowSize < 1) return pts.slice();
+    const half = Math.floor(windowSize / 2);
+    const sigma = Math.max(1, windowSize / 3);
+    const w = new Array(half * 2 + 1);
+    for (let i = -half; i <= half; i++) w[i + half] = Math.exp(-(i * i) / (2 * sigma * sigma));
+    const out = new Array(pts.length);
+    for (let i = 0; i < pts.length; i++) {
+      let sx = 0, sy = 0, sw = 0;
+      for (let k = -half; k <= half; k++) {
+        const j = i + k;
+        if (j < 0 || j >= pts.length) continue;
+        const ww = w[k + half];
+        sx += pts[j].x * ww; sy += pts[j].y * ww; sw += ww;
+      }
+      out[i] = { x: sx / sw, y: sy / sw };
+    }
+    out[0] = pts[0];
+    out[out.length - 1] = pts[pts.length - 1];
+    return out;
+  }
+
+  function chaikin(pts, iters) {
+    if (iters <= 0 || pts.length < 3) return pts;
+    let out = pts;
+    for (let it = 0; it < iters; it++) {
+      const next = [out[0]];
+      for (let i = 0; i < out.length - 1; i++) {
+        const p = out[i], q = out[i + 1];
+        next.push({ x: 0.75 * p.x + 0.25 * q.x, y: 0.75 * p.y + 0.25 * q.y });
+        next.push({ x: 0.25 * p.x + 0.75 * q.x, y: 0.25 * p.y + 0.75 * q.y });
+      }
+      next.push(out[out.length - 1]);
+      out = next;
+    }
+    return out;
+  }
+
+  function vectorize(stroke) {
+    const key = state.mouseSmoothing * 1000 + state.vectorSmoothing;
+    if (stroke._cache && stroke._cache.k === key) return stroke._cache.pts;
+    const raw = stroke.raw;
+    if (raw.length < 3) {
+      const pts = raw.slice();
+      stroke._cache = { k: key, pts };
+      return pts;
+    }
+    const { gwin, eps, iters } = smoothingParams(state.mouseSmoothing, state.vectorSmoothing, raw);
+    const filtered = gwin > 0 ? gaussianSmooth(raw, gwin) : raw;
+    const simplified = eps > 0 ? rdp(filtered, eps) : filtered;
+    const pts = chaikin(simplified, iters);
+    stroke._cache = { k: key, pts };
+    return pts;
+  }
+
+  function anchorCount(stroke) {
+    const raw = stroke.raw;
+    if (raw.length < 3) return raw.length;
+    const { gwin, eps } = smoothingParams(state.mouseSmoothing, state.vectorSmoothing, raw);
+    const filtered = gwin > 0 ? gaussianSmooth(raw, gwin) : raw;
+    const simplified = eps > 0 ? rdp(filtered, eps) : filtered;
+    return simplified.length;
+  }
+
+  function densify(pts, stepsPerSeg = 20) {
+    if (pts.length < 2) return pts.slice();
+    const out = [pts[0]];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const c1x = p1.x + (p2.x - p0.x) / 6;
+      const c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6;
+      const c2y = p2.y - (p3.y - p1.y) / 6;
+      for (let s = 1; s <= stepsPerSeg; s++) {
+        const t = s / stepsPerSeg, u = 1 - t;
+        out.push({
+          x: u * u * u * p1.x + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * p2.x,
+          y: u * u * u * p1.y + 3 * u * u * t * c1y + 3 * u * t * t * c2y + t * t * t * p2.y,
+        });
+      }
+    }
+    return out;
+  }
+
+  function walkPath(dense, step, fn) {
+    let carry = 0;
+    for (let i = 0; i < dense.length - 1; i++) {
+      const a = dense[i], b = dense[i + 1];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 1e-6) continue;
+      const ux = dx / d, uy = dy / d;
+      let t = step - carry;
+      while (t <= d) { fn(a.x + ux * t, a.y + uy * t, ux, uy); t += step; }
+      carry = d - (t - step);
+    }
+  }
+
+  function rand(x, y) {
+    const v = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return v - Math.floor(v);
+  }
+
+  /* ---------------- Stroke rendering ---------------- */
+  function strokeBezier(c, pts) {
+    if (pts.length === 0) return;
+    if (pts.length === 1) {
+      c.beginPath();
+      c.arc(pts[0].x, pts[0].y, Math.max(0.5, c.lineWidth / 2), 0, Math.PI * 2);
+      c.fill();
+      return;
+    }
+    c.beginPath();
+    c.moveTo(pts[0].x, pts[0].y);
+    if (pts.length === 2) { c.lineTo(pts[1].x, pts[1].y); c.stroke(); return; }
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const c1x = p1.x + (p2.x - p0.x) / 6;
+      const c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6;
+      const c2y = p2.y - (p3.y - p1.y) / 6;
+      c.bezierCurveTo(c1x, c1y, c2x, c2y, p2.x, p2.y);
+    }
+    c.stroke();
+  }
+
+  const TEXTURES = {
+    solido(c, pts, s) {
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      c.strokeStyle = s.color; c.globalAlpha = s.opacity; c.lineWidth = s.size;
+      strokeBezier(c, pts);
+    },
+    giz(c, pts, s) {
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      c.strokeStyle = s.color;
+      c.globalAlpha = s.opacity * 0.35;
+      c.lineWidth = s.size * 0.85;
+      strokeBezier(c, pts);
+
+      const dense = densify(pts, 16);
+      c.fillStyle = s.color;
+      c.globalAlpha = s.opacity * 0.7;
+      walkPath(dense, Math.max(1, s.size * 0.25), (x, y, ux, uy) => {
+        const nx = -uy, ny = ux;
+        for (let k = 0; k < 4; k++) {
+          const off = (rand(x + k * 3.1, y + k * 7.7) - 0.5) * s.size * 1.4;
+          const jx = (rand(x * 2 + k, y) - 0.5) * 0.6;
+          const jy = (rand(x, y * 2 + k) - 0.5) * 0.6;
+          const px = x + nx * off + jx;
+          const py = y + ny * off + jy;
+          const r = 0.6 + rand(x + k, y - k) * Math.max(0.8, s.size * 0.12);
+          c.beginPath();
+          c.arc(px, py, r, 0, Math.PI * 2);
+          c.fill();
+        }
+      });
+    },
+  };
+
+  /* ---------------- Ink faults ---------------- */
+  function buildFaultPlan(pts, types, level, gapSize, seed) {
+    if (!types || !types.length || level <= 0 || pts.length < 3) {
+      return { segments: [{ pts, alpha: 1 }], splatter: 0 };
+    }
+    const segments = [];
+    const N = pts.length;
+    const rate = Math.pow(level / 100, 1.25) * 0.55;
+    const g = Math.max(0, Math.min(100, gapSize || 0)) / 100;
+    const chunkMax = 2 + Math.round(Math.pow(g, 1.2) * 16);
+    let i = 0;
+    while (i < N - 1) {
+      const sx = pts[i].x + seed * 0.13;
+      const sy = pts[i].y + seed * 0.19;
+      const chunk = 2 + Math.floor(rand(sx * 0.37, sy * 0.71 + i) * (chunkMax - 1));
+      const end = Math.min(i + chunk, N - 1);
+      const seg = pts.slice(i, end + 1);
+      const r = rand(sx + 11, sy * 2.3 + i * 3.1);
+      if (r < rate) {
+        const pickIdx = Math.floor(rand(sx + 17 + seed, sy + 29) * types.length);
+        const picked = types[pickIdx];
+        if (picked === 'quebra') {
+          // drop — clean gap
+        } else if (picked === 'falha') {
+          const a = 0.08 + rand(sx, sy + i) * 0.28;
+          segments.push({ pts: seg, alpha: a });
+        } else if (picked === 'respingo') {
+          segments.push({ pts: seg, alpha: 1 });
+        }
+      } else {
+        segments.push({ pts: seg, alpha: 1 });
+      }
+      i = end;
+    }
+    return { segments, splatter: types.includes('respingo') ? level : 0 };
+  }
+
+  function drawSplatter(c, pts, stroke, level) {
+    const dense = densify(pts, 12);
+    const density = Math.pow(level / 100, 1.1) * 0.35;
+    const reach = stroke.size * 3.5;
+    c.fillStyle = stroke.color;
+    walkPath(dense, 3, (x, y, ux, uy) => {
+      for (let k = 0; k < 3; k++) {
+        const rr = rand(x + k * 1.9 + stroke.seed, y + k * 2.7);
+        if (rr >= density) continue;
+        const ang = rand(x + k * 3.1, y - k * 1.7 + stroke.seed) * Math.PI * 2;
+        const dist = 0.2 + rand(x * 2, y * 2 + k) * reach;
+        const sz = 0.5 + rand(x - k, y + k + stroke.seed) * Math.max(1, stroke.size * 0.35);
+        c.globalAlpha = stroke.opacity * (0.25 + rand(x * 3 + stroke.seed, y) * 0.55);
+        c.beginPath();
+        c.arc(x + Math.cos(ang) * dist, y + Math.sin(ang) * dist, sz, 0, Math.PI * 2);
+        c.fill();
+      }
+    });
+  }
+
+  function drawStroke(c, stroke, ptsOverride) {
+    const pts = ptsOverride || vectorize(stroke);
+    const textures = (stroke.textures && stroke.textures.length)
+      ? stroke.textures : [stroke.texture || 'giz'];
+    const seed = stroke.seed || 0;
+    let faultTypes = state.faultTypes;
+    let faultLevel = state.faultLevel;
+    if ((!faultTypes || !faultTypes.length) && stroke.faultTypes && stroke.faultTypes.length) {
+      faultTypes = stroke.faultTypes;
+      faultLevel = stroke.faultLevel != null ? stroke.faultLevel : faultLevel;
+    }
+    const plan = buildFaultPlan(pts, faultTypes, faultLevel, state.gapSize, seed);
+    c.save();
+    for (const seg of plan.segments) {
+      if (seg.pts.length < 2) continue;
+      const sub = Object.assign({}, stroke, { opacity: stroke.opacity * seg.alpha });
+      for (const tex of textures) {
+        c.save();
+        (TEXTURES[tex] || TEXTURES.solido)(c, seg.pts, sub);
+        c.restore();
+      }
+    }
+    if (plan.splatter > 0) drawSplatter(c, pts, stroke, plan.splatter);
+    c.restore();
+  }
+
+  /* ---------------- Canvas render + input ---------------- */
+  function render() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, FRAME_W, FRAME_H);
+    for (const s of state.strokes) drawStroke(ctx, s);
+    if (state.current) drawStroke(ctx, state.current);
+    if (onChange) onChange();
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const sx = FRAME_W / rect.width;
+    const sy = FRAME_H / rect.height;
+    return { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy };
+  }
+
+  function onDown(e) {
+    e.preventDefault();
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+    state.isDrawing = true;
+    const p = getPos(e);
+    state.pointerStart = { x: e.clientX, y: e.clientY };
+    state.current = {
+      raw: [p], color: state.color, opacity: state.opacity,
+      size: state.size, textures: state.textures.slice(),
+      seed: Math.floor(Math.random() * 1e6), _cache: null,
+    };
+  }
+
+  function onMove(e) {
+    if (!state.isDrawing) return;
+    e.preventDefault();
+    const p = getPos(e);
+    if (e.shiftKey) {                           // straight line
+      state.current.raw = [state.current.raw[0], p];
+      state.current._cache = null;
+      render();
+      return;
+    }
+    const last = state.current.raw[state.current.raw.length - 1];
+    const dx = p.x - last.x, dy = p.y - last.y;
+    if (dx * dx + dy * dy < 1.5) return;
+    state.current.raw.push(p);
+    state.current._cache = null;
+    render();
+  }
+
+  function onUp() {
+    if (!state.isDrawing) return;
+    state.isDrawing = false;
+    if (state.current && state.current.raw.length > 0) {
+      state.strokes.push(state.current);
+      state.current = null;
+      state.redo = [];
+    }
+    state.pointerStart = null;
+    render();
+  }
+
+  function attach(canvasEl, opts) {
+    canvas = canvasEl;
+    canvas.width = FRAME_W; canvas.height = FRAME_H;
+    ctx = canvas.getContext('2d');
+    onChange = (opts && opts.onChange) || null;
+    canvas.addEventListener('pointerdown', onDown);
+    canvas.addEventListener('pointermove', onMove);
+    canvas.addEventListener('pointerup', onUp);
+    canvas.addEventListener('pointercancel', onUp);
+    window.addEventListener('pointerup', onUp);
+    render();
+  }
+
+  /* ---------------- History ---------------- */
+  function undo() {
+    if (!state.strokes.length) return;
+    state.redo.push(state.strokes.pop());
+    render();
+  }
+  function redo() {
+    if (!state.redo.length) return;
+    state.strokes.push(state.redo.pop());
+    render();
+  }
+  function clear() {
+    if (!state.strokes.length) return;
+    state.redo = state.strokes.splice(0).concat(state.redo).slice(0, 200);
+    render();
+  }
+
+  /* ---------------- Export: transparent PNG cropped to content ----------------
+     Returns { dataUrl, bbox } where bbox = { x, y, w, h } in FRAME (1920x1080)
+     coordinates, or null if there is nothing drawn. */
+  function bboxOfStrokes(strokes) {
+    if (!strokes || !strokes.length) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let maxSize = 1;
+    for (const s of strokes) {
+      if (s.size > maxSize) maxSize = s.size;
+      const pts = vectorize(s);
+      for (const p of pts) {
+        if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+      }
+    }
+    // pad for stroke width + texture grain / splatter reach
+    const pad = maxSize * 4 + 12;
+    minX = Math.max(0, minX - pad);
+    minY = Math.max(0, minY - pad);
+    maxX = Math.min(FRAME_W, maxX + pad);
+    maxY = Math.min(FRAME_H, maxY + pad);
+    return { x: minX, y: minY, w: Math.max(1, maxX - minX), h: Math.max(1, maxY - minY) };
+  }
+
+  function pngOfStrokes(strokes) {
+    const bbox = bboxOfStrokes(strokes);
+    if (!bbox) return null;
+    const off = document.createElement('canvas');
+    off.width = Math.round(bbox.w);
+    off.height = Math.round(bbox.h);
+    const oc = off.getContext('2d');
+    oc.translate(-bbox.x, -bbox.y);
+    for (const s of strokes) drawStroke(oc, s);
+    return { dataUrl: off.toDataURL('image/png'), bbox: bbox, frame: { w: FRAME_W, h: FRAME_H } };
+  }
+
+  function contentBBox() { return bboxOfStrokes(state.strokes); }
+  function exportTransparentPNG() { return pngOfStrokes(state.strokes); }
+
+  /* Render an arbitrary set of strokes (e.g. coming from the big-canvas
+     dialog) using the given config, WITHOUT disturbing live state. */
+  function renderExternalPNG(strokes, config) {
+    const saved = {
+      ms: state.mouseSmoothing, vs: state.vectorSmoothing,
+      ft: state.faultTypes, fl: state.faultLevel, gs: state.gapSize,
+    };
+    if (config) {
+      state.mouseSmoothing = config.mouseSmoothing;
+      state.vectorSmoothing = config.vectorSmoothing;
+      state.faultTypes = config.faultTypes || [];
+      state.faultLevel = config.faultLevel;
+      state.gapSize = config.gapSize;
+    }
+    const png = pngOfStrokes(strokes);
+    state.mouseSmoothing = saved.ms; state.vectorSmoothing = saved.vs;
+    state.faultTypes = saved.ft; state.faultLevel = saved.fl; state.gapSize = saved.gs;
+    return png;
+  }
+
+  /* Compact, serializable snapshot (strokes + config) for passing
+     between windows. Drops the vectorization cache. */
+  function payload() {
+    return {
+      strokes: state.strokes.map((s) => ({
+        raw: s.raw, color: s.color, opacity: s.opacity,
+        size: s.size, textures: s.textures, seed: s.seed,
+      })),
+      config: {
+        mouseSmoothing: state.mouseSmoothing, vectorSmoothing: state.vectorSmoothing,
+        faultTypes: state.faultTypes.slice(), faultLevel: state.faultLevel, gapSize: state.gapSize,
+      },
+    };
+  }
+
+  function isEmpty() { return state.strokes.length === 0; }
+
+  global.Doodle = {
+    state, FRAME_W, FRAME_H,
+    attach, render, undo, redo, clear,
+    exportTransparentPNG, contentBBox,
+    renderExternalPNG, payload, isEmpty,
+    vectorize, anchorCount,
+  };
+})(window);
