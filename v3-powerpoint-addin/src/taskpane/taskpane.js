@@ -17,6 +17,7 @@
   function updateButtons() {
     const empty = Doodle.isEmpty();
     insertBtn.disabled = empty;
+    $('gifBtn').disabled = empty;
     $('undoBtn').disabled = Doodle.state.strokes.length === 0;
     $('redoBtn').disabled = Doodle.state.redo.length === 0;
     // Warm up slide-size detection (~8MB, background, once) when drawing starts,
@@ -31,8 +32,32 @@
     $('clearBtn').addEventListener('click', () => Doodle.clear());
     $('bgBtn').addEventListener('click', loadBackground);
     insertBtn.addEventListener('click', insertOwnDrawing);
+    $('gifBtn').addEventListener('click', insertGif);
     $('bigBtn').addEventListener('click', openBigCanvas);
+    const gd = $('gifDur'), gdv = $('gifDurVal');
+    gd.addEventListener('input', () => { gdv.textContent = ((+gd.value) / 10).toFixed(1) + 's'; });
     updateButtons();
+  }
+
+  async function insertGif() {
+    if (Doodle.isEmpty()) { setStatus('Nada desenhado ainda.', 'warn'); return; }
+    const duration = (+$('gifDur').value) / 10;
+    $('gifBtn').disabled = true; insertBtn.disabled = true;
+    setStatus('Gerando GIF…');
+    try {
+      const gif = await Doodle.makeAnimatedGif({ duration: duration, fps: 12, holdMs: 600 });
+      if (!gif) { setStatus('Nada para animar.', 'warn'); return; }
+      setStatus('Inserindo GIF…');
+      const res = await OfficeBridge.insertDoodle(gif);
+      setStatus(res.mode === 'inserted' ? 'GIF animado inserido ✓'
+        : 'Modo navegador: GIF baixado (no PowerPoint, vai pro slide).', 'ok');
+    } catch (e) {
+      console.error(e);
+      setStatus('Erro ao gerar/inserir o GIF: ' + (e && e.message ? e.message : e), 'warn');
+    } finally {
+      const empty = Doodle.isEmpty();
+      $('gifBtn').disabled = empty; insertBtn.disabled = empty;
+    }
   }
 
   // Try, in order: the (preview) slide-image API → the clipboard (slide

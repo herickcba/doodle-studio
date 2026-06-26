@@ -525,11 +525,157 @@
 
   function isEmpty() { return state.strokes.length === 0; }
 
+  /* ============================================================
+     ANIMATION (progressive reveal by arc length) + GIF89a encoder.
+     Ported from the web version (v2.html), no dependencies.
+     ============================================================ */
+  const EASING = {
+    linear: (t) => t,
+    easeIn: (t) => t * t,
+    easeOut: (t) => 1 - (1 - t) * (1 - t),
+    easeInOut: (t) => t * t * (3 - 2 * t),
+  };
+  function strokeArcLen(stroke) {
+    const key = state.mouseSmoothing * 1000 + state.vectorSmoothing;
+    if (stroke._arc && stroke._arc.k === key) return stroke._arc.len;
+    const dense = densify(vectorize(stroke), 10);
+    let len = 0;
+    for (let i = 0; i < dense.length - 1; i++) len += Math.hypot(dense[i+1].x - dense[i].x, dense[i+1].y - dense[i].y);
+    stroke._arc = { k: key, len };
+    return len;
+  }
+  function strokeDur(s) { return Math.max(strokeArcLen(s), 4); }
+  function truncatePts(pts, targetLen) {
+    if (pts.length < 2 || targetLen <= 0) return pts.length ? [pts[0]] : [];
+    const out = [pts[0]]; let acc = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1], seg = Math.hypot(b.x - a.x, b.y - a.y);
+      if (acc + seg < targetLen) { out.push(b); acc += seg; }
+      else { const t = seg < 1e-6 ? 0 : (targetLen - acc) / seg; out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }); return out; }
+    }
+    return out;
+  }
+  function ensureAnimDefaults() {
+    let acc = 0;
+    for (const s of state.strokes) {
+      if (typeof s.animStart !== 'number') s.animStart = acc;
+      acc = Math.max(acc, s.animStart + strokeDur(s));
+    }
+  }
+  function strokeReveals(progress, easing) {
+    const ease = EASING[easing] || EASING.linear;
+    ensureAnimDefaults();
+    const durs = state.strokes.map(strokeDur);
+    let end = 1;
+    for (let i = 0; i < state.strokes.length; i++) end = Math.max(end, (state.strokes[i].animStart || 0) + durs[i]);
+    const tc = ease(Math.max(0, Math.min(1, progress))) * end;
+    return state.strokes.map((s, i) => Math.max(0, Math.min(durs[i], tc - (s.animStart || 0))));
+  }
+
+  function gifBuildPalette(rgba, maxColors) {
+    let samples = [];
+    for (let i = 0; i < rgba.length; i += 4) if (rgba[i+3] >= 128) samples.push([rgba[i], rgba[i+1], rgba[i+2]]);
+    if (samples.length === 0) return [[0, 0, 0]];
+    if (samples.length > 20000) { const s = [], stp = samples.length / 20000; for (let k = 0; k < 20000; k++) s.push(samples[Math.floor(k * stp)]); samples = s; }
+    let boxes = [samples];
+    while (boxes.length < maxColors) {
+      let bi = -1, brange = -1, bchan = 0;
+      for (let i = 0; i < boxes.length; i++) {
+        const b = boxes[i]; if (b.length < 2) continue;
+        const mn = [255,255,255], mx = [0,0,0];
+        for (const p of b) for (let c = 0; c < 3; c++) { if (p[c] < mn[c]) mn[c] = p[c]; if (p[c] > mx[c]) mx[c] = p[c]; }
+        for (let c = 0; c < 3; c++) { const r = mx[c] - mn[c]; if (r > brange) { brange = r; bi = i; bchan = c; } }
+      }
+      if (bi < 0) break;
+      const box = boxes[bi]; box.sort((a, b) => a[bchan] - b[bchan]); const mid = box.length >> 1;
+      boxes.splice(bi, 1, box.slice(0, mid), box.slice(mid));
+    }
+    return boxes.map((b) => { let r = 0, g = 0, bl = 0; for (const p of b) { r += p[0]; g += p[1]; bl += p[2]; } const n = Math.max(1, b.length); return [Math.round(r/n), Math.round(g/n), Math.round(bl/n)]; });
+  }
+  function gifNearest(pal, r, g, b, cache) {
+    const qr = r & 0xF0, qg = g & 0xF0, qb = b & 0xF0, key = (qr << 16) | (qg << 8) | qb;
+    const hit = cache.get(key); if (hit !== undefined) return hit;
+    let best = 0, bd = Infinity;
+    for (let i = 0; i < pal.length; i++) { const dr = pal[i][0]-qr, dg = pal[i][1]-qg, db = pal[i][2]-qb, d = dr*dr+dg*dg+db*db; if (d < bd) { bd = d; best = i; } }
+    cache.set(key, best); return best;
+  }
+  const LZW_DICT = new Int32Array(1 << 20);
+  function lzwEncode(minCodeSize, indices) {
+    const initBits = minCodeSize + 1, clearCode = 1 << minCodeSize, eofCode = clearCode + 1;
+    const maxbits = 12, maxmaxcode = 1 << maxbits, dict = LZW_DICT; dict.fill(-1);
+    const out = []; let nBits = initBits, maxcode = (1 << nBits) - 1, freeEnt = clearCode + 2, clearFlg = false, cur = 0, curBits = 0;
+    const MAXCODE = (n) => (1 << n) - 1;
+    const output = (code) => {
+      cur |= code << curBits; curBits += nBits;
+      while (curBits >= 8) { out.push(cur & 0xff); cur >>= 8; curBits -= 8; }
+      if (freeEnt > maxcode || clearFlg) { if (clearFlg) { nBits = initBits; maxcode = MAXCODE(nBits); clearFlg = false; } else { nBits++; maxcode = (nBits === maxbits) ? maxmaxcode : MAXCODE(nBits); } }
+    };
+    const clBlock = () => { dict.fill(-1); freeEnt = clearCode + 2; clearFlg = true; output(clearCode); };
+    output(clearCode); let ent = indices[0];
+    for (let i = 1; i < indices.length; i++) { const c = indices[i], fcode = (ent << 8) | c, got = dict[fcode]; if (got !== -1) { ent = got; continue; } output(ent); ent = c; if (freeEnt < maxmaxcode) dict[fcode] = freeEnt++; else clBlock(); }
+    output(ent); output(eofCode); if (curBits > 0) out.push(cur & 0xff); return out;
+  }
+
+  /* Build an animated, transparent GIF of the progressive reveal, cropped to the
+     content bbox. Returns { dataUrl, bbox, frame } like the PNG exporters. */
+  async function makeAnimatedGif(opts) {
+    opts = opts || {};
+    if (!state.strokes.length) return null;
+    const fps = opts.fps || 12, duration = opts.duration || 2.5;
+    const holdMs = opts.holdMs != null ? opts.holdMs : 600, easing = opts.easing || 'linear';
+    const bbox = bboxOfStrokes(state.strokes); if (!bbox) return null;
+    const CAP = 720, scale = Math.min(1, CAP / Math.max(bbox.w, bbox.h));
+    const W = Math.max(1, Math.round(bbox.w * scale)), H = Math.max(1, Math.round(bbox.h * scale));
+    const base = document.createElement('canvas'); base.width = W; base.height = H; const bctx = base.getContext('2d');
+    const gif = document.createElement('canvas'); gif.width = W; gif.height = H; const gctx = gif.getContext('2d');
+    const durs = state.strokes.map(strokeDur);
+    const drawScaled = (c, stroke, pts) => { c.setTransform(scale, 0, 0, scale, -bbox.x * scale, -bbox.y * scale); drawStroke(c, stroke, pts); c.setTransform(1, 0, 0, 1, 0, 0); };
+    let bakedUpTo = 0;
+    const frameData = (p) => {
+      const reveals = strokeReveals(p, easing);
+      while (bakedUpTo < state.strokes.length && reveals[bakedUpTo] >= durs[bakedUpTo]) { drawScaled(bctx, state.strokes[bakedUpTo]); bakedUpTo++; }
+      gctx.setTransform(1,0,0,1,0,0); gctx.clearRect(0,0,W,H); gctx.drawImage(base,0,0);
+      for (let i = bakedUpTo; i < state.strokes.length; i++) { const r = reveals[i]; if (r <= 0) continue; const s = state.strokes[i]; const pts = r >= durs[i] ? vectorize(s) : truncatePts(vectorize(s), r); if (pts.length >= 1) drawScaled(gctx, s, pts); }
+      return gctx.getImageData(0,0,W,H).data;
+    };
+    const N = Math.max(2, Math.round(duration * fps)), baseDelay = Math.max(2, Math.round(100 / fps)), holdCenti = Math.round(holdMs / 10);
+    for (const s of state.strokes) drawScaled(bctx, s);
+    const palette = gifBuildPalette(bctx.getImageData(0,0,W,H).data, 255);
+    bctx.clearRect(0,0,W,H);
+    const realCount = palette.length, transIndex = realCount;
+    let tableSize = 2; while (tableSize < realCount + 1) tableSize <<= 1;
+    const minCodeSize = Math.max(2, Math.round(Math.log2(tableSize))), gctSizeField = Math.round(Math.log2(tableSize)) - 1;
+    const bytes = [];
+    const write16 = (v) => { bytes.push(v & 0xff, (v >> 8) & 0xff); };
+    const writeStr = (s) => { for (let i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i)); };
+    writeStr('GIF89a'); write16(W); write16(H);
+    bytes.push(0x80 | ((minCodeSize - 1) << 4) | gctSizeField, transIndex, 0);
+    for (let i = 0; i < tableSize; i++) { if (i < realCount) bytes.push(palette[i][0], palette[i][1], palette[i][2]); else bytes.push(0, 0, 0); }
+    bytes.push(0x21, 0xFF, 0x0B); writeStr('NETSCAPE2.0'); bytes.push(0x03, 0x01, 0x00, 0x00, 0x00);
+    const idx = new Uint8Array(W * H), cache = new Map();
+    for (let f = 0; f < N; f++) {
+      const p = N === 1 ? 1 : f / (N - 1), data = frameData(p);
+      for (let i = 0, pix = 0; i < data.length; i += 4, pix++) idx[pix] = data[i+3] < 128 ? transIndex : gifNearest(palette, data[i], data[i+1], data[i+2], cache);
+      const delay = f === N - 1 ? baseDelay + holdCenti : baseDelay;
+      bytes.push(0x21, 0xF9, 0x04, (1 << 2) | 0x01, delay & 0xff, (delay >> 8) & 0xff, transIndex, 0x00);
+      bytes.push(0x2C); write16(0); write16(0); write16(W); write16(H); bytes.push(0x00); bytes.push(minCodeSize);
+      const lzw = lzwEncode(minCodeSize, idx);
+      for (let o = 0; o < lzw.length; o += 255) { const len = Math.min(255, lzw.length - o); bytes.push(len); for (let j = 0; j < len; j++) bytes.push(lzw[o + j]); }
+      bytes.push(0x00);
+      if (f % 4 === 0) await new Promise((r) => setTimeout(r)); // keep the webview responsive
+    }
+    bytes.push(0x3B);
+    const blob = new Blob([new Uint8Array(bytes)], { type: 'image/gif' });
+    const dataUrl = await new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
+    return { dataUrl, bbox, frame: { w: FRAME_W, h: FRAME_H } };
+  }
+
   global.Doodle = {
     state, FRAME_W, FRAME_H,
     attach, render, undo, redo, clear,
     exportTransparentPNG, contentBBox,
     renderExternalPNG, renderExternalPNGs, exportPNGs, payload, isEmpty,
+    makeAnimatedGif,
     vectorize, anchorCount,
   };
 })(window);

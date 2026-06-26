@@ -20,9 +20,10 @@ Duas versões mantidas em paralelo, com o **mesmo motor de desenho**:
 | Texturas | ✅ 9 | ⚠️ só **giz** | sólido, marcador, lápis, aquarela, spray, nanquim, pontilhado, patinhas só na web |
 | Combinar 2 texturas | ✅ | ❌ | |
 | Falhas na tinta (quebra/falha/respingo) | ✅ | ❌ | removidas no add-in |
-| Animação (timeline, easing, FPS, hold) | ✅ | ❌ | **só web** |
-| Export GIF / WebM | ✅ | ❌ | só web |
-| Export PNG / SVG (arquivo) | ✅ | ❌ | só web |
+| Animação (revelar traço por traço) | ✅ timeline arrastável | ⚠️ sequencial + duração | add-in: versão simples, sem timeline |
+| GIF animado | ✅ (exporta arquivo) | ✅ (insere no slide) | encoder GIF89a embutido, compartilhado |
+| Export WebM | ✅ | ❌ | só web |
+| Export PNG / SVG (arquivo) | ✅ | ❌ | só web (no add-in, vira "inserir no slide") |
 | Zoom do canvas | ✅ | ❌ | |
 | **Inserir no slide** (PNG) | ❌ | ✅ | **só add-in** (`setSelectedDataAsync`) |
 | Fundo = imagem do slide atual | ❌ | ✅ | via copiar+colar (Cmd+V / "Fundo do slide") |
