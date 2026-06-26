@@ -22,6 +22,7 @@ Duas versões mantidas em paralelo, com o **mesmo motor de desenho**:
 | Falhas na tinta (quebra/falha/respingo) | ✅ | ❌ | removidas no add-in |
 | Animação (revelar traço por traço) | ✅ timeline arrastável | ⚠️ sequencial + duração | add-in: versão simples, sem timeline |
 | GIF animado | ✅ (exporta arquivo) | ✅ (insere no slide) | encoder GIF89a embutido, compartilhado. No add-in **só na tela grande** |
+| GIF: 1º quadro = estado final | ✅ | ✅ | quadro-pôster (disposal=2) garante que PDF/render estático mostre o desenho completo; reveal continua começando do zero |
 | Controles de animação do GIF (curva/FPS/segurar no final) | ✅ | ✅ tela grande | curva linear/easeIn/easeOut/easeInOut, FPS, hold ms |
 | GIF com/sem loop · GIFs por traço separado | ✅ | ✅ tela grande | |
 | Export WebM | ✅ | ❌ | só web |
@@ -30,6 +31,7 @@ Duas versões mantidas em paralelo, com o **mesmo motor de desenho**:
 | Selecionar traço (clique) | ✅ | ✅ | clique sem arrasto destaca o traço |
 | **Biblioteca de traços** (salvar/reusar) | ✅ | ✅ | salvar desenho inteiro ou traço selecionado; **clicar na miniatura insere no slide no tamanho salvo**; global entre decks (`localStorage`); seção colapsável no painel; salvar também na tela grande |
 | Biblioteca: salvar **GIF** (com tag) | n/a | ✅ | na tela grande, "Salvar GIF na biblioteca" guarda traços + opções de animação (regenera no insert) com tag `GIF`; salva **também** um PNG do estado final estático |
+| Biblioteca: tag de **loop / sem loop** | n/a | ✅ | badge `GIF ↻` (em loop) vs `GIF 1×` (sem loop), conforme a escolha ao salvar |
 | **Inserir no slide** (PNG) | ❌ | ✅ | **só add-in** (`setSelectedDataAsync`) |
 | Fundo = imagem do slide atual | ❌ | ✅ | via copiar+colar (Cmd+V / "Fundo do slide") |
 | Tela grande (Office Dialog) | ❌ | ✅ | concentra GIF + animação + zoom (painel fica enxuto) |

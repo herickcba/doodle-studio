@@ -39,8 +39,11 @@
       img.src = it.thumb; img.alt = it.name || 'Doodle';
       cell.appendChild(img);
       if (isGif) {
+        const looping = !(it.gif && it.gif.loop === false);
         const badge = document.createElement('span');
-        badge.className = 'lib-badge'; badge.textContent = 'GIF';
+        badge.className = 'lib-badge';
+        badge.textContent = looping ? 'GIF ↻' : 'GIF 1×';
+        badge.title = looping ? 'GIF em loop' : 'GIF sem loop';
         cell.appendChild(badge);
       }
       const del = document.createElement('button');

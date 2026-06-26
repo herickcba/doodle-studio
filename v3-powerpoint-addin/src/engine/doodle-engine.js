@@ -752,15 +752,30 @@
     for (let i = 0; i < tableSize; i++) { if (i < realCount) bytes.push(palette[i][0], palette[i][1], palette[i][2]); else bytes.push(0, 0, 0); }
     if (loop) { bytes.push(0x21, 0xFF, 0x0B); writeStr('NETSCAPE2.0'); bytes.push(0x03, 0x01, 0x00, 0x00, 0x00); }
     const idx = new Uint8Array(W * H), cache = new Map();
-    for (let f = 0; f < N; f++) {
-      const p = N === 1 ? 1 : f / (N - 1), data = frameData(p);
+    // Emit one frame. disposal: 1 = leave in place (reveal is additive),
+    // 2 = restore to background (clears before the next frame).
+    const emitFrame = (data, delay, disposal) => {
       for (let i = 0, pix = 0; i < data.length; i += 4, pix++) idx[pix] = data[i+3] < 128 ? transIndex : gifNearest(palette, data[i], data[i+1], data[i+2], cache);
-      const delay = f === N - 1 ? baseDelay + holdCenti : baseDelay;
-      bytes.push(0x21, 0xF9, 0x04, (1 << 2) | 0x01, delay & 0xff, (delay >> 8) & 0xff, transIndex, 0x00);
+      bytes.push(0x21, 0xF9, 0x04, ((disposal || 1) << 2) | 0x01, delay & 0xff, (delay >> 8) & 0xff, transIndex, 0x00);
       bytes.push(0x2C); write16(0); write16(0); write16(W); write16(H); bytes.push(0x00); bytes.push(minCodeSize);
       const lzw = lzwEncode(minCodeSize, idx);
       for (let o = 0; o < lzw.length; o += 255) { const len = Math.min(255, lzw.length - o); bytes.push(len); for (let j = 0; j < len; j++) bytes.push(lzw[o + j]); }
       bytes.push(0x00);
+    };
+    // Poster: make the FIRST frame the final (completed) state, so static
+    // renderers (PDF export, thumbnails) show the finished drawing. We reuse
+    // frameData(1) so the poster pixels are identical to the reveal's last
+    // frame, then reset the bake state so the reveal still starts from empty.
+    // disposal=2 clears the poster before the reveal. Seamless in a loop
+    // (merges with the end hold); a brief flash on a non-looping GIF.
+    if (opts.finalFirst !== false) {
+      emitFrame(frameData(1), baseDelay, 2);
+      bctx.clearRect(0, 0, W, H); bakedUpTo = 0;
+    }
+    for (let f = 0; f < N; f++) {
+      const p = N === 1 ? 1 : f / (N - 1), data = frameData(p);
+      const delay = f === N - 1 ? baseDelay + holdCenti : baseDelay;
+      emitFrame(data, delay, 1);
       if (f % 4 === 0) await new Promise((r) => setTimeout(r)); // keep the webview responsive
     }
     bytes.push(0x3B);
