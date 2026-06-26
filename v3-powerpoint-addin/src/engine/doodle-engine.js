@@ -25,6 +25,7 @@
     isDrawing: false,
     pointerStart: null,
     insertSeparate: false,   // insert each stroke as its own image vs one merged image
+    selectedStrokeIdx: -1,   // index of the click-selected stroke (-1 = none)
   };
 
   let canvas = null, ctx = null, onChange = null;
@@ -335,8 +336,64 @@
     ctx.clearRect(0, 0, FRAME_W, FRAME_H);
     for (const s of state.strokes) drawStroke(ctx, s);
     if (state.current) drawStroke(ctx, state.current);
+    highlightSelected();
     if (onChange) onChange();
   }
+
+  // Soft blue halo under/over the click-selected stroke.
+  function highlightSelected() {
+    const i = state.selectedStrokeIdx;
+    if (i < 0 || i >= state.strokes.length) return;
+    const s = state.strokes[i];
+    const pts = vectorize(s);
+    if (!pts || pts.length < 2) return;
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.strokeStyle = '#436AE1';
+    ctx.lineWidth = Math.max(6, s.size + 10);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k].x, pts[k].y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---------------- Click-to-select a stroke ---------------- */
+  function distPointToSeg(p, a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    let t = len2 ? ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2 : 0;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+  }
+  function distToStroke(p, stroke) {
+    const pts = vectorize(stroke);
+    if (!pts || !pts.length) return Infinity;
+    if (pts.length === 1) return Math.hypot(p.x - pts[0].x, p.y - pts[0].y);
+    let min = Infinity;
+    for (let i = 1; i < pts.length; i++) {
+      const d = distPointToSeg(p, pts[i - 1], pts[i]);
+      if (d < min) min = d;
+    }
+    return min;
+  }
+  // Pick the nearest stroke under p (frame coords); -1 if none within reach.
+  function handleStrokeClick(p) {
+    let best = -1, bestD = Infinity;
+    for (let i = 0; i < state.strokes.length; i++) {
+      const d = distToStroke(p, state.strokes[i]);
+      const reach = Math.max(22, state.strokes[i].size * 2.5);
+      if (d <= reach && d < bestD) { bestD = d; best = i; }
+    }
+    state.selectedStrokeIdx = best;
+    return best;
+  }
+  function getSelectedStroke() {
+    const i = state.selectedStrokeIdx;
+    return (i >= 0 && i < state.strokes.length) ? state.strokes[i] : null;
+  }
+  function clearSelection() { state.selectedStrokeIdx = -1; render(); }
 
   function getPos(e) {
     const rect = canvas.getBoundingClientRect();
@@ -376,13 +433,24 @@
     render();
   }
 
-  function onUp() {
+  function onUp(e) {
     if (!state.isDrawing) return;
     state.isDrawing = false;
-    if (state.current && state.current.raw.length > 0) {
-      state.strokes.push(state.current);
+    const cur = state.current;
+    // A tap that barely moved is a selection click, not a stroke.
+    let moved = 999;
+    if (cur && state.pointerStart && e && e.clientX != null) {
+      moved = Math.hypot(e.clientX - state.pointerStart.x, e.clientY - state.pointerStart.y);
+    }
+    const wasClick = cur && cur.raw.length <= 2 && moved < 6;
+    if (wasClick) {
+      state.current = null;
+      handleStrokeClick(cur.raw[0]);
+    } else if (cur && cur.raw.length > 0) {
+      state.strokes.push(cur);
       state.current = null;
       state.redo = [];
+      state.selectedStrokeIdx = -1;   // a fresh stroke clears any selection
     }
     state.pointerStart = null;
     render();
@@ -405,6 +473,7 @@
   function undo() {
     if (!state.strokes.length) return;
     state.redo.push(state.strokes.pop());
+    state.selectedStrokeIdx = -1;
     render();
   }
   function redo() {
@@ -415,6 +484,7 @@
   function clear() {
     if (!state.strokes.length) return;
     state.redo = state.strokes.splice(0).concat(state.redo).slice(0, 200);
+    state.selectedStrokeIdx = -1;
     render();
   }
 
@@ -509,10 +579,10 @@
 
   /* Compact, serializable snapshot (strokes + config) for passing
      between windows. Drops the vectorization cache. */
-  function payload() {
+  function payloadOf(strokes) {
     return {
       insertSeparate: state.insertSeparate,
-      strokes: state.strokes.map((s) => ({
+      strokes: strokes.map((s) => ({
         raw: s.raw, color: s.color, opacity: s.opacity,
         size: s.size, textures: s.textures, seed: s.seed,
       })),
@@ -521,6 +591,39 @@
         faultTypes: state.faultTypes.slice(), faultLevel: state.faultLevel, gapSize: state.gapSize,
       },
     };
+  }
+  function payload() { return payloadOf(state.strokes); }
+
+  /* Append saved strokes (from the library) onto the live canvas. */
+  function loadStrokes(arr) {
+    if (!arr || !arr.length) return;
+    for (const s of arr) {
+      state.strokes.push({
+        raw: s.raw, color: s.color, opacity: s.opacity,
+        size: s.size, textures: (s.textures && s.textures.slice()) || ['giz'],
+        seed: s.seed != null ? s.seed : Math.floor(Math.random() * 1e6),
+        _cache: null,
+      });
+    }
+    state.redo = [];
+    state.selectedStrokeIdx = -1;
+    render();
+  }
+
+  /* Small PNG preview of a stroke set, cropped to its bbox. */
+  function thumbnailOf(strokes, maxPx) {
+    maxPx = maxPx || 132;
+    const bbox = bboxOfStrokes(strokes);
+    if (!bbox) return '';
+    const scale = Math.min(1, maxPx / Math.max(bbox.w, bbox.h));
+    const W = Math.max(1, Math.round(bbox.w * scale));
+    const H = Math.max(1, Math.round(bbox.h * scale));
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    const oc = off.getContext('2d');
+    oc.setTransform(scale, 0, 0, scale, -bbox.x * scale, -bbox.y * scale);
+    for (const s of strokes) drawStroke(oc, s);
+    return off.toDataURL('image/png');
   }
 
   function isEmpty() { return state.strokes.length === 0; }
@@ -690,8 +793,9 @@
     state, FRAME_W, FRAME_H,
     attach, render, undo, redo, clear,
     exportTransparentPNG, contentBBox,
-    renderExternalPNG, renderExternalPNGs, exportPNGs, payload, isEmpty,
+    renderExternalPNG, renderExternalPNGs, exportPNGs, payload, payloadOf, isEmpty,
     exportGifs, renderExternalGifs,
     vectorize, anchorCount,
+    handleStrokeClick, getSelectedStroke, clearSelection, loadStrokes, thumbnailOf,
   };
 })(window);

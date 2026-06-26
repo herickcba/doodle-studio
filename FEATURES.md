@@ -21,20 +21,25 @@ Duas versões mantidas em paralelo, com o **mesmo motor de desenho**:
 | Combinar 2 texturas | ✅ | ❌ | |
 | Falhas na tinta (quebra/falha/respingo) | ✅ | ❌ | removidas no add-in |
 | Animação (revelar traço por traço) | ✅ timeline arrastável | ⚠️ sequencial + duração | add-in: versão simples, sem timeline |
-| GIF animado | ✅ (exporta arquivo) | ✅ (insere no slide) | encoder GIF89a embutido, compartilhado |
+| GIF animado | ✅ (exporta arquivo) | ✅ (insere no slide) | encoder GIF89a embutido, compartilhado. No add-in **só na tela grande** |
+| Controles de animação do GIF (curva/FPS/segurar no final) | ✅ | ✅ tela grande | curva linear/easeIn/easeOut/easeInOut, FPS, hold ms |
+| GIF com/sem loop · GIFs por traço separado | ✅ | ✅ tela grande | |
 | Export WebM | ✅ | ❌ | só web |
 | Export PNG / SVG (arquivo) | ✅ | ❌ | só web (no add-in, vira "inserir no slide") |
-| Zoom do canvas | ✅ | ❌ | |
+| Zoom do canvas | ✅ | ✅ tela grande | −/100%/+/Ajustar na barra da tela grande |
+| Selecionar traço (clique) | ✅ | ✅ | clique sem arrasto destaca o traço |
+| **Biblioteca de traços** (salvar/reusar) | ✅ | ✅ | salvar desenho inteiro ou traço selecionado; global entre decks (`localStorage`); seção colapsável no painel; salvar também na tela grande |
 | **Inserir no slide** (PNG) | ❌ | ✅ | **só add-in** (`setSelectedDataAsync`) |
 | Fundo = imagem do slide atual | ❌ | ✅ | via copiar+colar (Cmd+V / "Fundo do slide") |
-| Tela grande (Office Dialog) | ❌ | ✅ | |
+| Tela grande (Office Dialog) | ❌ | ✅ | concentra GIF + animação + zoom (painel fica enxuto) |
 | Detectar tamanho real do slide | ❌ | ✅ | lê `sldSz` do `.pptx` |
 | Inserir traços **separados ou juntos** | n/a | ✅ | espelha o modelo de "vários traços" da web |
 | Botão na faixa (ribbon) do PowerPoint | n/a | ✅ | atalho como ChatGPT/Claude |
 
 ## Compatibilidade / paralelismo
 
-- **Motor compartilhado:** `v3-powerpoint-addin/src/engine/doodle-engine.js` é o motor de `v2.html` extraído (sem animação). Bug/ajuste no motor deve ser replicado nos dois.
+- **Motor compartilhado:** `v3-powerpoint-addin/src/engine/doodle-engine.js` é o motor de `v2.html` extraído (já com animação/GIF, seleção de traço, `loadStrokes`/`thumbnailOf`). Bug/ajuste no motor deve ser replicado nos dois.
+- **Biblioteca:** `v3-powerpoint-addin/src/shared/library.js` guarda em `localStorage['doodle.library']`; painel e tela grande compartilham (mesma origem). Salvar funciona dos dois lados; navegar/carregar fica no painel.
 - **Tokens visuais:** ambos usam a mesma paleta (cinza-neutro + azul `#436AE1`) e tipografia.
 - **O que NÃO migra pro add-in:** animação e exports de arquivo (dependências/peso e fora do caso de uso "desenhar no slide").
 - **O que é exclusivo do add-in:** tudo que toca a API do Office (inserir, ler slide, dialog, ribbon).

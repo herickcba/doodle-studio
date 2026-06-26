@@ -24,6 +24,12 @@
       <button class="btn icon" id="undoBtn" title="Desfazer">↶</button>
       <button class="btn icon" id="redoBtn" title="Refazer">↷</button>
       <button class="btn icon danger" id="clearBtn" title="Limpar tudo">⌫</button>
+      <span class="bar-sep"></span>
+      <button class="btn icon" id="zoomOutBtn" title="Diminuir zoom">−</button>
+      <span id="zoomLabel" class="zoom-label">100%</span>
+      <button class="btn icon" id="zoomInBtn" title="Aumentar zoom">+</button>
+      <button class="btn icon" id="zoomFitBtn" title="Ajustar">⤢</button>
+      <span class="bar-sep"></span>
       <label class="opacity-ctl" style="gap:6px;"><input type="checkbox" id="insertSeparate" /> Separados</label>
       <button class="btn" id="cancelBtn">Cancelar</button>
       <button class="btn primary" id="insertBtn" disabled>Inserir no slide</button>
@@ -63,13 +69,43 @@
       <label class="opt-row"><input type="checkbox" id="gifLoop" checked /> Em loop</label>
       <div class="slabel"><span>Duração</span><b id="gifDurVal">2.5s</b></div>
       <input type="range" id="gifDur" min="10" max="60" value="25" aria-label="Duração do GIF" />
+      <div class="anim-row2">
+        <div class="anim-field">
+          <label for="gifEasing">Curva</label>
+          <select id="gifEasing">
+            <option value="linear">Constante</option>
+            <option value="easeIn">Ease-In</option>
+            <option value="easeOut">Ease-Out</option>
+            <option value="easeInOut">Ease-In-Out</option>
+          </select>
+        </div>
+        <div class="anim-field">
+          <label for="gifFps">FPS</label>
+          <select id="gifFps">
+            <option value="12">12</option>
+            <option value="15" selected>15</option>
+            <option value="25">25</option>
+            <option value="30">30</option>
+          </select>
+        </div>
+      </div>
+      <div class="slabel"><span>Segurar no final</span><b id="gifHoldVal">600ms</b></div>
+      <input type="range" id="gifHold" min="0" max="2000" value="600" step="50" aria-label="Segurar no final" />
     </section>
 
-    <div class="hint">Segure <kbd>Shift</kbd> para linha reta · <kbd>Cmd+V</kbd> cola uma imagem de fundo.</div>
+    <section class="sec">
+      <div class="sec-head">Biblioteca</div>
+      <button class="btn block" id="saveAllBtn" disabled style="margin-bottom:8px;">Salvar tudo na biblioteca</button>
+      <button class="btn block" id="saveSelBtn" disabled title="Clique num traço para selecioná-lo">Salvar traço selecionado</button>
+      <div class="hint-inline" style="margin-top:8px;">Aparece na biblioteca do painel lateral.</div>
+    </section>
+
+    <div class="hint">Segure <kbd>Shift</kbd> para linha reta · clique num traço para selecioná-lo · <kbd>Cmd+V</kbd> cola uma imagem de fundo.</div>
   </aside>
 
   <script src="../engine/doodle-engine.js"></script>
   <script src="../shared/controls.js"></script>
+  <script src="../shared/library.js"></script>
   <script src="dialog.js"></script>
   <script defer src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </body>

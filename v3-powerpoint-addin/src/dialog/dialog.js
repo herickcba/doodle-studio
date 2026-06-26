@@ -9,12 +9,28 @@
 
   const $ = (id) => document.getElementById(id);
 
+  let zoom = 1;
+  function setZoom(z) {
+    zoom = Math.max(0.25, Math.min(4, z));
+    const w = document.querySelector('.big-wrap');
+    if (w) w.style.transform = 'scale(' + zoom + ')';
+    const lbl = $('zoomLabel'); if (lbl) lbl.textContent = Math.round(zoom * 100) + '%';
+  }
+
   function updateButtons() {
     const empty = Doodle.isEmpty();
     $('insertBtn').disabled = empty;
     $('gifBtn').disabled = empty;
     $('undoBtn').disabled = Doodle.state.strokes.length === 0;
     $('redoBtn').disabled = Doodle.state.redo.length === 0;
+    $('saveAllBtn').disabled = empty;
+    $('saveSelBtn').disabled = !Doodle.getSelectedStroke();
+  }
+
+  function saveToLibrary(strokes, label) {
+    if (!strokes || !strokes.length) return;
+    const thumb = Doodle.thumbnailOf(strokes);
+    DoodleLibrary.save(label, Doodle.payloadOf(strokes), thumb);
   }
 
   function loadBackdrop() {
@@ -35,7 +51,11 @@
   function finish(kind, gif) {
     if (kind === 'inserted') {
       const p = Doodle.payload();
-      if (gif) { p.asGif = true; p.gifLoop = $('gifLoop').checked; p.gifDuration = (+$('gifDur').value) / 10; }
+      if (gif) {
+        p.asGif = true; p.gifLoop = $('gifLoop').checked;
+        p.gifDuration = (+$('gifDur').value) / 10;
+        p.gifEasing = $('gifEasing').value; p.gifFps = +$('gifFps').value; p.gifHold = +$('gifHold').value;
+      }
       try { localStorage.setItem('doodle.result', JSON.stringify(p)); } catch (_) {}
     }
     if (window.opener) {            // standalone window.open()
@@ -57,6 +77,13 @@
     $('cancelBtn').addEventListener('click', () => finish('cancel'));
     const gd = $('gifDur'), gdv = $('gifDurVal');
     if (gd) gd.addEventListener('input', () => { gdv.textContent = ((+gd.value) / 10).toFixed(1) + 's'; });
+    const gh = $('gifHold'), ghv = $('gifHoldVal');
+    if (gh) gh.addEventListener('input', () => { ghv.textContent = gh.value + 'ms'; });
+    $('zoomInBtn').addEventListener('click', () => setZoom(zoom * 1.2));
+    $('zoomOutBtn').addEventListener('click', () => setZoom(zoom / 1.2));
+    $('zoomFitBtn').addEventListener('click', () => setZoom(1));
+    $('saveAllBtn').addEventListener('click', () => { saveToLibrary(Doodle.state.strokes, 'Desenho'); $('saveAllBtn').textContent = '✓ Salvo na biblioteca'; });
+    $('saveSelBtn').addEventListener('click', () => { const s = Doodle.getSelectedStroke(); if (s) { saveToLibrary([s], 'Traço'); $('saveSelBtn').textContent = '✓ Traço salvo'; } });
     $('bgBtn').addEventListener('click', async () => {
       const res = await DoodleUI.loadBackdropFromClipboard();
       $('bgBtn').textContent = res.ok ? '✓ Fundo do slide' : '📋 Copie o slide e cole (Cmd+V)';

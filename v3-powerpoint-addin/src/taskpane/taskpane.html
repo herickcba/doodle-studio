@@ -8,16 +8,6 @@
   <link rel="stylesheet" href="taskpane.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="logo" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><path d="M3 16c1.2-3.5 2-6.5 3.5-6.5S8 15 9.5 15s2-9 4-9 2.3 6 3.5 8.5"/><path d="M5 19c3-1.2 11-1.2 14 0"/></svg>
-    </div>
-    <div>
-      <h1>Doodle Studio <span class="pill">v3</span></h1>
-      <small id="hostLabel">Carregando…</small>
-    </div>
-  </header>
-
   <!-- Drawing surface (slide backdrop + transparent canvas on top) -->
   <div class="draw-wrap" id="drawWrap">
     <div class="draw-bg" id="drawBg"></div>
@@ -35,14 +25,8 @@
   <button class="btn block" id="bigBtn" title="Abrir uma janela ampla para desenhar com o slide ao fundo">⤢ Tela grande para desenhar</button>
 
   <section class="insert-group">
-    <label class="opt-row"><input type="checkbox" id="insertSeparate" /> Inserir cada traço separado <span class="hint-inline">(imagem e GIF)</span></label>
+    <label class="opt-row"><input type="checkbox" id="insertSeparate" /> Inserir cada traço separado</label>
     <button class="btn primary block" id="insertBtn" disabled>Inserir no slide</button>
-    <button class="btn block" id="gifBtn" disabled>▶ Inserir como GIF animado</button>
-    <div class="gif-opts">
-      <label class="opt-row"><input type="checkbox" id="gifLoop" checked /> GIF em loop</label>
-      <div class="slabel"><span>Duração do GIF</span><b id="gifDurVal">2.5s</b></div>
-      <input type="range" id="gifDur" min="10" max="60" value="25" aria-label="Duração do GIF" />
-    </div>
   </section>
   <div class="status" id="status">Desenhe um traço para começar.</div>
 
@@ -67,11 +51,28 @@
     <input type="range" id="vectorSmooth" min="0" max="100" value="0" aria-label="Suavização vetorial" />
   </section>
 
-  <div class="hint">Dica: segure <kbd>Shift</kbd> para linha reta · <kbd>Cmd+V</kbd> cola uma imagem de fundo.</div>
+  <!-- Config: Library (collapsible) -->
+  <section class="sec lib collapsed" id="libSec">
+    <button class="lib-head" id="libHead" aria-expanded="false">
+      <span class="sec-head" style="border:0;padding:0;margin:0;">Biblioteca</span>
+      <span class="lib-arrow" aria-hidden="true">▸</span>
+    </button>
+    <div class="lib-body" id="libBody">
+      <div class="lib-actions">
+        <button class="btn" id="saveAllBtn" disabled title="Salvar o desenho inteiro">Salvar tudo</button>
+        <button class="btn" id="saveSelBtn" disabled title="Clique num traço para selecioná-lo, depois salve">Salvar selecionado</button>
+      </div>
+      <div class="lib-grid" id="libGrid"></div>
+      <div class="lib-empty" id="libEmpty">Nada salvo ainda. Dê um clique num traço para selecioná-lo, ou salve o desenho inteiro.</div>
+    </div>
+  </section>
+
+  <div class="hint">Dica: segure <kbd>Shift</kbd> para linha reta · <kbd>Cmd+V</kbd> cola uma imagem de fundo · clique num traço para selecioná-lo.</div>
 
   <!-- UI + drawing run immediately; office.js loads deferred so it never blocks first paint -->
   <script src="../engine/doodle-engine.js"></script>
   <script src="../shared/controls.js"></script>
+  <script src="../shared/library.js"></script>
   <script src="../office/office-bridge.js"></script>
   <script src="taskpane.js"></script>
   <script defer src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>

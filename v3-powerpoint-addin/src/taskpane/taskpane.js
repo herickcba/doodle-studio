@@ -17,12 +17,56 @@
   function updateButtons() {
     const empty = Doodle.isEmpty();
     insertBtn.disabled = empty;
-    $('gifBtn').disabled = empty;
     $('undoBtn').disabled = Doodle.state.strokes.length === 0;
     $('redoBtn').disabled = Doodle.state.redo.length === 0;
+    $('saveAllBtn').disabled = empty;
+    $('saveSelBtn').disabled = !Doodle.getSelectedStroke();
     // Warm up slide-size detection (~8MB, background, once) when drawing starts,
     // so the first insert is already exact — never on open.
     if (!empty && OfficeBridge.inPowerPoint()) OfficeBridge.detectSlideSize();
+  }
+
+  /* ---------------- Library (save + browse) ---------------- */
+  function renderLibrary() {
+    const grid = $('libGrid');
+    const items = DoodleLibrary.list();
+    grid.innerHTML = '';
+    for (const it of items) {
+      const cell = document.createElement('div');
+      cell.className = 'lib-item';
+      cell.title = 'Clique para adicionar ao canvas';
+      const img = document.createElement('img');
+      img.src = it.thumb; img.alt = it.name || 'Doodle';
+      cell.appendChild(img);
+      const del = document.createElement('button');
+      del.className = 'lib-del'; del.textContent = '×'; del.title = 'Excluir';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        DoodleLibrary.remove(it.id);
+        renderLibrary();
+      });
+      cell.appendChild(del);
+      cell.addEventListener('click', () => {
+        Doodle.loadStrokes(it.payload && it.payload.strokes);
+        setStatus('Traços adicionados da biblioteca ✓', 'ok');
+      });
+      grid.appendChild(cell);
+    }
+  }
+
+  function saveToLibrary(strokes, label) {
+    if (!strokes || !strokes.length) { setStatus('Nada para salvar.', 'warn'); return; }
+    const thumb = Doodle.thumbnailOf(strokes);
+    const id = DoodleLibrary.save(label, Doodle.payloadOf(strokes), thumb);
+    if (!id) { setStatus('Não foi possível salvar (armazenamento cheio).', 'warn'); return; }
+    renderLibrary();
+    setStatus('Salvo na biblioteca ✓', 'ok');
+  }
+
+  function toggleLibrary() {
+    const sec = $('libSec');
+    const open = sec.classList.toggle('collapsed') === false;
+    $('libHead').setAttribute('aria-expanded', String(open));
   }
 
   function boot() {
@@ -32,28 +76,15 @@
     $('clearBtn').addEventListener('click', () => Doodle.clear());
     $('bgBtn').addEventListener('click', loadBackground);
     insertBtn.addEventListener('click', insertOwnDrawing);
-    $('gifBtn').addEventListener('click', insertGif);
     $('bigBtn').addEventListener('click', openBigCanvas);
-    const gd = $('gifDur'), gdv = $('gifDurVal');
-    gd.addEventListener('input', () => { gdv.textContent = ((+gd.value) / 10).toFixed(1) + 's'; });
+    $('libHead').addEventListener('click', toggleLibrary);
+    $('saveAllBtn').addEventListener('click', () => saveToLibrary(Doodle.state.strokes, 'Desenho'));
+    $('saveSelBtn').addEventListener('click', () => {
+      const sel = Doodle.getSelectedStroke();
+      if (sel) saveToLibrary([sel], 'Traço');
+    });
+    renderLibrary();
     updateButtons();
-  }
-
-  async function insertGif() {
-    if (Doodle.isEmpty()) { setStatus('Nada desenhado ainda.', 'warn'); return; }
-    const duration = (+$('gifDur').value) / 10;
-    const loop = $('gifLoop').checked, sep = Doodle.state.insertSeparate;
-    $('gifBtn').disabled = true;
-    setStatus(sep && Doodle.state.strokes.length > 1 ? 'Gerando GIFs…' : 'Gerando GIF…');
-    try {
-      const gifs = await Doodle.exportGifs(sep, { duration: duration, loop: loop, fps: 12, holdMs: 600 });
-      await insertPNGs(gifs, gifs.length > 1 ? `${gifs.length} GIFs inseridos ✓` : 'GIF animado inserido ✓');
-    } catch (e) {
-      console.error(e);
-      setStatus('Erro ao gerar/inserir o GIF: ' + (e && e.message ? e.message : e), 'warn');
-    } finally {
-      $('gifBtn').disabled = Doodle.isEmpty();
-    }
   }
 
   // Try, in order: the (preview) slide-image API → the clipboard (slide
@@ -97,6 +128,7 @@
     const backdrop = window.DoodleBackdrop || currentSlideImg || '';
     setStatus('Tela grande aberta — desenhe e clique Inserir lá.', 'ok');
     OfficeBridge.openDrawDialog(backdrop, async (payload) => {
+      renderLibrary();   // the dialog may have saved into the shared library
       if (!payload || !payload.strokes || !payload.strokes.length) {
         setStatus('Tela grande fechada sem desenho.', 'warn');
         return;
@@ -104,7 +136,9 @@
       if (payload.asGif) {
         setStatus('Gerando GIF…');
         const gifs = await Doodle.renderExternalGifs(payload.strokes, payload.config, payload.insertSeparate,
-          { duration: payload.gifDuration || 2.5, loop: payload.gifLoop !== false, fps: 12, holdMs: 600 });
+          { duration: payload.gifDuration || 2.5, loop: payload.gifLoop !== false,
+            fps: payload.gifFps || 12, holdMs: payload.gifHold != null ? payload.gifHold : 600,
+            easing: payload.gifEasing || 'linear' });
         await insertPNGs(gifs, gifs.length > 1 ? `${gifs.length} GIFs inseridos (tela grande) ✓` : 'GIF inserido (tela grande) ✓');
       } else {
         const pngs = Doodle.renderExternalPNGs(payload.strokes, payload.config, payload.insertSeparate);
@@ -121,7 +155,7 @@
     if (typeof Office === 'undefined' || !Office.onReady) return false;
     Office.onReady((info) => {
       const inPP = info && info.host === Office.HostType.PowerPoint;
-      $('hostLabel').textContent = inPP ? 'PowerPoint' : 'Modo navegador';
+      const hl = $('hostLabel'); if (hl) hl.textContent = inPP ? 'PowerPoint' : 'Modo navegador';
       if (inPP) setStatus('Copie o slide (Cmd+C) e clique "Fundo do slide" para vê-lo atrás.', '');
     });
     return true;
