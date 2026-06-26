@@ -57,6 +57,7 @@
     updateButtons();
   }
 
-  if (typeof Office !== 'undefined' && Office.onReady) Office.onReady(() => boot());
-  else boot();
+  // UI loads immediately; office.js is deferred and only needed when the user
+  // clicks Inserir (messageParent), by which point it has loaded.
+  boot();
 })();

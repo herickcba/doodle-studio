@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Doodle Studio — PowerPoint</title>
-  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <link rel="preconnect" href="https://appsforoffice.microsoft.com" />
   <link rel="stylesheet" href="taskpane.css" />
 </head>
 <body>
@@ -60,9 +60,11 @@
 
   <div class="hint">Dica: segure <kbd>Shift</kbd> para linha reta · <kbd>Cmd+V</kbd> cola uma imagem de fundo.</div>
 
+  <!-- UI + drawing run immediately; office.js loads deferred so it never blocks first paint -->
   <script src="../engine/doodle-engine.js"></script>
   <script src="../shared/controls.js"></script>
   <script src="../office/office-bridge.js"></script>
   <script src="taskpane.js"></script>
+  <script defer src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </body>
 </html>

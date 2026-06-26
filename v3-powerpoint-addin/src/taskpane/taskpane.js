@@ -87,16 +87,19 @@
 
   boot();
 
-  if (typeof Office !== 'undefined' && Office.onReady) {
+  // office.js is loaded deferred (after this script), so poll until it's ready.
+  // The UI and drawing already work; this only enables the Office features.
+  function wireOffice() {
+    if (typeof Office === 'undefined' || !Office.onReady) return false;
     Office.onReady((info) => {
-      if (info.host === Office.HostType.PowerPoint) {
-        $('hostLabel').textContent = 'PowerPoint';
-        setStatus('Copie o slide (Cmd+C) e clique "Fundo do slide" para vê-lo atrás.', '');
-      } else {
-        $('hostLabel').textContent = 'Modo navegador';
-      }
+      const inPP = info && info.host === Office.HostType.PowerPoint;
+      $('hostLabel').textContent = inPP ? 'PowerPoint' : 'Modo navegador';
+      if (inPP) setStatus('Copie o slide (Cmd+C) e clique "Fundo do slide" para vê-lo atrás.', '');
     });
-  } else {
-    $('hostLabel').textContent = 'Modo navegador';
+    return true;
+  }
+  if (!wireOffice()) {
+    const t = setInterval(() => { if (wireOffice()) clearInterval(t); }, 60);
+    setTimeout(() => clearInterval(t), 10000);
   }
 })();
