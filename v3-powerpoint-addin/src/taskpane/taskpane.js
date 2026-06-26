@@ -88,7 +88,6 @@
       if (info.host === Office.HostType.PowerPoint) {
         $('hostLabel').textContent = 'PowerPoint';
         setStatus('Copie o slide (Cmd+C) e clique "Fundo do slide" para vê-lo atrás.', '');
-        OfficeBridge.getSlideSizePt(); // prefetch slide size (off the insert path)
       } else {
         $('hostLabel').textContent = 'Modo navegador';
       }

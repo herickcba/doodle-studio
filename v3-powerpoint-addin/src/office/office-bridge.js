@@ -36,10 +36,30 @@
     }
   }
 
-  /* ---- Real slide size (points), read from the .pptx — works on any build ----
-     getFileAsync gives the zipped presentation; we read <p:sldSz> from
-     ppt/presentation.xml (EMU → points). Falls back to 16:9 960×540. */
-  let _slideSize = null;
+  /* ---- Slide size (points) ----
+     The exact size lives in <p:sldSz> of ppt/presentation.xml, but the only
+     way to read it on older builds is getFileAsync, which downloads the WHOLE
+     presentation (can be hundreds of MB). So we NEVER block on it:
+       - inserts use a synchronous best-known size (memory → localStorage cache
+         → 16:9 default) so they're instant;
+       - the exact size is detected ONCE in the background and cached in
+         localStorage (per document), so reopening never downloads again. */
+  let _slideSize = null;     // {w,h} once known (exact)
+  let _detecting = null;     // in-flight detection promise (dedup)
+  let _detectTried = false;  // stop retrying the heavy download after one attempt
+
+  function _sizeKey() {
+    let url = '';
+    try { url = (Office.context.document && Office.context.document.url) || ''; } catch (_) {}
+    return 'doodle.slideSize::' + url;
+  }
+  function _loadCachedSize() {
+    try {
+      const v = localStorage.getItem(_sizeKey());
+      if (v) { const o = JSON.parse(v); if (o && o.w && o.h) return o; }
+    } catch (_) {}
+    return null;
+  }
 
   function getCompressedBytes() {
     return new Promise((resolve, reject) => {
@@ -95,19 +115,38 @@
     throw new Error('zip: entry not found');
   }
 
-  async function getSlideSizePt() {
-    if (_slideSize) return _slideSize;
-    let size = { w: SLIDE_W_PT, h: SLIDE_H_PT };
-    if (inPowerPoint()) {
+  /* Instant: best-known size, never downloads. exact=false means it's the
+     16:9 fallback (insert will be off-scale only on non-16:9 / custom decks). */
+  function getSlideSizeSync() {
+    if (_slideSize) return { w: _slideSize.w, h: _slideSize.h, exact: true };
+    const c = _loadCachedSize();
+    if (c) { _slideSize = c; return { w: c.w, h: c.h, exact: true }; }
+    return { w: SLIDE_W_PT, h: SLIDE_H_PT, exact: false };
+  }
+
+  /* Background, one-time, deduped: read the real size from the .pptx and cache
+     it. Heavy on big decks, but never blocks an insert or the open. */
+  function detectSlideSize() {
+    if (_slideSize) return Promise.resolve(_slideSize);
+    if (_detecting) return _detecting;
+    if (_detectTried || !inPowerPoint()) return Promise.resolve(null);
+    _detecting = (async () => {
       try {
         const bytes = await getCompressedBytes();
         const xml = await unzipEntry(bytes, 'ppt/presentation.xml');
         const m = xml.match(/<p:sldSz[^>]*cx="(\d+)"[^>]*cy="(\d+)"/);
-        if (m) size = { w: +m[1] / 12700, h: +m[2] / 12700 };
-      } catch (e) { console.warn('[OfficeBridge] slide size detect failed:', e && e.message); }
-    }
-    _slideSize = size;
-    return size;
+        if (m) {
+          _slideSize = { w: +m[1] / 12700, h: +m[2] / 12700 };
+          try { localStorage.setItem(_sizeKey(), JSON.stringify(_slideSize)); } catch (_) {}
+        }
+      } catch (e) {
+        console.warn('[OfficeBridge] slide size detect failed:', e && e.message);
+      } finally {
+        _detectTried = true; _detecting = null;
+      }
+      return _slideSize;
+    })();
+    return _detecting;
   }
 
   /* Insert the doodle PNG onto the active slide, positioned so it lands
@@ -126,7 +165,8 @@
     }
 
     const base64 = png.dataUrl.split(',')[1];
-    const slide = await getSlideSizePt();
+    const slide = getSlideSizeSync();              // instant, never downloads
+    if (!slide.exact) detectSlideSize();           // refine in background for next inserts
     const left = png.bbox.x / png.frame.w * slide.w;
     const top = png.bbox.y / png.frame.h * slide.h;
     const width = png.bbox.w / png.frame.w * slide.w;
@@ -214,6 +254,6 @@
 
   global.OfficeBridge = {
     inPowerPoint, getActiveSlideImage, insertDoodle, openDrawDialog,
-    getSlideSizePt, SLIDE_W_PT, SLIDE_H_PT,
+    getSlideSizeSync, detectSlideSize, SLIDE_W_PT, SLIDE_H_PT,
   };
 })(window);
