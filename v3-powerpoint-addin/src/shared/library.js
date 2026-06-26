@@ -31,5 +31,15 @@
   function get(id) { return list().find((x) => x.id === id) || null; }
   function clearAll() { return persist([]); }
 
-  global.DoodleLibrary = { list, save, remove, get, clearAll };
+  // Save the 3 versions of a drawing in one go: a looping GIF, a non-looping
+  // GIF, and the static PNG of the final state. GIFs store only strokes +
+  // animation options (regenerated on insert) — no heavy bytes.
+  function saveGifSet(payload, thumb, gifOpts) {
+    const o = gifOpts || {};
+    save('GIF', payload, thumb, { kind: 'gif', gif: Object.assign({}, o, { loop: true }) });
+    save('GIF', payload, thumb, { kind: 'gif', gif: Object.assign({}, o, { loop: false }) });
+    save('Desenho', payload, thumb, { kind: 'png' });
+  }
+
+  global.DoodleLibrary = { list, save, saveGifSet, remove, get, clearAll };
 })(window);

@@ -21,6 +21,8 @@
     $('redoBtn').disabled = Doodle.state.redo.length === 0;
     $('saveAllBtn').disabled = empty;
     $('saveSelBtn').disabled = !Doodle.getSelectedStroke();
+    $('saveGifBtn').disabled = empty;
+    const gb = $('saveGifBtn'); if (gb.dataset.label) gb.textContent = gb.dataset.label;  // reset stale "✓" on new drawing
     // Warm up slide-size detection (~8MB, background, once) when drawing starts,
     // so the first insert is already exact — never on open.
     if (!empty && OfficeBridge.inPowerPoint()) OfficeBridge.detectSlideSize();
@@ -92,6 +94,18 @@
     setStatus('Salvo na biblioteca ✓', 'ok');
   }
 
+  // Save the 3 versions (loop GIF + no-loop GIF + static PNG). The sidebar has
+  // no animation controls, so it uses sensible defaults (tune in the big canvas).
+  const DEFAULT_GIF = { duration: 2.5, fps: 12, holdMs: 600, easing: 'linear' };
+  function saveGifToLibrary() {
+    const strokes = Doodle.state.strokes;
+    if (!strokes.length) { setStatus('Nada para salvar.', 'warn'); return; }
+    DoodleLibrary.saveGifSet(Doodle.payload(), Doodle.thumbnailOf(strokes), DEFAULT_GIF);
+    $('saveGifBtn').textContent = '✓ 3 versões salvas';
+    renderLibrary();
+    setStatus('GIF salvo na biblioteca (loop, sem loop e PNG) ✓', 'ok');
+  }
+
   function toggleLibrary() {
     const sec = $('libSec');
     const open = sec.classList.toggle('collapsed') === false;
@@ -112,6 +126,8 @@
       const sel = Doodle.getSelectedStroke();
       if (sel) saveToLibrary([sel], 'Traço');
     });
+    $('saveGifBtn').dataset.label = $('saveGifBtn').textContent;
+    $('saveGifBtn').addEventListener('click', saveGifToLibrary);
     renderLibrary();
     updateButtons();
   }

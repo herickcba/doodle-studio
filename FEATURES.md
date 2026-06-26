@@ -30,8 +30,9 @@ Duas versões mantidas em paralelo, com o **mesmo motor de desenho**:
 | Zoom do canvas | ✅ | ✅ tela grande | −/100%/+/Ajustar na barra da tela grande |
 | Selecionar traço (clique) | ✅ | ✅ | clique sem arrasto destaca o traço |
 | **Biblioteca de traços** (salvar/reusar) | ✅ | ✅ | salvar desenho inteiro ou traço selecionado; **clicar na miniatura insere no slide no tamanho salvo**; global entre decks (`localStorage`); seção colapsável no painel; salvar também na tela grande |
-| Biblioteca: salvar **GIF** (com tag) | n/a | ✅ | na tela grande, "Salvar GIF na biblioteca" guarda traços + opções de animação (regenera no insert) com tag `GIF`; salva **também** um PNG do estado final estático |
-| Biblioteca: tag de **loop / sem loop** | n/a | ✅ | badge `GIF ↻` (em loop) vs `GIF 1×` (sem loop), conforme a escolha ao salvar |
+| Biblioteca: salvar **GIF** (3 versões) | n/a | ✅ | "Salvar como GIF" grava **sempre 3 itens**: GIF em loop + GIF sem loop + PNG do estado final. Disponível na **barra lateral** (configs padrão) e na **tela grande** (configs de animação). Não há mais opção de loop |
+| Inserir GIF = inserir + salvar | n/a | ✅ | na tela grande, "Inserir GIF no slide" insere a versão **sem loop** e salva as 3 versões na biblioteca |
+| Biblioteca: tag de **loop / sem loop** | n/a | ✅ | badge `GIF ↻` (em loop) vs `GIF 1×` (sem loop) |
 | **Inserir no slide** (PNG) | ❌ | ✅ | **só add-in** (`setSelectedDataAsync`) |
 | Fundo = imagem do slide atual | ❌ | ✅ | via copiar+colar (Cmd+V / "Fundo do slide") |
 | Tela grande (Office Dialog) | ❌ | ✅ | concentra GIF + animação + zoom (painel fica enxuto) |

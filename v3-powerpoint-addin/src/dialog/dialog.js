@@ -17,6 +17,10 @@
     const lbl = $('zoomLabel'); if (lbl) lbl.textContent = Math.round(zoom * 100) + '%';
   }
 
+  // Reset a save button's label back to its original text (so a new drawing
+  // doesn't keep showing a stale "✓ salvo").
+  function resetLabel(id) { const b = $(id); if (b && b.dataset.label) b.textContent = b.dataset.label; }
+
   function updateButtons() {
     const empty = Doodle.isEmpty();
     $('insertBtn').disabled = empty;
@@ -26,6 +30,7 @@
     $('redoBtn').disabled = Doodle.state.redo.length === 0;
     $('saveAllBtn').disabled = empty;
     $('saveSelBtn').disabled = !Doodle.getSelectedStroke();
+    ['saveGifBtn', 'saveAllBtn', 'saveSelBtn'].forEach(resetLabel);
   }
 
   function saveToLibrary(strokes, label) {
@@ -34,22 +39,11 @@
     DoodleLibrary.save(label, Doodle.payloadOf(strokes), thumb);
   }
 
-  // Save the current drawing as a GIF item (strokes + animation opts) AND a
-  // static PNG of the final state, both into the shared library.
+  // Save the 3 versions (loop GIF + no-loop GIF + static PNG) into the library.
   function saveGifToLibrary() {
     const strokes = Doodle.state.strokes;
     if (!strokes.length) return;
-    const thumb = Doodle.thumbnailOf(strokes);            // final-state preview
-    const payload = Doodle.payload();
-    const gif = {
-      duration: (+$('gifDur').value) / 10,
-      loop: $('gifLoop').checked,
-      fps: +$('gifFps').value,
-      holdMs: +$('gifHold').value,
-      easing: $('gifEasing').value,
-    };
-    DoodleLibrary.save('GIF', payload, thumb, { kind: 'gif', gif });
-    DoodleLibrary.save('Desenho', payload, thumb, { kind: 'png' });   // static final state
+    DoodleLibrary.saveGifSet(Doodle.payload(), Doodle.thumbnailOf(strokes), gifOpts());
   }
 
   function loadBackdrop() {
@@ -67,13 +61,23 @@
     apply();
   }
 
+  // Current animation settings (no loop control — see saveGifSet for the 3 versions).
+  function gifOpts() {
+    return {
+      duration: (+$('gifDur').value) / 10,
+      fps: +$('gifFps').value,
+      holdMs: +$('gifHold').value,
+      easing: $('gifEasing').value,
+    };
+  }
+
   function finish(kind, gif) {
     if (kind === 'inserted') {
       const p = Doodle.payload();
       if (gif) {
-        p.asGif = true; p.gifLoop = $('gifLoop').checked;
-        p.gifDuration = (+$('gifDur').value) / 10;
-        p.gifEasing = $('gifEasing').value; p.gifFps = +$('gifFps').value; p.gifHold = +$('gifHold').value;
+        const o = gifOpts();
+        p.asGif = true; p.gifLoop = false;   // inserted GIFs go in without loop
+        p.gifDuration = o.duration; p.gifEasing = o.easing; p.gifFps = o.fps; p.gifHold = o.holdMs;
       }
       try { localStorage.setItem('doodle.result', JSON.stringify(p)); } catch (_) {}
     }
@@ -92,8 +96,10 @@
     $('redoBtn').addEventListener('click', () => Doodle.redo());
     $('clearBtn').addEventListener('click', () => Doodle.clear());
     $('insertBtn').addEventListener('click', () => { if (!Doodle.isEmpty()) finish('inserted', false); });
-    $('gifBtn').addEventListener('click', () => { if (!Doodle.isEmpty()) finish('inserted', true); });
+    // Insert as GIF (no loop) AND stash the 3 versions in the library.
+    $('gifBtn').addEventListener('click', () => { if (!Doodle.isEmpty()) { saveGifToLibrary(); finish('inserted', true); } });
     $('cancelBtn').addEventListener('click', () => finish('cancel'));
+    ['saveGifBtn', 'saveAllBtn', 'saveSelBtn'].forEach((id) => { const b = $(id); if (b) b.dataset.label = b.textContent; });
     const gd = $('gifDur'), gdv = $('gifDurVal');
     if (gd) gd.addEventListener('input', () => { gdv.textContent = ((+gd.value) / 10).toFixed(1) + 's'; });
     const gh = $('gifHold'), ghv = $('gifHoldVal');
@@ -103,7 +109,7 @@
     $('zoomFitBtn').addEventListener('click', () => setZoom(1));
     $('saveAllBtn').addEventListener('click', () => { saveToLibrary(Doodle.state.strokes, 'Desenho'); $('saveAllBtn').textContent = '✓ Salvo na biblioteca'; });
     $('saveSelBtn').addEventListener('click', () => { const s = Doodle.getSelectedStroke(); if (s) { saveToLibrary([s], 'Traço'); $('saveSelBtn').textContent = '✓ Traço salvo'; } });
-    $('saveGifBtn').addEventListener('click', () => { if (!Doodle.isEmpty()) { saveGifToLibrary(); $('saveGifBtn').textContent = '✓ GIF + PNG salvos'; } });
+    $('saveGifBtn').addEventListener('click', () => { if (!Doodle.isEmpty()) { saveGifToLibrary(); $('saveGifBtn').textContent = '✓ 3 versões salvas'; } });
     $('bgBtn').addEventListener('click', async () => {
       const res = await DoodleUI.loadBackdropFromClipboard();
       $('bgBtn').textContent = res.ok ? '✓ Fundo do slide' : '📋 Copie o slide e cole (Cmd+V)';
