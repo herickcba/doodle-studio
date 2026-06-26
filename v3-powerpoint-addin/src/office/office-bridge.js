@@ -61,28 +61,40 @@
     return null;
   }
 
-  function getCompressedBytes() {
+  const SLICE = 4194304; // 4 MB
+
+  function _getFile() {
     return new Promise((resolve, reject) => {
-      Office.context.document.getFileAsync(Office.FileType.Compressed, { sliceSize: 4194304 }, (res) => {
-        if (res.status !== Office.AsyncResultStatus.Succeeded) return reject(res.error);
-        const file = res.value, n = file.sliceCount, parts = new Array(n);
-        let got = 0, failed = false;
-        for (let i = 0; i < n; i++) {
-          file.getSliceAsync(i, (s) => {
-            if (failed) return;
-            if (s.status !== Office.AsyncResultStatus.Succeeded) { failed = true; file.closeAsync(() => {}); return reject(s.error); }
-            parts[s.value.index] = s.value.data;
-            if (++got === n) {
-              file.closeAsync(() => {});
-              let len = 0; for (const p of parts) len += p.length;
-              const out = new Uint8Array(len); let o = 0;
-              for (const p of parts) { out.set(p, o); o += p.length; }
-              resolve(out);
-            }
-          });
-        }
+      Office.context.document.getFileAsync(Office.FileType.Compressed, { sliceSize: SLICE }, (res) => {
+        res.status === Office.AsyncResultStatus.Succeeded ? resolve(res.value) : reject(res.error);
       });
     });
+  }
+  function _getSlice(file, i) {
+    return new Promise((resolve, reject) => {
+      file.getSliceAsync(i, (s) => {
+        s.status === Office.AsyncResultStatus.Succeeded ? resolve(s.value.data) : reject(s.error);
+      });
+    });
+  }
+  function _toBytes(d) {
+    if (typeof d === 'string') { const b = atob(d), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+    return d instanceof Uint8Array ? d : Uint8Array.from(d);
+  }
+  /* Read an absolute byte range [start, start+len) by fetching only the slices
+     that overlap it — not the whole file. */
+  async function _readRange(file, start, len) {
+    const end = start + len, first = Math.floor(start / SLICE), last = Math.floor((end - 1) / SLICE);
+    const out = new Uint8Array(len); let w = 0;
+    for (let i = first; i <= last; i++) {
+      const bytes = _toBytes(await _getSlice(file, i));
+      const sStart = i * SLICE;
+      const from = Math.max(start, sStart) - sStart;
+      const to = Math.min(end, sStart + bytes.length) - sStart;
+      const chunk = bytes.subarray(from, to);
+      out.set(chunk, w); w += chunk.length;
+    }
+    return out.subarray(0, w);
   }
 
   async function inflateRaw(bytes) {
@@ -91,28 +103,36 @@
     return new Uint8Array(await stream.arrayBuffer());
   }
 
-  async function unzipEntry(b, name) {
-    const u32 = (o) => b[o] | (b[o+1]<<8) | (b[o+2]<<16) | (b[o+3]*0x1000000);
-    const u16 = (o) => b[o] | (b[o+1]<<8);
-    let eocd = -1;
-    for (let i = b.length - 22; i >= 0; i--) { if (u32(i) === 0x06054b50) { eocd = i; break; } }
-    if (eocd < 0) throw new Error('zip: no EOCD');
-    let off = u32(eocd + 16); const count = u16(eocd + 10);
-    for (let k = 0; k < count; k++) {
-      if (u32(off) !== 0x02014b50) throw new Error('zip: bad CDH');
-      const method = u16(off + 10), csize = u32(off + 20);
-      const nlen = u16(off + 28), elen = u16(off + 30), clen = u16(off + 32), lho = u32(off + 42);
-      const fname = new TextDecoder().decode(b.subarray(off + 46, off + 46 + nlen));
-      if (fname === name) {
-        const lnlen = u16(lho + 26), lelen = u16(lho + 28);
-        const ds = lho + 30 + lnlen + lelen;
-        const data = b.subarray(ds, ds + csize);
-        const out = method === 0 ? data : await inflateRaw(data);
-        return new TextDecoder().decode(out);
-      }
+  /* Read one ZIP entry by fetching only: the tail (End-Of-Central-Directory +
+     central directory) and the entry's local header + data. ~2-3 slices total. */
+  async function _readEntryViaSlices(file, name) {
+    const u32 = (b, o) => b[o] | (b[o+1]<<8) | (b[o+2]<<16) | (b[o+3]*0x1000000);
+    const u16 = (b, o) => b[o] | (b[o+1]<<8);
+    const size = file.size, nSlices = file.sliceCount;
+    // 1) tail slice -> EOCD -> central directory location
+    const lastStart = (nSlices - 1) * SLICE;
+    const tail = await _readRange(file, lastStart, size - lastStart);
+    let e = -1;
+    for (let i = tail.length - 22; i >= 0; i--) { if (u32(tail, i) === 0x06054b50) { e = i; break; } }
+    if (e < 0) throw new Error('no EOCD');
+    const cdOff = u32(tail, e + 16), cdSize = u32(tail, e + 12);
+    // 2) central directory -> find the entry
+    const cd = await _readRange(file, cdOff, cdSize);
+    let off = 0, hit = null;
+    while (off + 46 <= cd.length) {
+      if (u32(cd, off) !== 0x02014b50) break;
+      const method = u16(cd, off + 10), csize = u32(cd, off + 20);
+      const nlen = u16(cd, off + 28), elen = u16(cd, off + 30), clen = u16(cd, off + 32), lho = u32(cd, off + 42);
+      if (new TextDecoder().decode(cd.subarray(off + 46, off + 46 + nlen)) === name) { hit = { method, csize, lho }; break; }
       off += 46 + nlen + elen + clen;
     }
-    throw new Error('zip: entry not found');
+    if (!hit) throw new Error('entry not found: ' + name);
+    // 3) local header + compressed data
+    const head = await _readRange(file, hit.lho, 30);
+    const dataStart = hit.lho + 30 + u16(head, 26) + u16(head, 28);
+    const cdata = await _readRange(file, dataStart, hit.csize);
+    const out = hit.method === 0 ? cdata : await inflateRaw(cdata);
+    return new TextDecoder().decode(out);
   }
 
   /* Instant: best-known size, never downloads. exact=false means it's the
@@ -131,9 +151,10 @@
     if (_detecting) return _detecting;
     if (_detectTried || !inPowerPoint()) return Promise.resolve(null);
     _detecting = (async () => {
+      let file = null;
       try {
-        const bytes = await getCompressedBytes();
-        const xml = await unzipEntry(bytes, 'ppt/presentation.xml');
+        file = await _getFile();                                   // does not download slices yet
+        const xml = await _readEntryViaSlices(file, 'ppt/presentation.xml'); // ~2-3 slices only
         const m = xml.match(/<p:sldSz[^>]*cx="(\d+)"[^>]*cy="(\d+)"/);
         if (m) {
           _slideSize = { w: +m[1] / 12700, h: +m[2] / 12700 };
@@ -142,6 +163,7 @@
       } catch (e) {
         console.warn('[OfficeBridge] slide size detect failed:', e && e.message);
       } finally {
+        if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
         _detectTried = true; _detecting = null;
       }
       return _slideSize;

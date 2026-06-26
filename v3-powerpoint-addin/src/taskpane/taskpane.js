@@ -15,9 +15,13 @@
   }
 
   function updateButtons() {
-    insertBtn.disabled = Doodle.isEmpty();
+    const empty = Doodle.isEmpty();
+    insertBtn.disabled = empty;
     $('undoBtn').disabled = Doodle.state.strokes.length === 0;
     $('redoBtn').disabled = Doodle.state.redo.length === 0;
+    // Warm up slide-size detection (~8MB, background, once) when drawing starts,
+    // so the first insert is already exact — never on open.
+    if (!empty && OfficeBridge.inPowerPoint()) OfficeBridge.detectSlideSize();
   }
 
   function boot() {
