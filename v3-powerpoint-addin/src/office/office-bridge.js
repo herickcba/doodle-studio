@@ -274,8 +274,124 @@
     });
   }
 
+  /* ============================================================
+     TYPOGRAPHY module — apply text styles + insert the style anchor.
+     ============================================================ */
+
+  function apiSupported(version) {
+    try {
+      return !!(Office.context && Office.context.requirements
+        && Office.context.requirements.isSetSupported('PowerPointApi', version));
+    } catch (_) { return false; }
+  }
+
+  function _abToBase64(buf) {
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+
+  /* Best-effort: is the (single) selected shape's fill the brand blue?
+     Fully isolated — never throws, returns false on any uncertainty so it
+     can't break the apply that follows. */
+  async function _selectionBgIsBlue() {
+    try {
+      return await PowerPoint.run(async (context) => {
+        const sel = context.presentation.getSelectedTextRangeOrNullObject();
+        const shapes = context.presentation.getSelectedShapes();
+        sel.load('isNullObject');
+        shapes.load('items');
+        await context.sync();
+        let shape = null;
+        if (!sel.isNullObject) { try { shape = sel.getParentTextFrame().getParentShape(); } catch (_) {} }
+        else if (shapes.items && shapes.items.length === 1) shape = shapes.items[0];
+        if (!shape) return false;
+        shape.fill.load('type');
+        await context.sync();
+        if (String(shape.fill.type).toLowerCase().indexOf('solid') < 0) return false;
+        shape.fill.load('foregroundColor');
+        await context.sync();
+        const fg = (shape.fill.foregroundColor || '').toString().toUpperCase().replace('#', '');
+        return fg.indexOf('436AE1') >= 0;
+      });
+    } catch (_) { return false; }
+  }
+
+  /* Apply a typographic style to the current selection.
+     style = { font, size, color, periodColor, bgAware, sample }.
+     Targets, in order: a selected text sub-range -> selected shape(s) ->
+     a brand-new text box on the active slide. Sets font/bold/size/color and
+     colors the final period; line spacing is NOT settable here (use the anchor). */
+  async function applyTextStyle(style) {
+    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+    if (!apiSupported('1.6')) {
+      throw new Error('Seu PowerPoint não suporta a API 1.6. Atualize, ou use a referência (Pincel de Formatação).');
+    }
+
+    // background-aware override (Hero on a blue object -> white text)
+    let textColor = style.color, periodColor = style.periodColor;
+    if (style.bgAware && await _selectionBgIsBlue()) { textColor = '#FFFFFF'; periodColor = '#FC5E6D'; }
+
+    return await PowerPoint.run(async (context) => {
+      const sel = context.presentation.getSelectedTextRangeOrNullObject();
+      sel.load('text');
+      const shapes = context.presentation.getSelectedShapes();
+      shapes.load('items');
+      await context.sync();
+
+      let ranges = [], mode = '';
+      if (!sel.isNullObject && sel.text && sel.text.trim().length) {
+        ranges = [sel]; mode = 'text';
+      } else if (shapes.items && shapes.items.length) {
+        ranges = shapes.items.map((sh) => sh.textFrame.textRange);
+        mode = 'shape';
+      } else {
+        const slide = context.presentation.getSelectedSlides().getItemAt(0);
+        const box = slide.shapes.addTextBox((style.sample || 'Texto') + '.',
+          { left: 48, top: 72, width: 864, height: 220 });
+        ranges = [box.textFrame.textRange]; mode = 'new';
+      }
+
+      ranges.forEach((r) => r.load('text'));
+      await context.sync();
+
+      ranges.forEach((r) => {
+        r.font.name = style.font;
+        r.font.bold = true;
+        r.font.size = style.size;
+        r.font.color = textColor;
+        if (periodColor) {
+          const t = r.text || '';
+          if (t.length && t.charAt(t.length - 1) === '.') {
+            try { r.getSubstring(t.length - 1, 1).font.color = periodColor; } catch (_) {}
+          }
+        }
+      });
+      await context.sync();
+      return { applied: ranges.length, mode };
+    });
+  }
+
+  /* Insert the "style anchor" reference slide (exact styles incl. line
+     spacing, baked in OOXML) so the user can copy a box or Format-Painter it. */
+  async function insertStylesReference() {
+    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+    const url = new URL('../../assets/estilos-bg.pptx', location.href).href;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Não foi possível carregar a referência (' + resp.status + ').');
+    const b64 = _abToBase64(await resp.arrayBuffer());
+    await PowerPoint.run(async (context) => {
+      context.presentation.insertSlidesFromBase64(b64, { formatting: 'KeepSourceFormatting' });
+      await context.sync();
+    });
+  }
+
   global.OfficeBridge = {
     inPowerPoint, getActiveSlideImage, insertDoodle, openDrawDialog,
     getSlideSizeSync, detectSlideSize, SLIDE_W_PT, SLIDE_H_PT,
+    apiSupported, applyTextStyle, insertStylesReference,
   };
 })(window);

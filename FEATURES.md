@@ -1,5 +1,21 @@
 # Doodle Studio — Web (completo) × Add-in PowerPoint
 
+> **Add-in vira plataforma multi-módulo.** O task pane tem **abas no topo** (`src/shared/modules.js`): cada módulo é uma `view`. Módulo 1 = **Doodle**. Módulo 2 = **Tipografia** (estilos B+G). Próximos módulos entram como novas abas.
+
+## Módulo Tipografia (estilos B+G) — add-in
+Estilos **Hero / Mega / H1** aplicáveis a um objeto ou texto selecionado, com prévia clicável (sem dropdown). Arquivos: `src/modules/typography.js`, `OfficeBridge.applyTextStyle` / `insertStylesReference`, asset `assets/estilos-bg.pptx` (gerado por `tools/build-styles-reference.py`).
+
+| Atributo | Como é aplicado |
+|---|---|
+| Fonte (Avenir Next), negrito, tamanho, cor | **Na hora**, à seleção, via Office.js `TextRange.font` (PowerPointApi **1.6** p/ ler a seleção) |
+| Ponto final em outra cor (Hero) | `getSubstring(len-1,1).font.color` |
+| Cor da fonte conforme o fundo (Hero) | Best-effort: lê o preenchimento do objeto; se `436AE1` → branca (ponto `FC5E6D`) |
+| **Entrelinha (0.8x/0.9x)** | **Não é setável via Office.js** → vem da **âncora**: `insertStylesReference()` insere um slide de referência (`estilos-bg.pptx`, entrelinha assada no OOXML) e o usuário **copia a caixa** ou usa o **Pincel de Formatação** (nativos, preservam a entrelinha) |
+
+Estilos: **Hero** 120pt·0.8x·`FC5E6D` (ponto `436AE1`; sobre fundo `436AE1` → branca) · **Mega** 80pt·0.9x·`436AE1` · **H1** 60pt·0.9x·`FC5E6D`.
+
+---
+
 Duas versões mantidas em paralelo, com o **mesmo motor de desenho**:
 
 - **Web (v3)** — o app **completo**. Arquivo: [`v2.html`](v2.html). No ar: https://doodle-studio-sigma.vercel.app/v2.html
