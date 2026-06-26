@@ -555,21 +555,16 @@
     }
     return out;
   }
-  function ensureAnimDefaults() {
-    let acc = 0;
-    for (const s of state.strokes) {
-      if (typeof s.animStart !== 'number') s.animStart = acc;
-      acc = Math.max(acc, s.animStart + strokeDur(s));
-    }
-  }
-  function strokeReveals(progress, easing) {
+  /* Reveal lengths for a group of strokes, sequenced from 0 (each starts when
+     the previous ends). Pure — no mutation, works on any stroke subset. */
+  function strokeRevealsFor(strokes, progress, easing) {
     const ease = EASING[easing] || EASING.linear;
-    ensureAnimDefaults();
-    const durs = state.strokes.map(strokeDur);
-    let end = 1;
-    for (let i = 0; i < state.strokes.length; i++) end = Math.max(end, (state.strokes[i].animStart || 0) + durs[i]);
+    const durs = strokes.map(strokeDur);
+    const starts = []; let acc = 0;
+    for (let i = 0; i < strokes.length; i++) { starts.push(acc); acc += durs[i]; }
+    const end = Math.max(1, acc);
     const tc = ease(Math.max(0, Math.min(1, progress))) * end;
-    return state.strokes.map((s, i) => Math.max(0, Math.min(durs[i], tc - (s.animStart || 0))));
+    return strokes.map((s, i) => Math.max(0, Math.min(durs[i], tc - starts[i])));
   }
 
   function gifBuildPalette(rgba, maxColors) {
@@ -618,28 +613,29 @@
 
   /* Build an animated, transparent GIF of the progressive reveal, cropped to the
      content bbox. Returns { dataUrl, bbox, frame } like the PNG exporters. */
-  async function makeAnimatedGif(opts) {
+  async function makeAnimatedGif(strokes, opts) {
     opts = opts || {};
-    if (!state.strokes.length) return null;
+    if (!strokes || !strokes.length) return null;
     const fps = opts.fps || 12, duration = opts.duration || 2.5;
     const holdMs = opts.holdMs != null ? opts.holdMs : 600, easing = opts.easing || 'linear';
-    const bbox = bboxOfStrokes(state.strokes); if (!bbox) return null;
+    const loop = opts.loop !== false;   // default: loop forever
+    const bbox = bboxOfStrokes(strokes); if (!bbox) return null;
     const CAP = 720, scale = Math.min(1, CAP / Math.max(bbox.w, bbox.h));
     const W = Math.max(1, Math.round(bbox.w * scale)), H = Math.max(1, Math.round(bbox.h * scale));
     const base = document.createElement('canvas'); base.width = W; base.height = H; const bctx = base.getContext('2d');
     const gif = document.createElement('canvas'); gif.width = W; gif.height = H; const gctx = gif.getContext('2d');
-    const durs = state.strokes.map(strokeDur);
+    const durs = strokes.map(strokeDur);
     const drawScaled = (c, stroke, pts) => { c.setTransform(scale, 0, 0, scale, -bbox.x * scale, -bbox.y * scale); drawStroke(c, stroke, pts); c.setTransform(1, 0, 0, 1, 0, 0); };
     let bakedUpTo = 0;
     const frameData = (p) => {
-      const reveals = strokeReveals(p, easing);
-      while (bakedUpTo < state.strokes.length && reveals[bakedUpTo] >= durs[bakedUpTo]) { drawScaled(bctx, state.strokes[bakedUpTo]); bakedUpTo++; }
+      const reveals = strokeRevealsFor(strokes, p, easing);
+      while (bakedUpTo < strokes.length && reveals[bakedUpTo] >= durs[bakedUpTo]) { drawScaled(bctx, strokes[bakedUpTo]); bakedUpTo++; }
       gctx.setTransform(1,0,0,1,0,0); gctx.clearRect(0,0,W,H); gctx.drawImage(base,0,0);
-      for (let i = bakedUpTo; i < state.strokes.length; i++) { const r = reveals[i]; if (r <= 0) continue; const s = state.strokes[i]; const pts = r >= durs[i] ? vectorize(s) : truncatePts(vectorize(s), r); if (pts.length >= 1) drawScaled(gctx, s, pts); }
+      for (let i = bakedUpTo; i < strokes.length; i++) { const r = reveals[i]; if (r <= 0) continue; const s = strokes[i]; const pts = r >= durs[i] ? vectorize(s) : truncatePts(vectorize(s), r); if (pts.length >= 1) drawScaled(gctx, s, pts); }
       return gctx.getImageData(0,0,W,H).data;
     };
     const N = Math.max(2, Math.round(duration * fps)), baseDelay = Math.max(2, Math.round(100 / fps)), holdCenti = Math.round(holdMs / 10);
-    for (const s of state.strokes) drawScaled(bctx, s);
+    for (const s of strokes) drawScaled(bctx, s);
     const palette = gifBuildPalette(bctx.getImageData(0,0,W,H).data, 255);
     bctx.clearRect(0,0,W,H);
     const realCount = palette.length, transIndex = realCount;
@@ -651,7 +647,7 @@
     writeStr('GIF89a'); write16(W); write16(H);
     bytes.push(0x80 | ((minCodeSize - 1) << 4) | gctSizeField, transIndex, 0);
     for (let i = 0; i < tableSize; i++) { if (i < realCount) bytes.push(palette[i][0], palette[i][1], palette[i][2]); else bytes.push(0, 0, 0); }
-    bytes.push(0x21, 0xFF, 0x0B); writeStr('NETSCAPE2.0'); bytes.push(0x03, 0x01, 0x00, 0x00, 0x00);
+    if (loop) { bytes.push(0x21, 0xFF, 0x0B); writeStr('NETSCAPE2.0'); bytes.push(0x03, 0x01, 0x00, 0x00, 0x00); }
     const idx = new Uint8Array(W * H), cache = new Map();
     for (let f = 0; f < N; f++) {
       const p = N === 1 ? 1 : f / (N - 1), data = frameData(p);
@@ -670,12 +666,32 @@
     return { dataUrl, bbox, frame: { w: FRAME_W, h: FRAME_H } };
   }
 
+  /* One GIF per stroke (separate) or one GIF for the whole drawing (together). */
+  async function makeGifGroups(strokes, separate, opts) {
+    const groups = separate ? strokes.map((s) => [s]) : [strokes];
+    const out = [];
+    for (const g of groups) { const gif = await makeAnimatedGif(g, opts); if (gif) out.push(gif); }
+    return out;
+  }
+  function exportGifs(separate, opts) { return makeGifGroups(state.strokes, separate, opts); }
+  async function renderExternalGifs(strokes, config, separate, opts) {
+    const saved = { ms: state.mouseSmoothing, vs: state.vectorSmoothing, ft: state.faultTypes, fl: state.faultLevel, gs: state.gapSize };
+    if (config) {
+      state.mouseSmoothing = config.mouseSmoothing; state.vectorSmoothing = config.vectorSmoothing;
+      state.faultTypes = config.faultTypes || []; state.faultLevel = config.faultLevel; state.gapSize = config.gapSize;
+    }
+    const out = await makeGifGroups(strokes, separate, opts);
+    state.mouseSmoothing = saved.ms; state.vectorSmoothing = saved.vs;
+    state.faultTypes = saved.ft; state.faultLevel = saved.fl; state.gapSize = saved.gs;
+    return out;
+  }
+
   global.Doodle = {
     state, FRAME_W, FRAME_H,
     attach, render, undo, redo, clear,
     exportTransparentPNG, contentBBox,
     renderExternalPNG, renderExternalPNGs, exportPNGs, payload, isEmpty,
-    makeAnimatedGif,
+    exportGifs, renderExternalGifs,
     vectorize, anchorCount,
   };
 })(window);

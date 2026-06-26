@@ -33,11 +33,17 @@
   </div>
 
   <button class="btn block" id="bigBtn" title="Abrir uma janela ampla para desenhar com o slide ao fundo">⤢ Tela grande para desenhar</button>
-  <label class="opt-row"><input type="checkbox" id="insertSeparate" /> Inserir cada traço separado</label>
-  <button class="btn primary block" id="insertBtn" disabled>Inserir no slide</button>
-  <button class="btn block" id="gifBtn" disabled>▶ Inserir como GIF animado</button>
-  <div class="slabel" style="margin:8px 0 2px;"><span>Duração do GIF</span><b id="gifDurVal">2.5s</b></div>
-  <input type="range" id="gifDur" min="10" max="60" value="25" aria-label="Duração do GIF" />
+
+  <section class="insert-group">
+    <label class="opt-row"><input type="checkbox" id="insertSeparate" /> Inserir cada traço separado <span class="hint-inline">(imagem e GIF)</span></label>
+    <button class="btn primary block" id="insertBtn" disabled>Inserir no slide</button>
+    <button class="btn block" id="gifBtn" disabled>▶ Inserir como GIF animado</button>
+    <div class="gif-opts">
+      <label class="opt-row"><input type="checkbox" id="gifLoop" checked /> GIF em loop</label>
+      <div class="slabel"><span>Duração do GIF</span><b id="gifDurVal">2.5s</b></div>
+      <input type="range" id="gifDur" min="10" max="60" value="25" aria-label="Duração do GIF" />
+    </div>
+  </section>
   <div class="status" id="status">Desenhe um traço para começar.</div>
 
   <!-- Config: Color -->

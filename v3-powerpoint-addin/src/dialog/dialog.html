@@ -57,6 +57,14 @@
       <input type="range" id="vectorSmooth" min="0" max="100" value="0" aria-label="Suavização vetorial" />
     </section>
 
+    <section class="sec">
+      <div class="sec-head">GIF animado</div>
+      <button class="btn primary block" id="gifBtn" disabled style="margin-bottom:10px;">▶ Inserir como GIF</button>
+      <label class="opt-row"><input type="checkbox" id="gifLoop" checked /> Em loop</label>
+      <div class="slabel"><span>Duração</span><b id="gifDurVal">2.5s</b></div>
+      <input type="range" id="gifDur" min="10" max="60" value="25" aria-label="Duração do GIF" />
+    </section>
+
     <div class="hint">Segure <kbd>Shift</kbd> para linha reta · <kbd>Cmd+V</kbd> cola uma imagem de fundo.</div>
   </aside>
 

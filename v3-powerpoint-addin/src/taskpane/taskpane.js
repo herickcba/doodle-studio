@@ -42,21 +42,17 @@
   async function insertGif() {
     if (Doodle.isEmpty()) { setStatus('Nada desenhado ainda.', 'warn'); return; }
     const duration = (+$('gifDur').value) / 10;
-    $('gifBtn').disabled = true; insertBtn.disabled = true;
-    setStatus('Gerando GIF…');
+    const loop = $('gifLoop').checked, sep = Doodle.state.insertSeparate;
+    $('gifBtn').disabled = true;
+    setStatus(sep && Doodle.state.strokes.length > 1 ? 'Gerando GIFs…' : 'Gerando GIF…');
     try {
-      const gif = await Doodle.makeAnimatedGif({ duration: duration, fps: 12, holdMs: 600 });
-      if (!gif) { setStatus('Nada para animar.', 'warn'); return; }
-      setStatus('Inserindo GIF…');
-      const res = await OfficeBridge.insertDoodle(gif);
-      setStatus(res.mode === 'inserted' ? 'GIF animado inserido ✓'
-        : 'Modo navegador: GIF baixado (no PowerPoint, vai pro slide).', 'ok');
+      const gifs = await Doodle.exportGifs(sep, { duration: duration, loop: loop, fps: 12, holdMs: 600 });
+      await insertPNGs(gifs, gifs.length > 1 ? `${gifs.length} GIFs inseridos ✓` : 'GIF animado inserido ✓');
     } catch (e) {
       console.error(e);
       setStatus('Erro ao gerar/inserir o GIF: ' + (e && e.message ? e.message : e), 'warn');
     } finally {
-      const empty = Doodle.isEmpty();
-      $('gifBtn').disabled = empty; insertBtn.disabled = empty;
+      $('gifBtn').disabled = Doodle.isEmpty();
     }
   }
 
@@ -100,13 +96,20 @@
     // Pass whatever backdrop we already have (API or pasted) into the dialog.
     const backdrop = window.DoodleBackdrop || currentSlideImg || '';
     setStatus('Tela grande aberta — desenhe e clique Inserir lá.', 'ok');
-    OfficeBridge.openDrawDialog(backdrop, (payload) => {
+    OfficeBridge.openDrawDialog(backdrop, async (payload) => {
       if (!payload || !payload.strokes || !payload.strokes.length) {
         setStatus('Tela grande fechada sem desenho.', 'warn');
         return;
       }
-      const pngs = Doodle.renderExternalPNGs(payload.strokes, payload.config, payload.insertSeparate);
-      insertPNGs(pngs, 'Inserido no slide (tela grande) ✓');
+      if (payload.asGif) {
+        setStatus('Gerando GIF…');
+        const gifs = await Doodle.renderExternalGifs(payload.strokes, payload.config, payload.insertSeparate,
+          { duration: payload.gifDuration || 2.5, loop: payload.gifLoop !== false, fps: 12, holdMs: 600 });
+        await insertPNGs(gifs, gifs.length > 1 ? `${gifs.length} GIFs inseridos (tela grande) ✓` : 'GIF inserido (tela grande) ✓');
+      } else {
+        const pngs = Doodle.renderExternalPNGs(payload.strokes, payload.config, payload.insertSeparate);
+        await insertPNGs(pngs, 'Inserido no slide (tela grande) ✓');
+      }
     });
   }
 
