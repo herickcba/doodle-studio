@@ -21,6 +21,7 @@
     const empty = Doodle.isEmpty();
     $('insertBtn').disabled = empty;
     $('gifBtn').disabled = empty;
+    $('saveGifBtn').disabled = empty;
     $('undoBtn').disabled = Doodle.state.strokes.length === 0;
     $('redoBtn').disabled = Doodle.state.redo.length === 0;
     $('saveAllBtn').disabled = empty;
@@ -31,6 +32,24 @@
     if (!strokes || !strokes.length) return;
     const thumb = Doodle.thumbnailOf(strokes);
     DoodleLibrary.save(label, Doodle.payloadOf(strokes), thumb);
+  }
+
+  // Save the current drawing as a GIF item (strokes + animation opts) AND a
+  // static PNG of the final state, both into the shared library.
+  function saveGifToLibrary() {
+    const strokes = Doodle.state.strokes;
+    if (!strokes.length) return;
+    const thumb = Doodle.thumbnailOf(strokes);            // final-state preview
+    const payload = Doodle.payload();
+    const gif = {
+      duration: (+$('gifDur').value) / 10,
+      loop: $('gifLoop').checked,
+      fps: +$('gifFps').value,
+      holdMs: +$('gifHold').value,
+      easing: $('gifEasing').value,
+    };
+    DoodleLibrary.save('GIF', payload, thumb, { kind: 'gif', gif });
+    DoodleLibrary.save('Desenho', payload, thumb, { kind: 'png' });   // static final state
   }
 
   function loadBackdrop() {
@@ -84,6 +103,7 @@
     $('zoomFitBtn').addEventListener('click', () => setZoom(1));
     $('saveAllBtn').addEventListener('click', () => { saveToLibrary(Doodle.state.strokes, 'Desenho'); $('saveAllBtn').textContent = '✓ Salvo na biblioteca'; });
     $('saveSelBtn').addEventListener('click', () => { const s = Doodle.getSelectedStroke(); if (s) { saveToLibrary([s], 'Traço'); $('saveSelBtn').textContent = '✓ Traço salvo'; } });
+    $('saveGifBtn').addEventListener('click', () => { if (!Doodle.isEmpty()) { saveGifToLibrary(); $('saveGifBtn').textContent = '✓ GIF + PNG salvos'; } });
     $('bgBtn').addEventListener('click', async () => {
       const res = await DoodleUI.loadBackdropFromClipboard();
       $('bgBtn').textContent = res.ok ? '✓ Fundo do slide' : '📋 Copie o slide e cole (Cmd+V)';

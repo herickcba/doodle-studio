@@ -32,11 +32,17 @@
     const items = DoodleLibrary.list();
     grid.innerHTML = '';
     for (const it of items) {
+      const isGif = it.kind === 'gif';
       const cell = document.createElement('div');
       cell.className = 'lib-item';
       const img = document.createElement('img');
       img.src = it.thumb; img.alt = it.name || 'Doodle';
       cell.appendChild(img);
+      if (isGif) {
+        const badge = document.createElement('span');
+        badge.className = 'lib-badge'; badge.textContent = 'GIF';
+        cell.appendChild(badge);
+      }
       const del = document.createElement('button');
       del.className = 'lib-del'; del.textContent = '×'; del.title = 'Excluir';
       del.addEventListener('click', (e) => {
@@ -45,8 +51,8 @@
         renderLibrary();
       });
       cell.appendChild(del);
-      cell.title = 'Inserir no slide no tamanho salvo';
-      cell.addEventListener('click', () => insertFromLibrary(it));
+      cell.title = isGif ? 'Inserir GIF no slide no tamanho salvo' : 'Inserir no slide no tamanho salvo';
+      cell.addEventListener('click', () => isGif ? insertGifFromLibrary(it) : insertFromLibrary(it));
       grid.appendChild(cell);
     }
   }
@@ -58,6 +64,20 @@
     if (!strokes || !strokes.length) { setStatus('Item da biblioteca vazio.', 'warn'); return; }
     const pngs = Doodle.renderExternalPNGs(strokes, it.payload.config, false);
     await insertPNGs(pngs, 'Inserido no slide da biblioteca ✓');
+  }
+
+  // Regenerate the saved GIF (strokes + stored animation opts) and insert it.
+  async function insertGifFromLibrary(it) {
+    const strokes = it && it.payload && it.payload.strokes;
+    if (!strokes || !strokes.length) { setStatus('Item da biblioteca vazio.', 'warn'); return; }
+    setStatus('Gerando GIF…');
+    const o = it.gif || {};
+    const separate = !!(it.payload && it.payload.insertSeparate);
+    const gifs = await Doodle.renderExternalGifs(strokes, it.payload.config, separate, {
+      duration: o.duration || 2.5, loop: o.loop !== false, fps: o.fps || 12,
+      holdMs: o.holdMs != null ? o.holdMs : 600, easing: o.easing || 'linear',
+    });
+    await insertPNGs(gifs, gifs.length > 1 ? `${gifs.length} GIFs inseridos da biblioteca ✓` : 'GIF inserido da biblioteca ✓');
   }
 
   function saveToLibrary(strokes, label) {

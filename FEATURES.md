@@ -29,6 +29,7 @@ Duas versões mantidas em paralelo, com o **mesmo motor de desenho**:
 | Zoom do canvas | ✅ | ✅ tela grande | −/100%/+/Ajustar na barra da tela grande |
 | Selecionar traço (clique) | ✅ | ✅ | clique sem arrasto destaca o traço |
 | **Biblioteca de traços** (salvar/reusar) | ✅ | ✅ | salvar desenho inteiro ou traço selecionado; **clicar na miniatura insere no slide no tamanho salvo**; global entre decks (`localStorage`); seção colapsável no painel; salvar também na tela grande |
+| Biblioteca: salvar **GIF** (com tag) | n/a | ✅ | na tela grande, "Salvar GIF na biblioteca" guarda traços + opções de animação (regenera no insert) com tag `GIF`; salva **também** um PNG do estado final estático |
 | **Inserir no slide** (PNG) | ❌ | ✅ | **só add-in** (`setSelectedDataAsync`) |
 | Fundo = imagem do slide atual | ❌ | ✅ | via copiar+colar (Cmd+V / "Fundo do slide") |
 | Tela grande (Office Dialog) | ❌ | ✅ | concentra GIF + animação + zoom (painel fica enxuto) |
