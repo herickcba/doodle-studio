@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doodle Studio — Editar imagem</title>
+  <link rel="preconnect" href="https://appsforoffice.microsoft.com" />
+  <link rel="stylesheet" href="../taskpane/taskpane.css" />
+  <link rel="stylesheet" href="dialog.css" />
+</head>
+<body>
+  <div class="stage">
+    <div class="stage-bar">
+      <h1>Editar imagem</h1>
+      <span class="spacer"></span>
+      <label class="opacity-ctl">Pincel
+        <input type="range" id="brushSize" min="2" max="80" value="16" aria-label="Tamanho do pincel" />
+      </label>
+      <input type="color" id="brushColor" value="#FF2D55" title="Cor da marcação" />
+      <button class="btn icon" id="undoBtn" title="Desfazer">↶</button>
+      <button class="btn icon danger" id="clearBtn" title="Limpar marcações">⌫</button>
+      <span class="bar-sep"></span>
+      <button class="btn" id="cancelBtn">Cancelar</button>
+      <button class="btn primary" id="applyBtn">Aplicar edição</button>
+    </div>
+    <div class="stage-canvas">
+      <div class="big-wrap">
+        <img id="editImg" class="edit-img" alt="" />
+        <canvas id="markCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <aside class="dlg-panel">
+    <section class="sec">
+      <div class="sec-head">O que mudar?</div>
+      <textarea id="editPrompt" class="img-prompt" rows="6" placeholder="Ex.: troque o céu por um pôr do sol; remova o objeto marcado; deixe o casaco vermelho…"></textarea>
+      <div class="hint-inline" style="margin-top:8px;">Rabisque sobre as regiões a alterar (opcional) com o pincel sólido e descreva a edição. O modelo usa as marcações só como guia.</div>
+    </section>
+  </aside>
+
+  <script src="imgedit.js"></script>
+  <script defer src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+</body>
+</html>

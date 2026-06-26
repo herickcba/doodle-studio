@@ -12,6 +12,7 @@
   <nav class="modnav" id="modnav" role="tablist" aria-label="Módulos">
     <button class="modtab active" data-view="doodle" role="tab" aria-selected="true">Doodle</button>
     <button class="modtab" data-view="type" role="tab" aria-selected="false">Tipografia</button>
+    <button class="modtab" data-view="image" role="tab" aria-selected="false">Imagem</button>
   </nav>
 
   <!-- ===================== Module: Doodle ===================== -->
@@ -90,13 +91,42 @@
     <div class="hint">A entrelinha (0.8x/0.9x) é aplicada por meio da <b>referência</b> — a API do PowerPoint não define espaçamento de linha por código. Fonte, tamanho, cor e ponto final são aplicados na hora à seleção.</div>
   </div><!-- /view-type -->
 
+  <!-- ===================== Module: Imagem ===================== -->
+  <div class="view hidden" id="view-image" role="tabpanel">
+    <div class="seg" id="imgModel" role="group" aria-label="Modelo">
+      <button class="seg-btn active" data-model="nano2">Nano Banana 2</button>
+      <button class="seg-btn" data-model="pro">Pro</button>
+    </div>
+    <textarea id="imgPrompt" class="img-prompt" rows="3" placeholder="Descreva a imagem (1920×1080)…"></textarea>
+
+    <div class="img-cons-label">Consistência <span>(o que manter ao variar)</span></div>
+    <div class="img-chips" id="imgChips"></div>
+
+    <div class="img-row">
+      <label class="img-batch">Imagens
+        <select id="imgBatch"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+      </label>
+      <button class="btn" id="imgRefBtn" title="Subir uma imagem de referência de estilo">＋ Referência</button>
+      <input type="file" id="imgRefFile" accept="image/*" hidden />
+    </div>
+    <div class="img-refs" id="imgRefs"></div>
+
+    <button class="btn primary block" id="imgGenBtn">✦ Melhorar + Gerar</button>
+    <div class="status" id="imgStatus">Descreva e gere uma imagem 1920×1080.</div>
+
+    <div class="img-gallery" id="imgGallery"></div>
+    <div class="hint">O prompt é melhorado pelo Gemini e enviado direto. A chave fica no servidor — o painel chama os nossos endpoints, nunca o Google direto.</div>
+  </div><!-- /view-image -->
+
   <!-- UI + drawing run immediately; office.js loads deferred so it never blocks first paint -->
   <script src="../engine/doodle-engine.js"></script>
   <script src="../shared/controls.js"></script>
   <script src="../shared/library.js"></script>
   <script src="../office/office-bridge.js"></script>
   <script src="../shared/modules.js"></script>
+  <script src="../shared/img-library.js"></script>
   <script src="../modules/typography.js"></script>
+  <script src="../modules/image-gen.js"></script>
   <script src="taskpane.js"></script>
   <script defer src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </body>

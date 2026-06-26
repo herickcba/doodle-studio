@@ -32,3 +32,7 @@ body { padding: 0; overflow: hidden; display: flex; }
 
 /* Zoom transform on the canvas wrap */
 .big-wrap { transition: transform .12s ease; transform-origin: center center; }
+
+/* Image-edit dialog: image under a solid-brush markup canvas */
+.edit-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.stage-bar input[type=color] { width: 30px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: none; cursor: pointer; }

@@ -222,6 +222,41 @@
     }
   }
 
+  /* Insert a full image (e.g. a generated 1920x1080) onto the active slide,
+     sized to fill the slide (16:9 image on a 16:9 slide). Accepts a data URL
+     or raw base64. Falls back to a download outside PowerPoint. */
+  async function insertImage(dataUrl) {
+    if (!inPowerPoint()) {
+      const a = document.createElement('a');
+      a.href = dataUrl.indexOf(',') >= 0 ? dataUrl : 'data:image/png;base64,' + dataUrl;
+      a.download = 'imagem.png'; a.click();
+      return { mode: 'download' };
+    }
+    const base64 = dataUrl.indexOf(',') >= 0 ? dataUrl.split(',')[1] : dataUrl;
+    const slide = getSlideSizeSync();
+    if (!slide.exact) detectSlideSize();
+    const o = { coercionType: Office.CoercionType.Image, imageLeft: 0, imageTop: 0, imageWidth: slide.w, imageHeight: slide.h };
+    const inserted = await new Promise((resolve) => {
+      try {
+        Office.context.document.setSelectedDataAsync(base64, o,
+          (res) => resolve(res.status === Office.AsyncResultStatus.Succeeded ? true : res));
+      } catch (e) { resolve(e); }
+    });
+    if (inserted === true) return { mode: 'inserted' };
+    try {
+      await PowerPoint.run(async (context) => {
+        const sl = context.presentation.getActiveSlide();
+        const shape = sl.shapes.addImage(base64);
+        try { shape.left = 0; shape.top = 0; shape.width = slide.w; shape.height = slide.h; } catch (_) {}
+        await context.sync();
+      });
+      return { mode: 'inserted' };
+    } catch (e2) {
+      const msg = (inserted && inserted.error && inserted.error.message) || (e2 && e2.message) || 'Falha ao inserir a imagem.';
+      throw new Error(msg);
+    }
+  }
+
   /* Open the big-canvas drawing dialog.
      The slide backdrop and the returned drawing are passed through
      localStorage (same origin) to avoid Office message size limits.
@@ -268,6 +303,52 @@
           dialog.close();
           if (res) onResult(JSON.parse(res));
         } else if (msg === 'cancel') {
+          dialog.close();
+        }
+      });
+    });
+  }
+
+  /* Open the image-edit dialog: shows `imageDataUrl`, lets the user mark it up
+     with a solid brush and type an edit prompt. onResult receives
+     { prompt, markupDataUrl }. Image + result pass through localStorage. */
+  function openImageEditDialog(imageDataUrl, onResult) {
+    try {
+      localStorage.setItem('doodle.editImage', imageDataUrl || '');
+      localStorage.removeItem('doodle.editResult');
+    } catch (_) {}
+    const url = new URL('../dialog/imgedit.html', location.href).href;
+    const canOfficeDialog = inPowerPoint()
+      && Office.context.ui && typeof Office.context.ui.displayDialogAsync === 'function';
+
+    if (!canOfficeDialog) {
+      const w = window.open(url, 'imgEditDialog', 'width=1280,height=820');
+      const timer = setInterval(() => {
+        let res = null;
+        try { res = localStorage.getItem('doodle.editResult'); } catch (_) {}
+        if (res) {
+          clearInterval(timer);
+          try { localStorage.removeItem('doodle.editResult'); } catch (_) {}
+          try { w && w.close(); } catch (_) {}
+          onResult(JSON.parse(res));
+        } else if (w && w.closed) { clearInterval(timer); }
+      }, 400);
+      return;
+    }
+
+    Office.context.ui.displayDialogAsync(url, { height: 82, width: 82, displayInIframe: false }, (asyncResult) => {
+      if (asyncResult.status !== Office.AsyncResultStatus.Succeeded) {
+        console.warn('[OfficeBridge] imgedit dialog failed:', asyncResult.error);
+        return;
+      }
+      const dialog = asyncResult.value;
+      dialog.addEventHandler(Office.EventType.DialogMessageReceived, (arg) => {
+        if (arg.message === 'edit') {
+          let res = null;
+          try { res = localStorage.getItem('doodle.editResult'); localStorage.removeItem('doodle.editResult'); } catch (_) {}
+          dialog.close();
+          if (res) onResult(JSON.parse(res));
+        } else if (arg.message === 'cancel') {
           dialog.close();
         }
       });
@@ -390,8 +471,8 @@
   }
 
   global.OfficeBridge = {
-    inPowerPoint, getActiveSlideImage, insertDoodle, openDrawDialog,
-    getSlideSizeSync, detectSlideSize, SLIDE_W_PT, SLIDE_H_PT,
+    inPowerPoint, getActiveSlideImage, insertDoodle, insertImage, openDrawDialog,
+    openImageEditDialog, getSlideSizeSync, detectSlideSize, SLIDE_W_PT, SLIDE_H_PT,
     apiSupported, applyTextStyle, insertStylesReference,
   };
 })(window);

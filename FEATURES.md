@@ -1,6 +1,21 @@
 # Doodle Studio — Web (completo) × Add-in PowerPoint
 
-> **Add-in vira plataforma multi-módulo.** O task pane tem **abas no topo** (`src/shared/modules.js`): cada módulo é uma `view`. Módulo 1 = **Doodle**. Módulo 2 = **Tipografia** (estilos B+G). Próximos módulos entram como novas abas.
+> **Add-in vira plataforma multi-módulo.** O task pane tem **abas no topo** (`src/shared/modules.js`): cada módulo é uma `view`. Módulo 1 = **Doodle**. Módulo 2 = **Tipografia** (estilos B+G). Módulo 3 = **Imagem** (Nano Banana). Próximos módulos entram como novas abas.
+
+## Módulo Imagem (Nano Banana / Gemini) — add-in
+Gera/edita imagens **1920×1080** (16:9). Modelos selecionáveis: **Nano Banana 2** (`gemini-3.1-flash-image`, default) e **Pro** (`gemini-3-pro-image`). Arquivos: `src/modules/image-gen.js`, `src/shared/img-library.js`, dialog `src/dialog/imgedit.html`, funções `api/*`.
+
+| Recurso | Como |
+|---|---|
+| Prompt → imagem | `improve-prompt` (Gemini texto → JSON) → `generate-image` (16:9) → reescala p/ 1920×1080 → galeria |
+| Toggle de **consistência** | chips `imagem·estilo·universo·textura·personagem·composição` enviados ao `improve-prompt` (varia o prompt mantendo o que estiver ligado) |
+| **Style reference** | upload/colar imagem (`DoodleImgRefs`, downscale, localStorage) → enviada junto na geração |
+| **Batch** | 1–4 imagens em sequência |
+| Inserir no slide | `OfficeBridge.insertImage` preenche o slide (16:9) |
+| **Editar** | tela grande (`imgedit.html`) com **pincel sólido** (sem giz) → base + marcação + prompt → `edit-image` |
+| Galeria | **na sessão** (memória); refs persistem (downscale) |
+
+**Segurança:** a `GEMINI_API_KEY` fica **só no servidor** (env var). O add-in chama os endpoints `api/improve-prompt` · `api/generate-image` · `api/edit-image` (mesma origem) — **nunca o Google direto**. Chave nunca no repo/cliente (`.env.local` ignorado; `.env.example` = placeholder). Setup: `vercel env add GEMINI_API_KEY` (prod) e copiar `.env.example`→`.env.local` p/ `vercel dev` local.
 
 ## Módulo Tipografia (estilos B+G) — add-in
 Estilos **Hero / Mega / H1** aplicáveis a um objeto ou texto selecionado, com prévia clicável (sem dropdown). Arquivos: `src/modules/typography.js`, `OfficeBridge.applyTextStyle` / `insertStylesReference`, asset `assets/estilos-bg.pptx` (gerado por `tools/build-styles-reference.py`).
