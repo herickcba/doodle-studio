@@ -34,7 +34,6 @@
     for (const it of items) {
       const cell = document.createElement('div');
       cell.className = 'lib-item';
-      cell.title = 'Clique para adicionar ao canvas';
       const img = document.createElement('img');
       img.src = it.thumb; img.alt = it.name || 'Doodle';
       cell.appendChild(img);
@@ -46,12 +45,19 @@
         renderLibrary();
       });
       cell.appendChild(del);
-      cell.addEventListener('click', () => {
-        Doodle.loadStrokes(it.payload && it.payload.strokes);
-        setStatus('Traços adicionados da biblioteca ✓', 'ok');
-      });
+      cell.title = 'Inserir no slide no tamanho salvo';
+      cell.addEventListener('click', () => insertFromLibrary(it));
       grid.appendChild(cell);
     }
+  }
+
+  // Insert a saved item straight into the slide, at the resolution it was
+  // saved (full 1920×1080 frame coords → scaled to the slide by insertDoodle).
+  async function insertFromLibrary(it) {
+    const strokes = it && it.payload && it.payload.strokes;
+    if (!strokes || !strokes.length) { setStatus('Item da biblioteca vazio.', 'warn'); return; }
+    const pngs = Doodle.renderExternalPNGs(strokes, it.payload.config, false);
+    await insertPNGs(pngs, 'Inserido no slide da biblioteca ✓');
   }
 
   function saveToLibrary(strokes, label) {

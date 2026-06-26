@@ -28,7 +28,7 @@ Duas versões mantidas em paralelo, com o **mesmo motor de desenho**:
 | Export PNG / SVG (arquivo) | ✅ | ❌ | só web (no add-in, vira "inserir no slide") |
 | Zoom do canvas | ✅ | ✅ tela grande | −/100%/+/Ajustar na barra da tela grande |
 | Selecionar traço (clique) | ✅ | ✅ | clique sem arrasto destaca o traço |
-| **Biblioteca de traços** (salvar/reusar) | ✅ | ✅ | salvar desenho inteiro ou traço selecionado; global entre decks (`localStorage`); seção colapsável no painel; salvar também na tela grande |
+| **Biblioteca de traços** (salvar/reusar) | ✅ | ✅ | salvar desenho inteiro ou traço selecionado; **clicar na miniatura insere no slide no tamanho salvo**; global entre decks (`localStorage`); seção colapsável no painel; salvar também na tela grande |
 | **Inserir no slide** (PNG) | ❌ | ✅ | **só add-in** (`setSelectedDataAsync`) |
 | Fundo = imagem do slide atual | ❌ | ✅ | via copiar+colar (Cmd+V / "Fundo do slide") |
 | Tela grande (Office Dialog) | ❌ | ✅ | concentra GIF + animação + zoom (painel fica enxuto) |
