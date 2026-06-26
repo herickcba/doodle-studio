@@ -12,7 +12,7 @@ Estilos **Hero / Mega / H1** aplicáveis a um objeto ou texto selecionado, com p
 | Cor da fonte conforme o fundo (Hero) | Best-effort: lê o preenchimento do objeto; se `436AE1` → branca (ponto `FC5E6D`) |
 | **Entrelinha (0.8x/0.9x)** | **Não é setável via Office.js** → vem da **âncora**: `insertStylesReference()` insere um slide de referência (`estilos-bg.pptx`, entrelinha assada no OOXML) e o usuário **copia a caixa** ou usa o **Pincel de Formatação** (nativos, preservam a entrelinha) |
 
-Estilos: **Hero** 120pt·0.8x·`FC5E6D` (ponto `436AE1`; sobre fundo `436AE1` → branca) · **Mega** 80pt·0.9x·`436AE1` · **H1** 60pt·0.9x·`FC5E6D`.
+Estilos (11): **Hero** 120·0.8·`FC5E6D` (ponto `436AE1`; sobre fundo azul → branca) · **Mega** 80·0.9·`436AE1` · **H1** 60·0.9·`FC5E6D` · **Label de Seção** 60·0.9·`FC5E6D` · **Corpo de Texto** 44·1.15·`436AE1`·Reg · **H3** 34·0.95·`FC5E6D` · **H4** 28·1.0·`436AE1` · **H5** 24·1.0·`436AE1`·Reg · **Corpo de Pilar** 20·1.3·`436AE1`·Reg · **Eyebrow** 18·1.0·`FC5E6D` · **Caption** 16·1.3·`436AE1`·Reg. (Bold salvo onde não marcado Reg.) Entrelinha sempre **múltiplo** (spcPct) na referência.
 
 ---
 

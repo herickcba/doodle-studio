@@ -360,7 +360,7 @@
 
       ranges.forEach((r) => {
         r.font.name = style.font;
-        r.font.bold = true;
+        r.font.bold = !!style.bold;
         r.font.size = style.size;
         r.font.color = textColor;
         if (periodColor) {
