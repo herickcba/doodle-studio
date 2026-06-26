@@ -5,7 +5,7 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>74647E3E-4C47-4D22-8166-95594303BBD8</Id>
-  <Version>1.0.0.0</Version>
+  <Version>1.1.0.0</Version>
   <ProviderName>Doodle Studio</ProviderName>
   <DefaultLocale>pt-BR</DefaultLocale>
   <DisplayName DefaultValue="Doodle Studio" />
@@ -19,8 +19,66 @@
   <Hosts>
     <Host Name="Presentation" />
   </Hosts>
+  <Requirements>
+    <Sets DefaultMinVersion="1.1">
+      <Set Name="AddinCommands" MinVersion="1.1" />
+    </Sets>
+  </Requirements>
   <DefaultSettings>
     <SourceLocation DefaultValue="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html" />
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Presentation">
+        <DesktopFormFactor>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="DoodleGroup">
+                <Label resid="Doodle.GroupLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Doodle.icon16" />
+                  <bt:Image size="32" resid="Doodle.icon32" />
+                  <bt:Image size="80" resid="Doodle.icon80" />
+                </Icon>
+                <Control xsi:type="Button" id="DoodleOpenButton">
+                  <Label resid="Doodle.ButtonLabel" />
+                  <Supertip>
+                    <Title resid="Doodle.ButtonLabel" />
+                    <Description resid="Doodle.ButtonTip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Doodle.icon16" />
+                    <bt:Image size="32" resid="Doodle.icon32" />
+                    <bt:Image size="80" resid="Doodle.icon80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>DoodleTaskpane</TaskpaneId>
+                    <SourceLocation resid="Doodle.Taskpane.Url" />
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Doodle.icon16" DefaultValue="https://doodle-studio-app.vercel.app/assets/icon-16.png" />
+        <bt:Image id="Doodle.icon32" DefaultValue="https://doodle-studio-app.vercel.app/assets/icon-32.png" />
+        <bt:Image id="Doodle.icon80" DefaultValue="https://doodle-studio-app.vercel.app/assets/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Doodle.Taskpane.Url" DefaultValue="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Doodle.GroupLabel" DefaultValue="Doodle Studio" />
+        <bt:String id="Doodle.ButtonLabel" DefaultValue="Doodle Studio" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="Doodle.ButtonTip" DefaultValue="Abrir o Doodle Studio para desenhar e inserir no slide." />
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
 </OfficeApp>

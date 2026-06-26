@@ -24,6 +24,7 @@
     current: null,
     isDrawing: false,
     pointerStart: null,
+    insertSeparate: false,   // insert each stroke as its own image vs one merged image
   };
 
   let canvas = null, ctx = null, onChange = null;
@@ -476,10 +477,41 @@
     return png;
   }
 
+  /* Export one PNG per stroke (separate) or one merged PNG (together).
+     Returns an array of { dataUrl, bbox, frame }. */
+  function exportPNGs(separate) {
+    if (separate) return state.strokes.map((s) => pngOfStrokes([s])).filter(Boolean);
+    const p = pngOfStrokes(state.strokes);
+    return p ? [p] : [];
+  }
+
+  /* Same, for an arbitrary stroke set (e.g. from the big-canvas dialog),
+     using the given config, without disturbing live state. */
+  function renderExternalPNGs(strokes, config, separate) {
+    const saved = {
+      ms: state.mouseSmoothing, vs: state.vectorSmoothing,
+      ft: state.faultTypes, fl: state.faultLevel, gs: state.gapSize,
+    };
+    if (config) {
+      state.mouseSmoothing = config.mouseSmoothing;
+      state.vectorSmoothing = config.vectorSmoothing;
+      state.faultTypes = config.faultTypes || [];
+      state.faultLevel = config.faultLevel;
+      state.gapSize = config.gapSize;
+    }
+    let out;
+    if (separate) out = strokes.map((s) => pngOfStrokes([s])).filter(Boolean);
+    else { const p = pngOfStrokes(strokes); out = p ? [p] : []; }
+    state.mouseSmoothing = saved.ms; state.vectorSmoothing = saved.vs;
+    state.faultTypes = saved.ft; state.faultLevel = saved.fl; state.gapSize = saved.gs;
+    return out;
+  }
+
   /* Compact, serializable snapshot (strokes + config) for passing
      between windows. Drops the vectorization cache. */
   function payload() {
     return {
+      insertSeparate: state.insertSeparate,
       strokes: state.strokes.map((s) => ({
         raw: s.raw, color: s.color, opacity: s.opacity,
         size: s.size, textures: s.textures, seed: s.seed,
@@ -497,7 +529,7 @@
     state, FRAME_W, FRAME_H,
     attach, render, undo, redo, clear,
     exportTransparentPNG, contentBBox,
-    renderExternalPNG, payload, isEmpty,
+    renderExternalPNG, renderExternalPNGs, exportPNGs, payload, isEmpty,
     vectorize, anchorCount,
   };
 })(window);

@@ -43,20 +43,28 @@
     setStatus('Copie o slide (clique nele → Cmd+C) e clique aqui de novo — ou cole com Cmd+V.', 'warn');
   }
 
-  async function insertPNG(png, successMsg) {
-    if (!png) { setStatus('Nada desenhado ainda.', 'warn'); return; }
+  async function insertPNGs(pngs, successMsg) {
+    if (!pngs || !pngs.length) { setStatus('Nada desenhado ainda.', 'warn'); return; }
+    insertBtn.disabled = true;
+    setStatus(pngs.length > 1 ? `Inserindo ${pngs.length} traços…` : 'Inserindo…');
     try {
-      const res = await OfficeBridge.insertDoodle(png);
-      setStatus(res.mode === 'inserted' ? successMsg
+      let mode = 'inserted';
+      for (const png of pngs) {
+        mode = (await OfficeBridge.insertDoodle(png)).mode;
+        if (mode !== 'inserted') break;
+      }
+      setStatus(mode === 'inserted' ? successMsg
         : 'Modo navegador: PNG baixado (no PowerPoint, vai pro slide).', 'ok');
     } catch (e) {
       console.error(e);
       setStatus('Erro ao inserir: ' + (e && e.message ? e.message : e), 'warn');
+    } finally {
+      insertBtn.disabled = Doodle.isEmpty();
     }
   }
 
   function insertOwnDrawing() {
-    insertPNG(Doodle.exportTransparentPNG(), 'Inserido no slide ✓');
+    insertPNGs(Doodle.exportPNGs(Doodle.state.insertSeparate), 'Inserido no slide ✓');
   }
 
   async function openBigCanvas() {
@@ -68,8 +76,8 @@
         setStatus('Tela grande fechada sem desenho.', 'warn');
         return;
       }
-      const png = Doodle.renderExternalPNG(payload.strokes, payload.config);
-      insertPNG(png, 'Inserido no slide (tela grande) ✓');
+      const pngs = Doodle.renderExternalPNGs(payload.strokes, payload.config, payload.insertSeparate);
+      insertPNGs(pngs, 'Inserido no slide (tela grande) ✓');
     });
   }
 
@@ -80,6 +88,7 @@
       if (info.host === Office.HostType.PowerPoint) {
         $('hostLabel').textContent = 'PowerPoint';
         setStatus('Copie o slide (Cmd+C) e clique "Fundo do slide" para vê-lo atrás.', '');
+        OfficeBridge.getSlideSizePt(); // prefetch slide size (off the insert path)
       } else {
         $('hostLabel').textContent = 'Modo navegador';
       }

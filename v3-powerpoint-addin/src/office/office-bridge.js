@@ -43,7 +43,7 @@
 
   function getCompressedBytes() {
     return new Promise((resolve, reject) => {
-      Office.context.document.getFileAsync(Office.FileType.Compressed, { sliceSize: 65536 }, (res) => {
+      Office.context.document.getFileAsync(Office.FileType.Compressed, { sliceSize: 4194304 }, (res) => {
         if (res.status !== Office.AsyncResultStatus.Succeeded) return reject(res.error);
         const file = res.value, n = file.sliceCount, parts = new Array(n);
         let got = 0, failed = false;
@@ -214,6 +214,6 @@
 
   global.OfficeBridge = {
     inPowerPoint, getActiveSlideImage, insertDoodle, openDrawDialog,
-    SLIDE_W_PT, SLIDE_H_PT,
+    getSlideSizePt, SLIDE_W_PT, SLIDE_H_PT,
   };
 })(window);

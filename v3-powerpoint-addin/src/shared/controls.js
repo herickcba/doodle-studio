@@ -87,6 +87,12 @@
     bindSlider('mouseSmooth', 'mouseSmoothVal', (v) => v + '%', (v) => Doodle.state.mouseSmoothing = v, true);
     bindSlider('vectorSmooth', 'vectorSmoothVal', (v) => v + '%', (v) => Doodle.state.vectorSmoothing = v, true);
 
+    const sep = $('insertSeparate');
+    if (sep) {
+      sep.checked = Doodle.state.insertSeparate;
+      sep.addEventListener('change', () => { Doodle.state.insertSeparate = sep.checked; });
+    }
+
     // Paste (Cmd/Ctrl+V) an image to use as the slide backdrop reference.
     window.addEventListener('paste', async (e) => {
       const items = e.clipboardData && e.clipboardData.items;
