@@ -46,6 +46,23 @@
   function doGenerate(p) { const k = localKey(); return k ? DoodleGemini.generateImage(k, p) : api('/api/generate-image', p); }
   function doEdit(p) { const k = localKey(); return k ? DoodleGemini.editImage(k, p) : api('/api/edit-image', p); }
 
+  // Draw `overlayUrl` (a transparent scribble layer) on top of `baseUrl`.
+  function compositeOver(baseUrl, overlayUrl) {
+    return new Promise((resolve) => {
+      const b = new Image();
+      b.onload = () => {
+        const cv = document.createElement('canvas'); cv.width = b.naturalWidth; cv.height = b.naturalHeight;
+        const cx = cv.getContext('2d'); cx.drawImage(b, 0, 0);
+        const o = new Image();
+        o.onload = () => { cx.drawImage(o, 0, 0, cv.width, cv.height); resolve(cv.toDataURL('image/png')); };
+        o.onerror = () => resolve(baseUrl);
+        o.src = overlayUrl;
+      };
+      b.onerror = () => resolve(baseUrl);
+      b.src = baseUrl;
+    });
+  }
+
   // Cover-fit any generated image onto an exact 1920x1080 canvas.
   function rescale1080(dataUrl) {
     return new Promise((resolve) => {
@@ -157,10 +174,13 @@
       setStatus('Aplicando edição…');
       try {
         const base = item.dataUrl;
+        // composite the (small) scribble overlay over the full-res base here,
+        // so the model sees the marks in context without blowing localStorage.
+        const markup = result.markupDataUrl ? await compositeOver(base, result.markupDataUrl) : null;
         const r = await doEdit({
           prompt: result.prompt, model: activeModel,
           baseImageBase64: base.split(',')[1], baseMimeType: base.substring(5, base.indexOf(';')),
-          markupImageBase64: result.markupDataUrl ? result.markupDataUrl.split(',')[1] : null,
+          markupImageBase64: markup ? markup.split(',')[1] : null,
           markupMimeType: 'image/png',
         });
         const full = await rescale1080('data:' + (r.mimeType || 'image/png') + ';base64,' + r.imageBase64);

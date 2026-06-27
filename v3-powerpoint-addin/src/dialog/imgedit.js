@@ -69,17 +69,16 @@
   function finish(kind) {
     if (kind === 'edit') {
       const prompt = $('editPrompt').value.trim();
+      // Return ONLY the transparent scribble overlay (small — mostly transparent,
+      // compresses tiny). The task pane composites it over the full-res base, so
+      // we never push a multi-MB image through localStorage (quota would blow).
       let markupDataUrl = null;
-      if (strokes.length) {
-        // composite base image + scribbles, so the model sees them in context
-        const ex = document.createElement('canvas');
-        ex.width = canvas.width; ex.height = canvas.height;
-        const ec = ex.getContext('2d');
-        try { ec.drawImage(img, 0, 0, ex.width, ex.height); } catch (_) {}
-        ec.drawImage(canvas, 0, 0);
-        try { markupDataUrl = ex.toDataURL('image/png'); } catch (_) {}
+      if (strokes.length) { try { markupDataUrl = canvas.toDataURL('image/png'); } catch (_) {} }
+      try { localStorage.setItem('doodle.editResult', JSON.stringify({ prompt, markupDataUrl })); }
+      catch (e) {
+        // last resort: drop the overlay so at least the prompt-only edit fires
+        try { localStorage.setItem('doodle.editResult', JSON.stringify({ prompt, markupDataUrl: null })); } catch (_) {}
       }
-      try { localStorage.setItem('doodle.editResult', JSON.stringify({ prompt, markupDataUrl })); } catch (_) {}
     }
     if (window.opener) { try { window.close(); } catch (_) {} return; }
     try { Office.context.ui.messageParent(kind); } catch (e) { try { window.close(); } catch (_) {} }
