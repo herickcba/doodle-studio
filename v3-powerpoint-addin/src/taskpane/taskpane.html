@@ -93,6 +93,19 @@
 
   <!-- ===================== Module: Imagem ===================== -->
   <div class="view hidden" id="view-image" role="tabpanel">
+    <details class="key-box" id="keyBox">
+      <summary><span id="keyDot" class="key-dot"></span> Chave Gemini (modo teste) — <span id="keyMode">serviço</span></summary>
+      <div class="key-body">
+        <div class="img-row" style="margin:8px 0 0;">
+          <input type="password" id="geminiKey" class="hex" placeholder="Cole sua API key do Google AI Studio" autocomplete="off" />
+        </div>
+        <div class="img-row" style="margin:8px 0 0;">
+          <button class="btn" id="saveKeyBtn">Salvar chave</button>
+          <button class="btn" id="clearKeyBtn">Limpar</button>
+        </div>
+        <div class="hint-inline" style="margin-top:8px;">A chave fica só no seu navegador (localStorage) e chama o Gemini direto — para testar. Em produção, deixe vazio e use o serviço (chave no servidor).</div>
+      </div>
+    </details>
     <div class="seg" id="imgModel" role="group" aria-label="Modelo">
       <button class="seg-btn active" data-model="nano2">Nano Banana 2</button>
       <button class="seg-btn" data-model="pro">Pro</button>
@@ -125,6 +138,7 @@
   <script src="../office/office-bridge.js"></script>
   <script src="../shared/modules.js"></script>
   <script src="../shared/img-library.js"></script>
+  <script src="../shared/gemini.js"></script>
   <script src="../modules/typography.js"></script>
   <script src="../modules/image-gen.js"></script>
   <script src="taskpane.js"></script>

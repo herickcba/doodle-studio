@@ -39,6 +39,13 @@
     return data;
   }
 
+  // Dispatch: if a local key is set (test mode) call Gemini directly from the
+  // browser; otherwise call our serverless functions (key on the server).
+  function localKey() { return (window.DoodleGemini && DoodleGemini.getKey()) || ''; }
+  function doImprove(p) { const k = localKey(); return k ? DoodleGemini.improvePrompt(k, p) : api('/api/improve-prompt', p); }
+  function doGenerate(p) { const k = localKey(); return k ? DoodleGemini.generateImage(k, p) : api('/api/generate-image', p); }
+  function doEdit(p) { const k = localKey(); return k ? DoodleGemini.editImage(k, p) : api('/api/edit-image', p); }
+
   // Cover-fit any generated image onto an exact 1920x1080 canvas.
   function rescale1080(dataUrl) {
     return new Promise((resolve) => {
@@ -113,12 +120,12 @@
     setBusy(true);
     try {
       setStatus('Melhorando o prompt…');
-      const improved = await api('/api/improve-prompt', { prompt, consistency: [...chips], hasRef: !!ref });
+      const improved = await doImprove({ prompt, consistency: [...chips], hasRef: !!ref });
       const fp = improved.finalPrompt || prompt;
       for (let i = 1; i <= n; i++) {
         setStatus('Gerando ' + i + '/' + n + '…');
         const p = n > 1 ? fp + ' — variação ' + i + ', enquadramento ligeiramente diferente' : fp;
-        const r = await api('/api/generate-image', { prompt: p, model: activeModel, refImageBase64: refB64, refMimeType: refMime });
+        const r = await doGenerate({ prompt: p, model: activeModel, refImageBase64: refB64, refMimeType: refMime });
         const full = await rescale1080('data:' + (r.mimeType || 'image/png') + ';base64,' + r.imageBase64);
         gallery.unshift({ id: 'g' + Date.now() + '_' + i, dataUrl: full, prompt: prompt, model: activeModel });
         renderGallery();
@@ -150,7 +157,7 @@
       setStatus('Aplicando edição…');
       try {
         const base = item.dataUrl;
-        const r = await api('/api/edit-image', {
+        const r = await doEdit({
           prompt: result.prompt, model: activeModel,
           baseImageBase64: base.split(',')[1], baseMimeType: base.substring(5, base.indexOf(';')),
           markupImageBase64: result.markupDataUrl ? result.markupDataUrl.split(',')[1] : null,
@@ -165,9 +172,26 @@
     });
   }
 
+  function refreshKeyUI() {
+    const has = !!localKey();
+    const dot = $('keyDot'), mode = $('keyMode');
+    if (dot) dot.classList.toggle('on', has);
+    if (mode) mode.textContent = has ? 'teste (chave local)' : 'serviço';
+  }
+
   function boot() {
     if (!$('imgGenBtn')) return;
     renderChips(); renderRefs(); renderGallery();
+    // key (test mode) wiring
+    if ($('geminiKey')) $('geminiKey').value = localKey();
+    if ($('saveKeyBtn')) $('saveKeyBtn').addEventListener('click', () => {
+      DoodleGemini.setKey($('geminiKey').value); refreshKeyUI();
+      setStatus(localKey() ? 'Chave salva — modo teste ativo ✓' : 'Chave vazia — usando o serviço.', 'ok');
+    });
+    if ($('clearKeyBtn')) $('clearKeyBtn').addEventListener('click', () => {
+      DoodleGemini.clearKey(); $('geminiKey').value = ''; refreshKeyUI(); setStatus('Chave removida — usando o serviço.', '');
+    });
+    refreshKeyUI();
     document.querySelectorAll('#imgModel .seg-btn').forEach((b) => {
       b.addEventListener('click', () => {
         activeModel = b.dataset.model;

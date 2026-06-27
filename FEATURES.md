@@ -15,7 +15,11 @@ Gera/edita imagens **1920×1080** (16:9). Modelos selecionáveis: **Nano Banana 
 | **Editar** | tela grande (`imgedit.html`) com **pincel sólido** (sem giz) → base + marcação + prompt → `edit-image` |
 | Galeria | **na sessão** (memória); refs persistem (downscale) |
 
-**Segurança:** a `GEMINI_API_KEY` fica **só no servidor** (env var). O add-in chama os endpoints `api/improve-prompt` · `api/generate-image` · `api/edit-image` (mesma origem) — **nunca o Google direto**. Chave nunca no repo/cliente (`.env.local` ignorado; `.env.example` = placeholder). Setup: `vercel env add GEMINI_API_KEY` (prod) e copiar `.env.example`→`.env.local` p/ `vercel dev` local.
+**Dois modos (dispatch em `image-gen.js` → `src/shared/gemini.js`):**
+- **Serviço (produção):** sem chave local → chama `api/improve-prompt` · `api/generate-image` · `api/edit-image` (mesma origem); `GEMINI_API_KEY` fica **só no servidor** (env var). Setup: `vercel env add GEMINI_API_KEY`.
+- **Teste (BYO key):** o usuário cola a chave na caixa "Chave Gemini (modo teste)" → fica no `localStorage` e o add-in chama o **Gemini direto** do navegador (`x-goog-api-key`). Destrava o teste sem servidor; trocar pra serviço é só limpar a chave.
+
+Chave **nunca** no repo (`.env.local`/`.gitignore`; `.env.example` = placeholder).
 
 ## Módulo Tipografia (estilos B+G) — add-in
 Estilos **Hero / Mega / H1** aplicáveis a um objeto ou texto selecionado, com prévia clicável (sem dropdown). Arquivos: `src/modules/typography.js`, `OfficeBridge.applyTextStyle` / `insertStylesReference`, asset `assets/estilos-bg.pptx` (gerado por `tools/build-styles-reference.py`).

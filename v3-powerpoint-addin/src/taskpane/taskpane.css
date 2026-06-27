@@ -128,6 +128,12 @@ input[type=range]:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); bord
 .type-apply { flex-shrink: 0; }
 
 /* ---------------- Image module ---------------- */
+.key-box { border: 1px solid var(--border-2); border-radius: var(--radius); background: var(--surface); margin-bottom: 12px; }
+.key-box summary { cursor: pointer; padding: 9px 12px; font-size: 12px; font-weight: 600; color: var(--muted-2); list-style: none; display: flex; align-items: center; gap: 7px; }
+.key-box summary::-webkit-details-marker { display: none; }
+.key-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--muted); flex-shrink: 0; }
+.key-dot.on { background: #2BA84A; }
+.key-body { padding: 0 12px 12px; }
 .seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 4px 0 12px; }
 .seg-btn { appearance: none; background: var(--surface-2); border: 0; border-right: 1px solid var(--border); padding: 7px 14px; font-family: inherit; font-size: 12px; font-weight: 700; color: var(--muted-2); cursor: pointer; }
 .seg-btn:last-child { border-right: 0; }
