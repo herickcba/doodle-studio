@@ -13,7 +13,8 @@ Gera/edita imagens **1920×1080** (16:9). Modelos selecionáveis: **Nano Banana 
 | **Batch** | 1–4 imagens em sequência |
 | Inserir no slide | `OfficeBridge.insertImage` preenche o slide (16:9) |
 | **Editar** | tela grande (`imgedit.html`) com **pincel sólido** (sem giz) → base + marcação + prompt → `edit-image` |
-| Galeria | **na sessão** (memória); refs persistem (downscale) |
+| Galeria/biblioteca | **persistente** (IndexedDB, `DoodleGallery`) — sobrevive reabrir; **excluir** por card (×); **editar/inserir/★ref** qualquer uma. Refs persistem (downscale) |
+| Editar imagem (já editada) | editor recebe cópia **leve (JPEG ≤1280px)** p/ display (não estoura o localStorage); composição base+marcação no painel em alta |
 
 **Dois modos (dispatch em `image-gen.js` → `src/shared/gemini.js`):**
 - **Serviço (produção):** sem chave local → chama `api/improve-prompt` · `api/generate-image` · `api/edit-image` (mesma origem); `GEMINI_API_KEY` fica **só no servidor** (env var). Setup: `vercel env add GEMINI_API_KEY`.

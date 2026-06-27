@@ -46,6 +46,26 @@
   function doGenerate(p) { const k = localKey(); return k ? DoodleGemini.generateImage(k, p) : api('/api/generate-image', p); }
   function doEdit(p) { const k = localKey(); return k ? DoodleGemini.editImage(k, p) : api('/api/edit-image', p); }
 
+  // A light (JPEG, <=1280px) copy of an image — used only for DISPLAY inside
+  // the edit dialog, so we never push a multi-MB image through localStorage
+  // (which would blow the quota and open the editor blank). The actual edit
+  // uses the full-res base; the overlay is scaled back up to it.
+  function downscaleForDisplay(dataUrl, maxPx) {
+    maxPx = maxPx || 1280;
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(1, maxPx / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * s)), h = Math.max(1, Math.round(img.naturalHeight * s));
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        try { resolve(cv.toDataURL('image/jpeg', 0.85)); } catch (_) { resolve(dataUrl); }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
   // Draw `overlayUrl` (a transparent scribble layer) on top of `baseUrl`.
   function compositeOver(baseUrl, overlayUrl) {
     return new Promise((resolve) => {
@@ -113,6 +133,10 @@
     const card = document.createElement('div');
     card.className = 'gen-card';
     const img = document.createElement('img'); img.src = item.dataUrl; card.appendChild(img);
+    const del = document.createElement('button');
+    del.className = 'lib-del'; del.textContent = '×'; del.title = 'Excluir da biblioteca';
+    del.addEventListener('click', (e) => { e.stopPropagation(); removeItem(item); });
+    card.appendChild(del);
     const row = document.createElement('div'); row.className = 'gen-actions';
     const mk = (label, title, fn) => { const b = document.createElement('button'); b.className = 'btn'; b.textContent = label; b.title = title; b.addEventListener('click', fn); return b; };
     row.appendChild(mk('Inserir', 'Inserir no slide (preenche)', () => insert(item)));
@@ -124,6 +148,19 @@
   function renderGallery() {
     const wrap = $('imgGallery'); wrap.innerHTML = '';
     for (const it of gallery) wrap.appendChild(galleryCard(it));
+  }
+
+  // Add a generated/edited image to the persistent library + the live list.
+  async function addToGallery(item) {
+    gallery.unshift(item);
+    renderGallery();
+    try { if (window.DoodleGallery) await DoodleGallery.add(item); } catch (_) {}
+  }
+  async function removeItem(item) {
+    gallery = gallery.filter((g) => g.id !== item.id);
+    renderGallery();
+    try { if (window.DoodleGallery) await DoodleGallery.remove(item.id); } catch (_) {}
+    setStatus('Imagem removida da biblioteca.', '');
   }
 
   async function generate() {
@@ -144,8 +181,7 @@
         const p = n > 1 ? fp + ' — variação ' + i + ', enquadramento ligeiramente diferente' : fp;
         const r = await doGenerate({ prompt: p, model: activeModel, refImageBase64: refB64, refMimeType: refMime });
         const full = await rescale1080('data:' + (r.mimeType || 'image/png') + ';base64,' + r.imageBase64);
-        gallery.unshift({ id: 'g' + Date.now() + '_' + i, dataUrl: full, prompt: prompt, model: activeModel });
-        renderGallery();
+        await addToGallery({ id: 'g' + Date.now() + '_' + i, dataUrl: full, prompt: prompt, model: activeModel, ts: Date.now() });
       }
       setStatus(n > 1 ? n + ' imagens geradas ✓' : 'Imagem gerada ✓', 'ok');
     } catch (e) {
@@ -166,9 +202,10 @@
     setStatus('Salva como referência de estilo ✓', 'ok');
   }
 
-  function edit(item) {
+  async function edit(item) {
     if (!window.OfficeBridge || !OfficeBridge.openImageEditDialog) { setStatus('Edição indisponível aqui.', 'warn'); return; }
-    OfficeBridge.openImageEditDialog(item.dataUrl, async (result) => {
+    const display = await downscaleForDisplay(item.dataUrl);   // light copy for the editor canvas
+    OfficeBridge.openImageEditDialog(display, async (result) => {
       if (!result || !result.prompt) { setStatus('Edição cancelada.', 'warn'); return; }
       setBusy(true);
       setStatus('Aplicando edição…');
@@ -184,8 +221,7 @@
           markupMimeType: 'image/png',
         });
         const full = await rescale1080('data:' + (r.mimeType || 'image/png') + ';base64,' + r.imageBase64);
-        gallery.unshift({ id: 'e' + Date.now(), dataUrl: full, prompt: result.prompt, model: activeModel });
-        renderGallery();
+        await addToGallery({ id: 'e' + Date.now(), dataUrl: full, prompt: result.prompt, model: activeModel, ts: Date.now() });
         setStatus('Edição aplicada ✓', 'ok');
       } catch (e) { setStatus(e && e.message ? e.message : 'Erro ao editar.', 'warn'); }
       finally { setBusy(false); }
@@ -202,6 +238,8 @@
   function boot() {
     if (!$('imgGenBtn')) return;
     renderChips(); renderRefs(); renderGallery();
+    // load the persistent library (IndexedDB) — survives reopening the add-in
+    if (window.DoodleGallery) DoodleGallery.list().then((items) => { gallery = items || []; renderGallery(); }).catch(() => {});
     // key (test mode) wiring
     if ($('geminiKey')) $('geminiKey').value = localKey();
     if ($('saveKeyBtn')) $('saveKeyBtn').addEventListener('click', () => {
