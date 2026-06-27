@@ -155,6 +155,7 @@ input[type=range]:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); bord
 .ref-item { position: relative; aspect-ratio: 16/9; border: 2px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; background: #fff; }
 .ref-item.on { border-color: var(--accent); }
 .ref-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ref-item .lib-del { display: flex; }   /* always show the remove (×) on references */
 .img-gallery { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
 .gen-card { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
 .gen-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
