@@ -67,19 +67,34 @@
     });
   }
 
-  // Draw `overlayUrl` (a transparent scribble layer) on top of `baseUrl`.
-  function compositeOver(baseUrl, overlayUrl) {
+  // Turn the scribble overlay into a clean WHITE-on-BLACK mask at the base's
+  // resolution (white = edit here). A light blur+threshold dilates thin strokes
+  // into a filled region so painting roughly over an area gives a usable mask.
+  function toMask(baseUrl, overlayUrl) {
     return new Promise((resolve) => {
       const b = new Image();
       b.onload = () => {
-        const cv = document.createElement('canvas'); cv.width = b.naturalWidth; cv.height = b.naturalHeight;
-        const cx = cv.getContext('2d'); cx.drawImage(b, 0, 0);
+        const W = b.naturalWidth, H = b.naturalHeight;
         const o = new Image();
-        o.onload = () => { cx.drawImage(o, 0, 0, cv.width, cv.height); resolve(cv.toDataURL('image/png')); };
-        o.onerror = () => resolve(baseUrl);
+        o.onload = () => {
+          const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+          const cx = cv.getContext('2d');
+          cx.fillStyle = '#000'; cx.fillRect(0, 0, W, H);
+          try { cx.filter = 'blur(' + Math.max(2, Math.round(Math.min(W, H) / 120)) + 'px)'; } catch (_) {}
+          cx.drawImage(o, 0, 0, W, H);            // strokes spread out
+          cx.filter = 'none';
+          const d = cx.getImageData(0, 0, W, H), px = d.data;
+          for (let i = 0; i < px.length; i += 4) {
+            const lit = (px[i] + px[i + 1] + px[i + 2]) > 24;   // any stroke colour => white
+            px[i] = px[i + 1] = px[i + 2] = lit ? 255 : 0; px[i + 3] = 255;
+          }
+          cx.putImageData(d, 0, 0);
+          resolve(cv.toDataURL('image/png'));
+        };
+        o.onerror = () => resolve(null);
         o.src = overlayUrl;
       };
-      b.onerror = () => resolve(baseUrl);
+      b.onerror = () => resolve(null);
       b.src = baseUrl;
     });
   }
@@ -234,14 +249,13 @@
       setStatus('Aplicando edição…');
       try {
         const base = item.dataUrl;
-        // composite the (small) scribble overlay over the full-res base here,
-        // so the model sees the marks in context without blowing localStorage.
-        const markup = result.markupDataUrl ? await compositeOver(base, result.markupDataUrl) : null;
+        // build a clean white/black MASK from the scribble (white = edit here),
+        // sent as a separate image so the model edits only that region.
+        const mask = result.markupDataUrl ? await toMask(base, result.markupDataUrl) : null;
         const r = await doEdit({
           prompt: result.prompt, model: activeModel,
           baseImageBase64: base.split(',')[1], baseMimeType: base.substring(5, base.indexOf(';')),
-          markupImageBase64: markup ? markup.split(',')[1] : null,
-          markupMimeType: 'image/png',
+          maskImageBase64: mask ? mask.split(',')[1] : null,
         });
         const full = await rescale1080('data:' + (r.mimeType || 'image/png') + ';base64,' + r.imageBase64);
         await addToGallery({ id: 'e' + Date.now(), dataUrl: full, prompt: result.prompt, model: activeModel, ts: Date.now() });

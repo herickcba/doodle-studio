@@ -14,7 +14,7 @@
       <h1>Editar imagem</h1>
       <span class="spacer"></span>
       <label class="opacity-ctl">Pincel
-        <input type="range" id="brushSize" min="2" max="80" value="16" aria-label="Tamanho do pincel" />
+        <input type="range" id="brushSize" min="4" max="120" value="36" aria-label="Tamanho do pincel" />
       </label>
       <input type="color" id="brushColor" value="#FF2D55" title="Cor da marcação" />
       <button class="btn icon" id="undoBtn" title="Desfazer">↶</button>
@@ -35,7 +35,7 @@
     <section class="sec">
       <div class="sec-head">O que mudar?</div>
       <textarea id="editPrompt" class="img-prompt" rows="6" placeholder="Ex.: troque o céu por um pôr do sol; remova o objeto marcado; deixe o casaco vermelho…"></textarea>
-      <div class="hint-inline" style="margin-top:8px;">Rabisque sobre as regiões a alterar (opcional) com o pincel sólido e descreva a edição. O modelo usa as marcações só como guia.</div>
+      <div class="hint-inline" style="margin-top:8px;"><b>Pinte por cima de TODA a região</b> que quer trocar (ex.: o legume) — isso vira a máscara: só a área pintada é editada, o resto fica idêntico. Sem pintar, a edição é semântica (descreva bem).</div>
     </section>
   </aside>
 

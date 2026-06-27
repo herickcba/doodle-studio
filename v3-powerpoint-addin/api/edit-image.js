@@ -8,22 +8,26 @@ const { resolveImageModel, callGemini, extractImage, readJson, fail } = require(
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return fail(res, 405, 'Use POST.');
   try {
-    const { prompt, model, baseImageBase64, baseMimeType, markupImageBase64, markupMimeType } = await readJson(req);
+    const { prompt, model, baseImageBase64, baseMimeType, maskImageBase64 } = await readJson(req);
     if (!baseImageBase64) return fail(res, 400, 'Imagem base ausente.');
     if (!prompt || !String(prompt).trim()) return fail(res, 400, 'Descreva a edição (prompt).');
 
-    const instruction = 'Você é um editor de imagem preciso. EDITE a primeira imagem (base) — NÃO gere uma cena nova. '
-      + 'Preserve EXATAMENTE: a cor e o conteúdo do fundo, a iluminação, as sombras, o enquadramento, a composição, '
-      + 'a perspectiva e tudo que não foi pedido. Altere SOMENTE o que a instrução pede (e, se houver segunda imagem, '
-      + 'apenas a região marcada — use os traços só como guia, sem incluí-los no resultado). Combine a iluminação e o '
-      + 'estilo do novo elemento com a cena original.\n\nInstrução: ' + String(prompt).trim();
+    const instruction = maskImageBase64
+      ? ('Você é um editor de imagem de precisão (inpainting). A IMAGEM 1 é a base. A IMAGEM 2 é uma MÁSCARA: '
+        + 'as áreas em BRANCO indicam EXATAMENTE onde editar; o PRETO deve permanecer pixel-a-pixel idêntico à base. '
+        + 'Edite APENAS a região branca da base aplicando a instrução abaixo, combinando perfeitamente iluminação, '
+        + 'sombras, perspectiva e estilo com a cena. NÃO gere uma cena nova; NÃO altere fundo, cor de fundo, '
+        + 'enquadramento ou composição. NÃO inclua a máscara no resultado.\n\nInstrução: ' + String(prompt).trim())
+      : ('Você é um editor de imagem de precisão. EDITE a imagem base mudando SOMENTE: ' + String(prompt).trim()
+        + '. Mantenha EXATAMENTE iguais o fundo e sua cor, a iluminação, as sombras, o enquadramento e a composição. '
+        + 'NÃO gere uma cena nova.');
 
     const parts = [
       { text: instruction },
       { inlineData: { mimeType: baseMimeType || 'image/png', data: baseImageBase64 } },
     ];
-    if (markupImageBase64) {
-      parts.push({ inlineData: { mimeType: markupMimeType || 'image/png', data: markupImageBase64 } });
+    if (maskImageBase64) {
+      parts.push({ inlineData: { mimeType: 'image/png', data: maskImageBase64 } });
     }
 
     const json = await callGemini(resolveImageModel(model), {
