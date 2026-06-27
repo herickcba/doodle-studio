@@ -156,6 +156,10 @@ input[type=range]:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); bord
 .ref-item.on { border-color: var(--accent); }
 .ref-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ref-item .lib-del { display: flex; }   /* always show the remove (×) on references */
+.ref-role { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 12px; color: var(--muted-2); }
+.ref-role[hidden] { display: none; }
+.ref-role .seg { margin: 0; }
+.ref-role .seg-btn { padding: 5px 11px; }
 .img-gallery { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
 .gen-card { position: relative; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
 .gen-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }

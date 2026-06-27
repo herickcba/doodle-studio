@@ -90,6 +90,7 @@
 
   function boot() {
     loadImage();
+    try { $('editPrompt').value = localStorage.getItem('doodle.editPrompt') || ''; } catch (_) {}
     canvas.addEventListener('pointerdown', onDown);
     canvas.addEventListener('pointermove', onMove);
     canvas.addEventListener('pointerup', onUp);

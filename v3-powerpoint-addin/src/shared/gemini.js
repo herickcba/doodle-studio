@@ -92,8 +92,11 @@
   }
 
   async function editImage(key, { prompt, model, baseImageBase64, baseMimeType, markupImageBase64, markupMimeType }) {
-    const instruction = 'Edite a primeira imagem (base) seguindo a instrução. A segunda imagem (se houver) tem marcações '
-      + 'indicando regiões a alterar — use só como guia, sem incluir os traços no resultado. Mantenha o resto fiel.\n\nInstrução: ' + String(prompt).trim();
+    const instruction = 'Você é um editor de imagem preciso. EDITE a primeira imagem (base) — NÃO gere uma cena nova. '
+      + 'Preserve EXATAMENTE: a cor e o conteúdo do fundo, a iluminação, as sombras, o enquadramento, a composição, '
+      + 'a perspectiva e tudo que não foi pedido. Altere SOMENTE o que a instrução pede (e, se houver segunda imagem, '
+      + 'apenas a região marcada — use os traços só como guia, sem incluí-los no resultado). Combine a iluminação e o '
+      + 'estilo do novo elemento com a cena original.\n\nInstrução: ' + String(prompt).trim();
     const parts = [{ text: instruction }, { inlineData: { mimeType: baseMimeType || 'image/png', data: baseImageBase64 } }];
     if (markupImageBase64) parts.push({ inlineData: { mimeType: markupMimeType || 'image/png', data: markupImageBase64 } });
     const json = await call(key, imageModel(model), {

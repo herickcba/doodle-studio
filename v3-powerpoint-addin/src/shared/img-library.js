@@ -9,7 +9,7 @@
 (function (global) {
   'use strict';
   const KEY = 'doodle.imgRefs';
-  const MAX_PX = 768;
+  const MAX_PX = 1280;   // bigger: a reference can also be the image-to-edit
 
   function list() {
     try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (_) { return []; }

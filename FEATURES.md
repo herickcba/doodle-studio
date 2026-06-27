@@ -9,7 +9,9 @@ Gera/edita imagens **1920×1080** (16:9). Modelos selecionáveis: **Nano Banana 
 |---|---|
 | Prompt → imagem | `improve-prompt` (Gemini texto → JSON) → `generate-image` (16:9) → reescala p/ 1920×1080 → galeria |
 | Toggle de **consistência** | chips `imagem·estilo·universo·textura·personagem·composição` enviados ao `improve-prompt` (varia o prompt mantendo o que estiver ligado) |
-| **Style reference** | upload/colar imagem (`DoodleImgRefs`, downscale, localStorage) → enviada junto na geração |
+| **Imagem enviada: Referência ou Editar** | toggle por imagem ativa. **Referência** = estilo numa geração nova. **Editar** = a imagem vira a BASE → abre o editor (marcar a região + prompt) p/ uma edição fiel que preserva o fundo/cena |
+| **Style reference** | upload/colar imagem (`DoodleImgRefs`, ≤1280px, localStorage) → enviada junto na geração |
+| Edição fiel | instrução reforçada: "EDITE a base, NÃO gere cena nova; preserve fundo/luz/composição; mude só o pedido". Marcar a região = controle preciso |
 | **Batch** | 1–4 imagens em sequência |
 | Inserir no slide | `OfficeBridge.insertImage` preenche o slide (16:9) |
 | **Editar** | tela grande (`imgedit.html`) com **pincel sólido** (sem giz) → base + marcação + prompt → `edit-image` |

@@ -16,6 +16,7 @@
 
   let activeModel = 'nano2';
   let activeRef = null;          // ref id or null
+  let refRole = 'style';         // 'style' (generate inspired) | 'edit' (edit this image)
   const chips = new Set();       // active consistency keys
   let gallery = [];              // [{ id, dataUrl, prompt, model }]
   let busy = false;
@@ -27,7 +28,7 @@
   function setBusy(b) {
     busy = b;
     $('imgGenBtn').disabled = b;
-    $('imgGenBtn').textContent = b ? 'Gerando…' : '✦ Melhorar + Gerar';
+    if (b) $('imgGenBtn').textContent = 'Processando…'; else updateGenLabel();
   }
 
   async function api(path, body) {
@@ -127,6 +128,19 @@
       cell.addEventListener('click', () => { activeRef = (activeRef === it.id) ? null : it.id; renderRefs(); });
       wrap.appendChild(cell);
     }
+    // role toggle visible only when a reference is active
+    const roleBox = $('refRole');
+    if (roleBox) {
+      roleBox.hidden = !activeRef;
+      if (!activeRef) refRole = 'style';
+      roleBox.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('active', b.dataset.role === refRole));
+    }
+    updateGenLabel();
+  }
+
+  function updateGenLabel() {
+    const b = $('imgGenBtn'); if (!b || busy) return;
+    b.textContent = (activeRef && refRole === 'edit') ? '✎ Editar esta imagem' : '✦ Melhorar + Gerar';
   }
 
   function galleryCard(item) {
@@ -202,7 +216,16 @@
     setStatus('Salva como referência de estilo ✓', 'ok');
   }
 
-  async function edit(item) {
+  // Edit the active reference as the BASE image (not a style ref): opens the
+  // editor preloaded with it + the typed prompt, so the user can mark the
+  // region (e.g. the vegetable) and keep the rest of the scene.
+  function editUploaded() {
+    const ref = activeRef ? DoodleImgRefs.get(activeRef) : null;
+    if (!ref) { setStatus('Selecione a imagem a editar.', 'warn'); return; }
+    edit({ id: 'u' + Date.now(), dataUrl: ref.thumb, prompt: '', model: activeModel, ts: Date.now() }, $('imgPrompt').value.trim());
+  }
+
+  async function edit(item, initialPrompt) {
     if (!window.OfficeBridge || !OfficeBridge.openImageEditDialog) { setStatus('Edição indisponível aqui.', 'warn'); return; }
     const display = await downscaleForDisplay(item.dataUrl);   // light copy for the editor canvas
     OfficeBridge.openImageEditDialog(display, async (result) => {
@@ -225,7 +248,7 @@
         setStatus('Edição aplicada ✓', 'ok');
       } catch (e) { setStatus(e && e.message ? e.message : 'Erro ao editar.', 'warn'); }
       finally { setBusy(false); }
-    });
+    }, initialPrompt || '');
   }
 
   function refreshKeyUI() {
@@ -256,7 +279,12 @@
         document.querySelectorAll('#imgModel .seg-btn').forEach((x) => x.classList.toggle('active', x === b));
       });
     });
-    $('imgGenBtn').addEventListener('click', generate);
+    $('imgGenBtn').addEventListener('click', () => {
+      if (activeRef && refRole === 'edit') editUploaded(); else generate();
+    });
+    document.querySelectorAll('#refRole .seg-btn').forEach((b) => {
+      b.addEventListener('click', () => { refRole = b.dataset.role; renderRefs(); });
+    });
     $('imgRefBtn').addEventListener('click', () => $('imgRefFile').click());
     $('imgRefFile').addEventListener('change', (e) => {
       const f = e.target.files && e.target.files[0]; if (!f) return;

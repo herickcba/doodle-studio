@@ -312,9 +312,10 @@
   /* Open the image-edit dialog: shows `imageDataUrl`, lets the user mark it up
      with a solid brush and type an edit prompt. onResult receives
      { prompt, markupDataUrl }. Image + result pass through localStorage. */
-  function openImageEditDialog(imageDataUrl, onResult) {
+  function openImageEditDialog(imageDataUrl, onResult, initialPrompt) {
     try {
       localStorage.setItem('doodle.editImage', imageDataUrl || '');
+      localStorage.setItem('doodle.editPrompt', initialPrompt || '');
       localStorage.removeItem('doodle.editResult');
     } catch (_) {}
     const url = new URL('../dialog/imgedit.html', location.href).href;

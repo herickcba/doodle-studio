@@ -12,9 +12,11 @@ module.exports = async (req, res) => {
     if (!baseImageBase64) return fail(res, 400, 'Imagem base ausente.');
     if (!prompt || !String(prompt).trim()) return fail(res, 400, 'Descreva a edição (prompt).');
 
-    const instruction = 'Edite a primeira imagem (base) seguindo a instrução. A segunda imagem (quando houver) '
-      + 'são marcações/rabiscos indicando as regiões a alterar — use-as apenas como guia de onde editar, '
-      + 'sem incluir os traços no resultado. Mantenha o resto da imagem fiel.\n\nInstrução: ' + String(prompt).trim();
+    const instruction = 'Você é um editor de imagem preciso. EDITE a primeira imagem (base) — NÃO gere uma cena nova. '
+      + 'Preserve EXATAMENTE: a cor e o conteúdo do fundo, a iluminação, as sombras, o enquadramento, a composição, '
+      + 'a perspectiva e tudo que não foi pedido. Altere SOMENTE o que a instrução pede (e, se houver segunda imagem, '
+      + 'apenas a região marcada — use os traços só como guia, sem incluí-los no resultado). Combine a iluminação e o '
+      + 'estilo do novo elemento com a cena original.\n\nInstrução: ' + String(prompt).trim();
 
     const parts = [
       { text: instruction },
