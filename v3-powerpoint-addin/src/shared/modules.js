@@ -25,6 +25,11 @@
     document.querySelectorAll('.modtab').forEach((t) => {
       t.addEventListener('click', () => show(t.dataset.view));
     });
+    // Deep-link: ?view=type opens straight to a module (e.g. a ribbon button).
+    try {
+      const v = new URLSearchParams(location.search).get('view');
+      if (v && document.getElementById('view-' + v)) show(v);
+    } catch (_) {}
   }
 
   // Modules can register a callback to run when their view is shown.

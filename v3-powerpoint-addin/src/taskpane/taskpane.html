@@ -82,23 +82,33 @@
 
   <!-- ===================== Module: Tipografia ===================== -->
   <div class="view hidden" id="view-type" role="tabpanel">
-    <p class="mod-intro">Selecione um objeto ou texto e clique num estilo — aplica <b>fonte, tamanho, cor e ponto final</b> na hora. A <b>entrelinha</b> é finalizada por uma macro (1x setup, abaixo).</p>
+    <p class="mod-intro">Clique num estilo para aplicar <b>fonte, tamanho, cor e ponto final</b> à seleção. A <b>entrelinha</b> é aplicada pela macro do add-in (abaixo).</p>
     <div class="status" id="typeStatus">Selecione um objeto/texto e clique num estilo.</div>
 
     <div class="type-cards" id="typeCards"></div>
 
+    <section class="sec">
+      <div class="sec-head">Entrelinha (macro do add-in)</div>
+      <p class="hint-inline">O add-in <b>BG-Tipografia</b> aplica a entrelinha B+G (a API do PowerPoint não faz isso). Rode: <kbd>Option</kbd>+<kbd>F8</kbd> → escolha a macro.</p>
+      <div class="macro-run">
+        <div class="macro-info"><div class="macro-name">BG_AplicarEntrelinhaTudo</div><div class="macro-desc">Corrige em <b>todos os slides</b>.</div></div>
+        <button class="btn macro-copy" data-macro="BG_AplicarEntrelinhaTudo">Copiar nome</button>
+      </div>
+      <div class="macro-run">
+        <div class="macro-info"><div class="macro-name">BG_AplicarEntrelinha</div><div class="macro-desc">Corrige na <b>seleção</b>.</div></div>
+        <button class="btn macro-copy" data-macro="BG_AplicarEntrelinha">Copiar nome</button>
+      </div>
+      <div class="hint-inline" style="margin-top:8px;">Dica: dá pra fixar essas macros no Quick Access Toolbar (ícone no topo) pra 1 clique.</div>
+    </section>
+
     <details class="key-box" id="macroBox">
-      <summary><span class="key-dot on"></span> Entrelinha — macro (configurar 1×)</summary>
+      <summary><span class="key-dot"></span> Não tem o add-in? Instalar a macro</summary>
       <div class="key-body">
-        <p class="hint-inline" style="margin:8px 0 0;">A API do PowerPoint não define entrelinha por código. Aplique o estilo acima e rode <b>BG_AplicarEntrelinha</b> — ela lê o tamanho e acerta a entrelinha (0.8×/0.9×…). <b>BG_InserirBloco</b> cria uma caixa já 100% no estilo.</p>
+        <p class="hint-inline" style="margin:8px 0 0;">Copie o código e cole no editor de VBA (<kbd>Option</kbd>+<kbd>F11</kbd> → Inserir › Módulo), ou baixe o <code>.bas</code>.</p>
         <div class="img-row" style="margin:10px 0 0;">
           <button class="btn" id="copyMacroBtn">Copiar código</button>
           <a class="btn" id="downloadMacroBtn" href="../../assets/BG-Tipografia.bas" download>Baixar .bas</a>
         </div>
-        <ol class="macro-steps">
-          <li><kbd>Option</kbd>+<kbd>F11</kbd> → Inserir › Módulo → cole o código.</li>
-          <li>Selecione o texto/objeto → <kbd>Option</kbd>+<kbd>F8</kbd> → <b>BG_AplicarEntrelinha</b> (ou adicione ao Quick Access Toolbar para 1 clique).</li>
-        </ol>
       </div>
     </details>
 

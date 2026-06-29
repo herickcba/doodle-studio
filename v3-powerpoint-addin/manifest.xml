@@ -5,7 +5,7 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>74647E3E-4C47-4D22-8166-95594303BBD8</Id>
-  <Version>1.1.0.0</Version>
+  <Version>1.2.0.0</Version>
   <ProviderName>Doodle Studio</ProviderName>
   <DefaultLocale>pt-BR</DefaultLocale>
   <DisplayName DefaultValue="Doodle Studio" />
@@ -57,6 +57,22 @@
                     <SourceLocation resid="Doodle.Taskpane.Url" />
                   </Action>
                 </Control>
+                <Control xsi:type="Button" id="TypeOpenButton">
+                  <Label resid="Type.ButtonLabel" />
+                  <Supertip>
+                    <Title resid="Type.ButtonLabel" />
+                    <Description resid="Type.ButtonTip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Doodle.icon16" />
+                    <bt:Image size="32" resid="Doodle.icon32" />
+                    <bt:Image size="80" resid="Doodle.icon80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>TypeTaskpane</TaskpaneId>
+                    <SourceLocation resid="Type.Taskpane.Url" />
+                  </Action>
+                </Control>
               </Group>
             </OfficeTab>
           </ExtensionPoint>
@@ -71,13 +87,16 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Doodle.Taskpane.Url" DefaultValue="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html" />
+        <bt:Url id="Type.Taskpane.Url" DefaultValue="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html?view=type" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="Doodle.GroupLabel" DefaultValue="Doodle Studio" />
         <bt:String id="Doodle.ButtonLabel" DefaultValue="Doodle Studio" />
+        <bt:String id="Type.ButtonLabel" DefaultValue="Tipografia" />
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="Doodle.ButtonTip" DefaultValue="Abrir o Doodle Studio para desenhar e inserir no slide." />
+        <bt:String id="Type.ButtonTip" DefaultValue="Abrir os estilos tipográficos B+G na barra lateral." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

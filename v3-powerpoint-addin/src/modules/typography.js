@@ -152,6 +152,15 @@
     if (ref) ref.addEventListener('click', insertReference);
     const copyBtn = $('copyMacroBtn');
     if (copyBtn) copyBtn.addEventListener('click', copyMacro);
+    document.querySelectorAll('.macro-copy').forEach((b) => {
+      b.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(b.dataset.macro);
+          const prev = b.textContent; b.textContent = '✓ Copiado';
+          setTimeout(() => { b.textContent = prev; }, 1500);
+        } catch (_) { setStatus('Copie o nome: ' + b.dataset.macro, 'warn'); }
+      });
+    });
     // When the module is shown, hint if "apply to selection" isn't available.
     if (window.DoodleModules) {
       DoodleModules.onShow.type = () => {
