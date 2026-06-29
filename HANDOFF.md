@@ -1,4 +1,4 @@
-# Doodle Studio — Handoff Document
+# CBA Studio — Handoff Document
 
 > **Para a próxima IA:** este documento cobre 100% do projeto. Leia antes de tocar em qualquer arquivo.
 
@@ -6,7 +6,7 @@
 
 ## O que é este projeto
 
-**Doodle Studio** é uma ferramenta de desenho vetorial animado 100% offline, em arquivo único HTML/CSS/JS — sem build, sem dependências externas, sem CDN. Tudo roda no browser diretamente abrindo o arquivo.
+**CBA Studio** é uma ferramenta de desenho vetorial animado 100% offline, em arquivo único HTML/CSS/JS — sem build, sem dependências externas, sem CDN. Tudo roda no browser diretamente abrindo o arquivo.
 
 Existem **duas versões**:
 - `index.html` — **V1 (NUNCA MODIFICAR).** Versão estável de referência.

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  Instalador da faixa "Doodle Studio" (.ppam VBA + RibbonX).
+#  Instalador da faixa "CBA Studio" (.ppam VBA + RibbonX).
 #  Copia o add-in para a pasta do Office e registra no
 #  MicrosoftRegistrationDB (AutoLoad + Path) p/ a aba aparecer
 #  sozinha ao abrir o PowerPoint. (Espelha o BrightSlide.)
@@ -25,7 +25,7 @@ GC="$HOME/Library/Group Containers/UBF8T346G9.Office"
 DEST_DIR="$GC/User Content.localized/Add-Ins.localized/$ADDIN"
 DB="$GC/MicrosoftRegistrationDB.reg"
 
-echo "→ Instalando Doodle Studio…"
+echo "→ Instalando CBA Studio…"
 
 # 2) fechar o PowerPoint p/ recarregar o add-in
 osascript -e 'tell application "Microsoft PowerPoint" to quit' >/dev/null 2>&1 || true
@@ -81,4 +81,4 @@ else
 fi
 
 echo "✅ Instalado: $PPAM"
-echo "   Abra o PowerPoint → clique 'Enable Macros' na 1ª vez → a aba 'Doodle Studio' aparece."
+echo "   Abra o PowerPoint → clique 'Enable Macros' na 1ª vez → a aba 'CBA Studio' aparece."

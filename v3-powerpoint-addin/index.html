@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Doodle Studio para PowerPoint — Instalar</title>
+  <title>CBA Studio para PowerPoint — Instalar</title>
   <style>
     :root{
       --bg:#F0F0F1; --surface:#FFFFFF; --surface-2:#F2F2F4; --surface-3:#E8E8EB;
@@ -50,7 +50,7 @@
         <svg viewBox="0 0 24 24"><path d="M3 16c1.2-3.5 2-6.5 3.5-6.5S8 15 9.5 15s2-9 4-9 2.3 6 3.5 8.5"/><path d="M5 19c3-1.2 11-1.2 14 0"/></svg>
       </div>
       <div>
-        <h1>Doodle Studio para PowerPoint</h1>
+        <h1>CBA Studio para PowerPoint</h1>
         <p>Suplemento (add-in) de desenho à mão direto nos seus slides</p>
       </div>
     </header>
@@ -72,7 +72,7 @@
       <ol>
         <li><a href="instalar-mac.zip" download>Baixe o instalador (Mac)</a> e abra o arquivo <code>.zip</code>.</li>
         <li>No <code>instalar-mac.command</code>, clique com o <b>botão direito → Abrir</b> (na primeira vez o Mac pede confirmação; clique em <b>Abrir</b>).</li>
-        <li>Reabra o PowerPoint: <b>Inserir → Add-ins</b>, role até <b>Developer Add-ins</b> e clique em <b>Doodle Studio</b>.</li>
+        <li>Reabra o PowerPoint: <b>Inserir → Add-ins</b>, role até <b>Developer Add-ins</b> e clique em <b>CBA Studio</b>.</li>
       </ol>
       <p style="margin:14px 0 6px;font-size:13px;color:var(--muted-2);font-weight:700;">Prefere o Terminal? Cole esta linha e tecle Enter:</p>
       <pre>mkdir -p ~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef &amp;&amp; curl -fsSL https://doodle-studio-app.vercel.app/manifest.xml -o ~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef/doodle-studio.xml &amp;&amp; osascript -e 'tell application "Microsoft PowerPoint" to quit'</pre>
@@ -95,7 +95,7 @@
         <li>Botão direito na pasta: <b>Propriedades → Compartilhamento → Compartilhar</b>. Anote o caminho de rede (ex.: <code>\\SEU-PC\DoodleStudio</code>).</li>
         <li>No PowerPoint: <b>Arquivo → Opções → Central de Confiabilidade → Configurações da Central de Confiabilidade → Catálogos de Suplementos Confiáveis</b>. Cole o caminho, clique <b>Adicionar catálogo</b>, marque <b>Mostrar no Menu</b> e <b>OK</b>.</li>
         <li>Feche e reabra o PowerPoint.</li>
-        <li><b>Início → Add-ins</b> (ou Inserir → Suplementos) → aba <b>Pasta Compartilhada</b> → <b>Doodle Studio</b>.</li>
+        <li><b>Início → Add-ins</b> (ou Inserir → Suplementos) → aba <b>Pasta Compartilhada</b> → <b>CBA Studio</b>.</li>
       </ol>
       <p class="muted" style="margin:10px 0 0;">Guia oficial: <a href="https://learn.microsoft.com/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins?product=powerpoint" target="_blank" rel="noopener">catálogo de pasta compartilhada</a>.</p>
     </div>
@@ -117,7 +117,7 @@
     </div>
 
     <footer>
-      Doodle Studio · suplemento de PowerPoint · <a href="src/taskpane/taskpane.html">abrir o painel</a> (carrega só dentro do PowerPoint).
+      CBA Studio · suplemento de PowerPoint · <a href="src/taskpane/taskpane.html">abrir o painel</a> (carrega só dentro do PowerPoint).
     </footer>
   </div>
 </body>

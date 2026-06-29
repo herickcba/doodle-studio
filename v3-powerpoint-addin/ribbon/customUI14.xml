@@ -1,38 +1,39 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<!-- Doodle Studio — aba de ribbon (RibbonX). Callbacks em BG_DoodleStudio.bas -->
+<!-- CBA Studio — aba de ribbon (RibbonX). Callbacks em BG_DoodleStudio.bas -->
 <customUI onLoad="OnLoad" xmlns="http://schemas.microsoft.com/office/2009/07/customui">
   <ribbon>
     <tabs>
-      <tab id="DoodleTab" label="Doodle Studio" insertAfterMso="TabHome">
+      <tab id="DoodleTab" label="CBA Studio" insertAfterMso="TabHome">
         <group id="dsGrpTipografia" label="Tipografia">
-          <button id="dsHero" label="Hero" image="dsHero" onAction="ApplyStyle"
-            screentip="Hero Statement" supertip="Avenir Next Bold · 120pt · 0.8x · rosa, ponto azul (sobre fundo azul → branco)."/>
-          <button id="dsMega" label="Mega" image="dsMega" onAction="ApplyStyle"
-            screentip="Mega Statement" supertip="Avenir Next Bold · 80pt · 0.9x · azul."/>
-          <button id="dsH1" label="H1 Título" image="dsH1" onAction="ApplyStyle"
-            screentip="H1 · Título de Página" supertip="Avenir Next Bold · 60pt · 0.9x · rosa."/>
-          <button id="dsLabelSec" label="Label de Seção" image="dsLabelSec" onAction="ApplyStyle"
-            screentip="Label de Seção" supertip="Avenir Next Bold · 60pt · 0.9x · rosa."/>
-          <button id="dsCorpo" label="Corpo de Texto" image="dsCorpo" onAction="ApplyStyle"
-            screentip="Corpo de Texto" supertip="Avenir Next Regular · 44pt · 1.15x · azul."/>
-          <button id="dsH3" label="H3" image="dsH3" onAction="ApplyStyle"
-            screentip="H3 · Corpo Descritivo" supertip="Avenir Next Bold · 34pt · 0.95x · rosa."/>
-          <button id="dsH4" label="H4" image="dsH4" onAction="ApplyStyle"
-            screentip="H4 · Subtítulo de Pilar" supertip="Avenir Next Bold · 28pt · 1.0x · azul."/>
-          <button id="dsH5" label="H5" image="dsH5" onAction="ApplyStyle"
-            screentip="H5 · Texto Descritivo" supertip="Avenir Next Regular · 24pt · 1.0x · azul."/>
-          <button id="dsCorpoPilar" label="Corpo de Pilar" image="dsCorpoPilar" onAction="ApplyStyle"
-            screentip="Corpo de Pilar" supertip="Avenir Next Regular · 20pt · 1.3x · azul."/>
-          <button id="dsEyebrow" label="Eyebrow" image="dsEyebrow" onAction="ApplyStyle"
-            screentip="Label / Eyebrow" supertip="Avenir Next Bold · 18pt · 1.0x · rosa."/>
-          <button id="dsCaption" label="Caption" image="dsCaption" onAction="ApplyStyle"
-            screentip="Legenda / Caption" supertip="Avenir Next Regular · 16pt · 1.3x · azul."/>
+          <gallery id="dsStyleGallery" label="Estilos" image="dsHero" size="large"
+            columns="2" itemWidth="88" itemHeight="52" showItemLabel="true" showItemImage="true"
+            onAction="ApplyStyleGallery"
+            screentip="Estilos B+G" supertip="Escolha um estilo: aplica fonte, tamanho, cor, ponto final e a entrelinha exata — num clique. Vale para o texto ou o objeto selecionado.">
+            <item id="dsHero"       image="prevHero"       label="Hero"/>
+            <item id="dsMega"       image="prevMega"       label="Mega"/>
+            <item id="dsH1"         image="prevH1"         label="H1 Título"/>
+            <item id="dsLabelSec"   image="prevLabelSec"   label="Label de Seção"/>
+            <item id="dsCorpo"      image="prevCorpo"      label="Corpo de Texto"/>
+            <item id="dsH3"         image="prevH3"         label="H3"/>
+            <item id="dsH4"         image="prevH4"         label="H4"/>
+            <item id="dsH5"         image="prevH5"         label="H5"/>
+            <item id="dsCorpoPilar" image="prevCorpoPilar" label="Corpo de Pilar"/>
+            <item id="dsEyebrow"    image="prevEyebrow"    label="Eyebrow"/>
+            <item id="dsCaption"    image="prevCaption"    label="Caption"/>
+          </gallery>
         </group>
         <group id="dsGrpEntrelinha" label="Entrelinha">
           <button id="entreSel" label="Seleção" image="entreSel" size="large" onAction="Entrelinha"
-            screentip="Entrelinha na seleção" supertip="Aplica a entrelinha B+G ao texto/objeto selecionado, lendo o tamanho de cada parágrafo."/>
+            screentip="Entrelinha pelo tamanho (seleção)" supertip="Lê o tamanho de cada parágrafo da seleção e aplica a entrelinha B+G correspondente."/>
           <button id="entreTudo" label="Todos os slides" image="entreTudo" size="large" onAction="EntrelinhaTudo"
-            screentip="Entrelinha em todos os slides" supertip="Aplica a entrelinha B+G em todas as caixas de texto de todos os slides."/>
+            screentip="Entrelinha pelo tamanho (todos os slides)" supertip="Aplica a entrelinha B+G em todas as caixas de texto de todos os slides."/>
+          <separator id="dsSepEntre"/>
+          <button id="ent08"  label="0,8×"  image="ent08"  onAction="SetEntrelinha" screentip="Entrelinha 0,8×" supertip="Fixa a entrelinha da seleção em 0,8× (múltiplo)."/>
+          <button id="ent09"  label="0,9×"  image="ent09"  onAction="SetEntrelinha" screentip="Entrelinha 0,9×" supertip="Fixa a entrelinha da seleção em 0,9× (múltiplo)."/>
+          <button id="ent095" label="0,95×" image="ent095" onAction="SetEntrelinha" screentip="Entrelinha 0,95×" supertip="Fixa a entrelinha da seleção em 0,95× (múltiplo)."/>
+          <button id="ent10"  label="1,0×"  image="ent10"  onAction="SetEntrelinha" screentip="Entrelinha 1,0×" supertip="Fixa a entrelinha da seleção em 1,0× (múltiplo)."/>
+          <button id="ent115" label="1,15×" image="ent115" onAction="SetEntrelinha" screentip="Entrelinha 1,15×" supertip="Fixa a entrelinha da seleção em 1,15× (múltiplo)."/>
+          <button id="ent13"  label="1,3×"  image="ent13"  onAction="SetEntrelinha" screentip="Entrelinha 1,3×" supertip="Fixa a entrelinha da seleção em 1,3× (múltiplo)."/>
         </group>
       </tab>
     </tabs>

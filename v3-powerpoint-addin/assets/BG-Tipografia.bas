@@ -3,7 +3,7 @@ Attribute VB_Name = "BG_Tipografia"
 '  B+G Tipografia — entrelinha (PowerPoint VBA add-in)
 '  A API de add-in nao seta entrelinha; o VBA seta. A escolha de
 '  tipografia (fonte/tamanho/cor/ponto) e feita na barra lateral
-'  do Doodle Studio; este modulo cuida SO da entrelinha.
+'  do CBA Studio; este modulo cuida SO da entrelinha.
 '
 '  BG_AplicarEntrelinha      -> aplica a entrelinha B+G a SELECAO
 '                               (texto, objeto[s] e grupos).

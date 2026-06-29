@@ -1,8 +1,8 @@
-# Doodle Studio v3 — Add-in de PowerPoint
+# CBA Studio v3 — Add-in de PowerPoint
 
 Desenhe doodles vetoriais (textura giz, suavização, falhas na tinta) **sobre o slide atual** e insira o resultado como **imagem PNG transparente**, posicionada onde você desenhou.
 
-Reaproveita o motor de desenho do Doodle Studio web (`../v2.html`). Sem animação (MVP).
+Reaproveita o motor de desenho do CBA Studio web (`../v2.html`). Sem animação (MVP).
 
 ## O que está incluído (MVP)
 Cor + paleta, opacidade, tamanho, textura **giz**, suavização (movimento + vetorial), falhas na tinta (quebra/falha/respingo + intensidade + tamanho da quebra), **linha reta com `Shift`**, desfazer/refazer, e **inserir no slide**.
@@ -53,7 +53,7 @@ Pré-requisito: Node.js.
 4. **Sideload no PowerPoint**:
    - **Windows/Mac (desktop)**: PowerPoint → **Inserir → Suplementos → Meus Suplementos → Carregar Meu Suplemento** → escolha `manifest.xml`.
    - **Web (powerpoint.office.com)**: **Inserir → Suplementos → Carregar Meu Suplemento** → `manifest.xml`.
-   - O painel "Doodle Studio" abre à direita.
+   - O painel "CBA Studio" abre à direita.
 
 5. **Usar**: abra um slide → **⟳ Atualizar slide** (carrega o fundo) → desenhe → **Inserir no slide**.
 

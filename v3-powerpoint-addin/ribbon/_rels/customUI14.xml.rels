@@ -1,16 +1,33 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="dsHero" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsHero.png"/>
-  <Relationship Id="dsMega" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsMega.png"/>
-  <Relationship Id="dsH1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsH1.png"/>
-  <Relationship Id="dsLabelSec" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsLabelSec.png"/>
+  <Relationship Id="dsCaption" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCaption.png"/>
   <Relationship Id="dsCorpo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCorpo.png"/>
+  <Relationship Id="dsCorpoPilar" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCorpoPilar.png"/>
+  <Relationship Id="dsEyebrow" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsEyebrow.png"/>
+  <Relationship Id="dsH1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsH1.png"/>
   <Relationship Id="dsH3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsH3.png"/>
   <Relationship Id="dsH4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsH4.png"/>
   <Relationship Id="dsH5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsH5.png"/>
-  <Relationship Id="dsCorpoPilar" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCorpoPilar.png"/>
-  <Relationship Id="dsEyebrow" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsEyebrow.png"/>
-  <Relationship Id="dsCaption" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCaption.png"/>
+  <Relationship Id="dsHero" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsHero.png"/>
+  <Relationship Id="dsLabelSec" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsLabelSec.png"/>
+  <Relationship Id="dsMega" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsMega.png"/>
+  <Relationship Id="ent08" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ent08.png"/>
+  <Relationship Id="ent09" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ent09.png"/>
+  <Relationship Id="ent095" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ent095.png"/>
+  <Relationship Id="ent10" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ent10.png"/>
+  <Relationship Id="ent115" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ent115.png"/>
+  <Relationship Id="ent13" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ent13.png"/>
   <Relationship Id="entreSel" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/entreSel.png"/>
   <Relationship Id="entreTudo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/entreTudo.png"/>
+  <Relationship Id="prevCaption" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevCaption.png"/>
+  <Relationship Id="prevCorpo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevCorpo.png"/>
+  <Relationship Id="prevCorpoPilar" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevCorpoPilar.png"/>
+  <Relationship Id="prevEyebrow" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevEyebrow.png"/>
+  <Relationship Id="prevH1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevH1.png"/>
+  <Relationship Id="prevH3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevH3.png"/>
+  <Relationship Id="prevH4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevH4.png"/>
+  <Relationship Id="prevH5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevH5.png"/>
+  <Relationship Id="prevHero" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevHero.png"/>
+  <Relationship Id="prevLabelSec" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevLabelSec.png"/>
+  <Relationship Id="prevMega" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevMega.png"/>
 </Relationships>

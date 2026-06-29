@@ -6,9 +6,9 @@
            xsi:type="TaskPaneApp">
   <Id>6FD3AA09-D91C-49FA-842B-1A2FCD893E01</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>Doodle Studio</ProviderName>
+  <ProviderName>CBA Studio</ProviderName>
   <DefaultLocale>pt-BR</DefaultLocale>
-  <DisplayName DefaultValue="Doodle Studio" />
+  <DisplayName DefaultValue="CBA Studio" />
   <Description DefaultValue="Desenhe doodles vetoriais (giz, suavização, falhas na tinta) e insira no slide como imagem." />
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-80.png" />

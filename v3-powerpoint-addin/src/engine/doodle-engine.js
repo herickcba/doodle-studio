@@ -1,5 +1,5 @@
 /* ============================================================
-   Doodle Engine — extracted from Doodle Studio v2.html
+   Doodle Engine — extracted from CBA Studio v2.html
    Pure vector drawing core (no animation, no timeline).
    Frame coordinate space is fixed at 1920x1080 (16:9).
    Exposes window.Doodle.

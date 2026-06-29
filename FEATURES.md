@@ -1,6 +1,6 @@
-# Doodle Studio — Web (completo) × Add-in PowerPoint
+# CBA Studio — Web (completo) × Add-in PowerPoint
 
-> **Add-in vira plataforma multi-módulo.** O task pane (sidebar) tem **abas no topo** (`src/shared/modules.js`): **Doodle** e **Imagem** (Nano Banana). A **Tipografia** migrou pro **ribbon** (faixa "Doodle Studio", `.ppam` VBA — ver seção abaixo), porque VBA aplica a entrelinha que o Office.js não faz. Doodle/Imagem ficam no painel (canvas/Gemini precisam de HTML).
+> **Add-in vira plataforma multi-módulo.** O task pane (sidebar) tem **abas no topo** (`src/shared/modules.js`): **Doodle** e **Imagem** (Nano Banana). A **Tipografia** migrou pro **ribbon** (faixa "CBA Studio", `.ppam` VBA — ver seção abaixo), porque VBA aplica a entrelinha que o Office.js não faz. Doodle/Imagem ficam no painel (canvas/Gemini precisam de HTML).
 
 ## Módulo Imagem (Nano Banana / Gemini) — add-in
 Gera/edita imagens **1920×1080** (16:9). Modelos selecionáveis: **Nano Banana 2** (`gemini-3.1-flash-image`, default) e **Pro** (`gemini-3-pro-image`). Arquivos: `src/modules/image-gen.js`, `src/shared/img-library.js`, dialog `src/dialog/imgedit.html`, funções `api/*`.
@@ -25,7 +25,7 @@ Gera/edita imagens **1920×1080** (16:9). Modelos selecionáveis: **Nano Banana 
 Chave **nunca** no repo (`.env.local`/`.gitignore`; `.env.example` = placeholder).
 
 ## Módulo Tipografia (estilos B+G) — **faixa de ribbon VBA** (`.ppam` + RibbonX)
-A Tipografia **saiu da sidebar** e virou uma **aba de ribbon "Doodle Studio"** (estilo BrightSlide), 100% VBA. Cada estilo aplica **num clique**: fonte (Avenir Next) + tamanho + negrito + cor + ponto final colorido + **ENTRELINHA exata** (o que o Office.js não consegue). Validado ao vivo no Mac. Arquivos: VBA `assets/BG-DoodleStudio.bas`; ribbon `ribbon/customUI14.xml` (+ `_rels` + `images/*.png`, ícones gerados por `tools/gen-ribbon-icons.py`); build `tools/build-ribbon-ppam.sh`; instalador `tools/install-doodle-ribbon.command` / `uninstall-…`.
+A Tipografia **saiu da sidebar** e virou uma **aba de ribbon "CBA Studio"** (estilo BrightSlide), 100% VBA. Cada estilo aplica **num clique**: fonte (Avenir Next) + tamanho + negrito + cor + ponto final colorido + **ENTRELINHA exata** (o que o Office.js não consegue). Validado ao vivo no Mac. Arquivos: VBA `assets/BG-DoodleStudio.bas`; ribbon `ribbon/customUI14.xml` (+ `_rels` + `images/*.png`, ícones gerados por `tools/gen-ribbon-icons.py`); build `tools/build-ribbon-ppam.sh`; instalador `tools/install-doodle-ribbon.command` / `uninstall-…`.
 
 | Atributo | Como é aplicado |
 |---|---|

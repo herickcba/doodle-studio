@@ -5,10 +5,10 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>74647E3E-4C47-4D22-8166-95594303BBD8</Id>
-  <Version>1.3.0.0</Version>
-  <ProviderName>Doodle Studio</ProviderName>
+  <Version>1.4.0.0</Version>
+  <ProviderName>CBA Studio</ProviderName>
   <DefaultLocale>pt-BR</DefaultLocale>
-  <DisplayName DefaultValue="Doodle Studio" />
+  <DisplayName DefaultValue="CBA Studio" />
   <Description DefaultValue="Desenhe doodles vetoriais (giz, suavização) e insira no slide como imagem." />
   <IconUrl DefaultValue="https://doodle-studio-app.vercel.app/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://doodle-studio-app.vercel.app/assets/icon-80.png" />
@@ -90,12 +90,12 @@
         <bt:Url id="Image.Taskpane.Url" DefaultValue="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html?view=image" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Doodle.GroupLabel" DefaultValue="Doodle Studio" />
-        <bt:String id="Doodle.ButtonLabel" DefaultValue="Doodle Studio" />
+        <bt:String id="Doodle.GroupLabel" DefaultValue="CBA Studio" />
+        <bt:String id="Doodle.ButtonLabel" DefaultValue="Doodle" />
         <bt:String id="Image.ButtonLabel" DefaultValue="Imagem" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="Doodle.ButtonTip" DefaultValue="Abrir o Doodle Studio para desenhar e inserir no slide." />
+        <bt:String id="Doodle.ButtonTip" DefaultValue="Abrir o Doodle (desenho vetorial) no painel do CBA Studio." />
         <bt:String id="Image.ButtonTip" DefaultValue="Abrir o gerador de imagens (Nano Banana) na barra lateral." />
       </bt:LongStrings>
     </Resources>

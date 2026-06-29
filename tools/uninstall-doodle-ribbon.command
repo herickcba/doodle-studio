@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  Desinstalador da faixa "Doodle Studio".
+#  Desinstalador da faixa "CBA Studio".
 #  Remove o registro no MicrosoftRegistrationDB e apaga o .ppam.
 #  Duplo-clique, ou: tools/uninstall-doodle-ribbon.command
 # ============================================================
@@ -11,7 +11,7 @@ GC="$HOME/Library/Group Containers/UBF8T346G9.Office"
 DEST_DIR="$GC/User Content.localized/Add-Ins.localized/$ADDIN"
 DB="$GC/MicrosoftRegistrationDB.reg"
 
-echo "→ Desinstalando Doodle Studio…"
+echo "→ Desinstalando CBA Studio…"
 osascript -e 'tell application "Microsoft PowerPoint" to quit' >/dev/null 2>&1 || true
 sleep 1
 
@@ -35,4 +35,4 @@ if [ -f "$DB" ]; then
 fi
 
 rm -rf "$DEST_DIR"
-echo "✅ Removido. Reabra o PowerPoint — a aba 'Doodle Studio' some."
+echo "✅ Removido. Reabra o PowerPoint — a aba 'CBA Studio' some."

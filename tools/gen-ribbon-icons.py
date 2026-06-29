@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gera os icones PNG do ribbon "Doodle Studio" (estilos de tipografia + entrelinha).
+Gera os icones PNG do ribbon "CBA Studio" (estilos de tipografia + entrelinha).
 Glifos em Avenir Next nas cores da marca, fundo transparente, 32x32.
 Saida: v3-powerpoint-addin/ribbon/images/<id>.png  (ids batem com customUI14.xml image=)
 
@@ -90,6 +90,24 @@ for name, (txt, col, dot) in GLYPHS.items():
 
 draw_lines(AZUL, n=3).save(os.path.join(OUT, "entreSel.png"))
 draw_lines(AZUL, n=4).save(os.path.join(OUT, "entreTudo.png"))
+
+
+def draw_step(label, color=AZUL):
+    """Icone de step de entrelinha: o multiplicador como numero."""
+    img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    px = 17 if len(label) <= 3 else 13
+    f = font(px, bold=True)
+    bb = d.textbbox((0, 0), label, font=f)
+    w, h = bb[2] - bb[0], bb[3] - bb[1]
+    d.text(((SIZE - w) / 2 - bb[0], (SIZE - h) / 2 - bb[1]), label, font=f, fill=color)
+    return img
+
+
+STEPS = {"ent08": "0,8", "ent09": "0,9", "ent095": "0,95",
+         "ent10": "1,0", "ent115": "1,15", "ent13": "1,3"}
+for sid, lbl in STEPS.items():
+    draw_step(lbl).save(os.path.join(OUT, sid + ".png"))
 
 print("Icones gerados em", os.path.normpath(OUT))
 for fn in sorted(os.listdir(OUT)):

@@ -1,7 +1,7 @@
 Attribute VB_Name = "BG_DoodleStudio"
 ' ============================================================
-'  Doodle Studio — Tipografia B+G no ribbon (PowerPoint VBA)
-'  Aba "Doodle Studio" (customUI14.xml) -> chama os callbacks
+'  CBA Studio — Tipografia B+G no ribbon (PowerPoint VBA)
+'  Aba "CBA Studio" (customUI14.xml) -> chama os callbacks
 '  deste modulo. Cada estilo aplica, num clique:
 '    FONTE (Avenir Next) + TAMANHO + NEGRITO + COR
 '    + PONTO FINAL colorido + ENTRELINHA exata.
@@ -43,20 +43,38 @@ End Sub
 
 ' Aplica o estilo correspondente ao botao clicado.
 Public Sub ApplyStyle(control As IRibbonControl)
+    ApplyStyleById control.id
+End Sub
+
+' Galeria de estilos: o item clicado traz o id (= chave de SpecFor).
+Public Sub ApplyStyleGallery(control As IRibbonControl, id As String, index As Integer)
+    ApplyStyleById id
+End Sub
+
+Private Sub ApplyStyleById(ByVal styleId As String)
     Dim spec As StyleSpec, sel As Object, shp As Object, n As Long
-    spec = SpecFor(control.id)
+    spec = SpecFor(styleId)
     If Not spec.found Then Exit Sub
     Set sel = ActiveWindow.Selection
     n = 0
     If sel.Type = ppSelectionText Then
-        ApplyStyleToRange sel.TextRange, spec, False
-        n = 1
+        If sel.TextRange.Length > 0 Then
+            ApplyStyleToRange sel.TextRange, spec, False
+            n = 1
+        Else
+            ' so' um cursor (sem selecao): aplica na caixa inteira (com bg-aware)
+            On Error Resume Next
+            For Each shp In sel.ShapeRange
+                n = n + ApplyStyleToShape(shp, spec)
+            Next shp
+            On Error GoTo 0
+        End If
     ElseIf sel.Type = ppSelectionShapes Then
         For Each shp In sel.ShapeRange
             n = n + ApplyStyleToShape(shp, spec)
         Next shp
     End If
-    If n = 0 Then MsgBox "Selecione um texto ou um objeto com texto.", vbInformation, "Doodle Studio"
+    If n = 0 Then MsgBox "Selecione um texto ou um objeto com texto.", vbInformation, "CBA Studio"
 End Sub
 
 Public Sub Entrelinha(control As IRibbonControl)
@@ -66,6 +84,71 @@ End Sub
 Public Sub EntrelinhaTudo(control As IRibbonControl)
     DoEntrelinhaTudo
 End Sub
+
+' Entrelinha FIXA por step (botoes 0,8x ... 1,3x) aplicada a' selecao.
+Public Sub SetEntrelinha(control As IRibbonControl)
+    Dim mult As Single, sel As Object, shp As Object, n As Long
+    mult = StepMult(control.id)
+    If mult <= 0 Then Exit Sub
+    Set sel = ActiveWindow.Selection
+    n = 0
+    If sel.Type = ppSelectionText Then
+        If sel.TextRange.Length > 0 Then
+            SetSpacingOnRange sel.TextRange, mult
+            n = 1
+        Else
+            On Error Resume Next
+            For Each shp In sel.ShapeRange
+                n = n + SetSpacingOnShape(shp, mult)
+            Next shp
+            On Error GoTo 0
+        End If
+    ElseIf sel.Type = ppSelectionShapes Then
+        For Each shp In sel.ShapeRange
+            n = n + SetSpacingOnShape(shp, mult)
+        Next shp
+    End If
+    If n = 0 Then MsgBox "Selecione um texto ou um objeto com texto.", vbInformation, "CBA Studio"
+End Sub
+
+Private Function StepMult(ByVal id As String) As Single
+    Select Case id
+        Case "ent08":  StepMult = 0.8
+        Case "ent09":  StepMult = 0.9
+        Case "ent095": StepMult = 0.95
+        Case "ent10":  StepMult = 1#
+        Case "ent115": StepMult = 1.15
+        Case "ent13":  StepMult = 1.3
+        Case Else:     StepMult = 0
+    End Select
+End Function
+
+Private Sub SetSpacingOnRange(ByVal tr As Object, ByVal mult As Single)
+    Dim p As Long, para As Object
+    For p = 1 To tr.Paragraphs.Count
+        Set para = tr.Paragraphs(p, 1)
+        para.ParagraphFormat.LineRuleWithin = msoTrue
+        para.ParagraphFormat.SpaceWithin = mult
+    Next p
+End Sub
+
+Private Function SetSpacingOnShape(ByVal shp As Object, ByVal mult As Single) As Long
+    Dim cnt As Long, s As Object
+    cnt = 0
+    On Error Resume Next
+    If shp.Type = msoGroup Then
+        For Each s In shp.GroupItems
+            cnt = cnt + SetSpacingOnShape(s, mult)
+        Next s
+    ElseIf shp.HasTextFrame Then
+        If shp.TextFrame.HasText Then
+            SetSpacingOnRange shp.TextFrame.TextRange, mult
+            cnt = 1
+        End If
+    End If
+    On Error GoTo 0
+    SetSpacingOnShape = cnt
+End Function
 
 ' Fallback p/ Option+F8 (subs sem argumentos aparecem na caixa de Macros)
 Public Sub BG_AplicarEntrelinha()
@@ -202,7 +285,7 @@ Private Sub DoEntrelinhaSelecao()
             n = n + ApplyToShape(shp)
         Next shp
     End If
-    If n = 0 Then MsgBox "Selecione um texto ou um objeto com texto.", vbInformation, "Doodle Studio"
+    If n = 0 Then MsgBox "Selecione um texto ou um objeto com texto.", vbInformation, "CBA Studio"
 End Sub
 
 Private Sub DoEntrelinhaTudo()
@@ -213,7 +296,7 @@ Private Sub DoEntrelinhaTudo()
             n = n + ApplyToShape(shp)
         Next shp
     Next sld
-    MsgBox "Entrelinha B+G aplicada em " & n & " caixas de texto, em todos os slides.", vbInformation, "Doodle Studio"
+    MsgBox "Entrelinha B+G aplicada em " & n & " caixas de texto, em todos os slides.", vbInformation, "CBA Studio"
 End Sub
 
 Private Sub ApplySpacingToRange(ByVal tr As Object)
