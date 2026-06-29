@@ -132,10 +132,26 @@
     }
   }
 
+  // Copy the macro code to the clipboard, stripping the `Attribute VB_Name`
+  // line (valid in a .bas import, but errors when pasted into the VBE).
+  async function copyMacro() {
+    const btn = $('copyMacroBtn');
+    try {
+      const resp = await fetch('../../assets/BG-Tipografia.bas');
+      const text = (await resp.text()).split('\n').filter((l) => l.indexOf('Attribute VB_Name') !== 0).join('\n').replace(/^\n+/, '');
+      await navigator.clipboard.writeText(text);
+      if (btn) { btn.textContent = '✓ Copiado'; setTimeout(() => { btn.textContent = 'Copiar código'; }, 2000); }
+    } catch (e) {
+      setStatus('Não foi possível copiar — use "Baixar .bas".', 'warn');
+    }
+  }
+
   function boot() {
     renderCards();
     const ref = $('insertRefBtn');
     if (ref) ref.addEventListener('click', insertReference);
+    const copyBtn = $('copyMacroBtn');
+    if (copyBtn) copyBtn.addEventListener('click', copyMacro);
     // When the module is shown, hint if "apply to selection" isn't available.
     if (window.DoodleModules) {
       DoodleModules.onShow.type = () => {

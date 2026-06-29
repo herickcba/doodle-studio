@@ -82,13 +82,28 @@
 
   <!-- ===================== Module: Tipografia ===================== -->
   <div class="view hidden" id="view-type" role="tabpanel">
-    <p class="mod-intro">Selecione um objeto ou texto e clique num estilo. A <b>entrelinha exata</b> vem da referência (copie a caixa ou use o Pincel de Formatação).</p>
-    <button class="btn primary block" id="insertRefBtn">＋ Inserir referência de estilos</button>
+    <p class="mod-intro">Selecione um objeto ou texto e clique num estilo — aplica <b>fonte, tamanho, cor e ponto final</b> na hora. A <b>entrelinha</b> é finalizada por uma macro (1x setup, abaixo).</p>
     <div class="status" id="typeStatus">Selecione um objeto/texto e clique num estilo.</div>
 
     <div class="type-cards" id="typeCards"></div>
 
-    <div class="hint">A entrelinha (0.8x/0.9x) é aplicada por meio da <b>referência</b> — a API do PowerPoint não define espaçamento de linha por código. Fonte, tamanho, cor e ponto final são aplicados na hora à seleção.</div>
+    <details class="key-box" id="macroBox">
+      <summary><span class="key-dot on"></span> Entrelinha — macro (configurar 1×)</summary>
+      <div class="key-body">
+        <p class="hint-inline" style="margin:8px 0 0;">A API do PowerPoint não define entrelinha por código. Aplique o estilo acima e rode <b>BG_AplicarEntrelinha</b> — ela lê o tamanho e acerta a entrelinha (0.8×/0.9×…). <b>BG_InserirBloco</b> cria uma caixa já 100% no estilo.</p>
+        <div class="img-row" style="margin:10px 0 0;">
+          <button class="btn" id="copyMacroBtn">Copiar código</button>
+          <a class="btn" id="downloadMacroBtn" href="../../assets/BG-Tipografia.bas" download>Baixar .bas</a>
+        </div>
+        <ol class="macro-steps">
+          <li><kbd>Option</kbd>+<kbd>F11</kbd> → Inserir › Módulo → cole o código.</li>
+          <li>Selecione o texto/objeto → <kbd>Option</kbd>+<kbd>F8</kbd> → <b>BG_AplicarEntrelinha</b> (ou adicione ao Quick Access Toolbar para 1 clique).</li>
+        </ol>
+      </div>
+    </details>
+
+    <button class="btn block" id="insertRefBtn" style="margin-top:12px;">＋ Inserir referência de estilos (alternativa)</button>
+    <div class="hint">Alternativa sem macro: insira a referência e use o <b>Pincel de Formatação</b>/copiar — também carrega a entrelinha.</div>
   </div><!-- /view-type -->
 
   <!-- ===================== Module: Imagem ===================== -->
