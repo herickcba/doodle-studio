@@ -5,7 +5,7 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>74647E3E-4C47-4D22-8166-95594303BBD8</Id>
-  <Version>1.2.0.0</Version>
+  <Version>1.3.0.0</Version>
   <ProviderName>Doodle Studio</ProviderName>
   <DefaultLocale>pt-BR</DefaultLocale>
   <DisplayName DefaultValue="Doodle Studio" />
@@ -57,11 +57,11 @@
                     <SourceLocation resid="Doodle.Taskpane.Url" />
                   </Action>
                 </Control>
-                <Control xsi:type="Button" id="TypeOpenButton">
-                  <Label resid="Type.ButtonLabel" />
+                <Control xsi:type="Button" id="ImageOpenButton">
+                  <Label resid="Image.ButtonLabel" />
                   <Supertip>
-                    <Title resid="Type.ButtonLabel" />
-                    <Description resid="Type.ButtonTip" />
+                    <Title resid="Image.ButtonLabel" />
+                    <Description resid="Image.ButtonTip" />
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Doodle.icon16" />
@@ -69,8 +69,8 @@
                     <bt:Image size="80" resid="Doodle.icon80" />
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>TypeTaskpane</TaskpaneId>
-                    <SourceLocation resid="Type.Taskpane.Url" />
+                    <TaskpaneId>ImageTaskpane</TaskpaneId>
+                    <SourceLocation resid="Image.Taskpane.Url" />
                   </Action>
                 </Control>
               </Group>
@@ -87,16 +87,16 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Doodle.Taskpane.Url" DefaultValue="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html" />
-        <bt:Url id="Type.Taskpane.Url" DefaultValue="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html?view=type" />
+        <bt:Url id="Image.Taskpane.Url" DefaultValue="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html?view=image" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="Doodle.GroupLabel" DefaultValue="Doodle Studio" />
         <bt:String id="Doodle.ButtonLabel" DefaultValue="Doodle Studio" />
-        <bt:String id="Type.ButtonLabel" DefaultValue="Tipografia" />
+        <bt:String id="Image.ButtonLabel" DefaultValue="Imagem" />
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="Doodle.ButtonTip" DefaultValue="Abrir o Doodle Studio para desenhar e inserir no slide." />
-        <bt:String id="Type.ButtonTip" DefaultValue="Abrir os estilos tipográficos B+G na barra lateral." />
+        <bt:String id="Image.ButtonTip" DefaultValue="Abrir o gerador de imagens (Nano Banana) na barra lateral." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

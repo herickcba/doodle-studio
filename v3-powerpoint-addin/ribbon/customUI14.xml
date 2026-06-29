@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- Doodle Studio — aba de ribbon (RibbonX). Callbacks em BG_DoodleStudio.bas -->
+<customUI onLoad="OnLoad" xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+  <ribbon>
+    <tabs>
+      <tab id="DoodleTab" label="Doodle Studio" insertAfterMso="TabHome">
+        <group id="dsGrpTipografia" label="Tipografia">
+          <button id="dsHero" label="Hero" image="dsHero" onAction="ApplyStyle"
+            screentip="Hero Statement" supertip="Avenir Next Bold · 120pt · 0.8x · rosa, ponto azul (sobre fundo azul → branco)."/>
+          <button id="dsMega" label="Mega" image="dsMega" onAction="ApplyStyle"
+            screentip="Mega Statement" supertip="Avenir Next Bold · 80pt · 0.9x · azul."/>
+          <button id="dsH1" label="H1 Título" image="dsH1" onAction="ApplyStyle"
+            screentip="H1 · Título de Página" supertip="Avenir Next Bold · 60pt · 0.9x · rosa."/>
+          <button id="dsLabelSec" label="Label de Seção" image="dsLabelSec" onAction="ApplyStyle"
+            screentip="Label de Seção" supertip="Avenir Next Bold · 60pt · 0.9x · rosa."/>
+          <button id="dsCorpo" label="Corpo de Texto" image="dsCorpo" onAction="ApplyStyle"
+            screentip="Corpo de Texto" supertip="Avenir Next Regular · 44pt · 1.15x · azul."/>
+          <button id="dsH3" label="H3" image="dsH3" onAction="ApplyStyle"
+            screentip="H3 · Corpo Descritivo" supertip="Avenir Next Bold · 34pt · 0.95x · rosa."/>
+          <button id="dsH4" label="H4" image="dsH4" onAction="ApplyStyle"
+            screentip="H4 · Subtítulo de Pilar" supertip="Avenir Next Bold · 28pt · 1.0x · azul."/>
+          <button id="dsH5" label="H5" image="dsH5" onAction="ApplyStyle"
+            screentip="H5 · Texto Descritivo" supertip="Avenir Next Regular · 24pt · 1.0x · azul."/>
+          <button id="dsCorpoPilar" label="Corpo de Pilar" image="dsCorpoPilar" onAction="ApplyStyle"
+            screentip="Corpo de Pilar" supertip="Avenir Next Regular · 20pt · 1.3x · azul."/>
+          <button id="dsEyebrow" label="Eyebrow" image="dsEyebrow" onAction="ApplyStyle"
+            screentip="Label / Eyebrow" supertip="Avenir Next Bold · 18pt · 1.0x · rosa."/>
+          <button id="dsCaption" label="Caption" image="dsCaption" onAction="ApplyStyle"
+            screentip="Legenda / Caption" supertip="Avenir Next Regular · 16pt · 1.3x · azul."/>
+        </group>
+        <group id="dsGrpEntrelinha" label="Entrelinha">
+          <button id="entreSel" label="Seleção" image="entreSel" size="large" onAction="Entrelinha"
+            screentip="Entrelinha na seleção" supertip="Aplica a entrelinha B+G ao texto/objeto selecionado, lendo o tamanho de cada parágrafo."/>
+          <button id="entreTudo" label="Todos os slides" image="entreTudo" size="large" onAction="EntrelinhaTudo"
+            screentip="Entrelinha em todos os slides" supertip="Aplica a entrelinha B+G em todas as caixas de texto de todos os slides."/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

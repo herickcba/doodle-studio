@@ -1,6 +1,6 @@
 # Doodle Studio — Web (completo) × Add-in PowerPoint
 
-> **Add-in vira plataforma multi-módulo.** O task pane tem **abas no topo** (`src/shared/modules.js`): cada módulo é uma `view`. Módulo 1 = **Doodle**. Módulo 2 = **Tipografia** (estilos B+G). Módulo 3 = **Imagem** (Nano Banana). Próximos módulos entram como novas abas.
+> **Add-in vira plataforma multi-módulo.** O task pane (sidebar) tem **abas no topo** (`src/shared/modules.js`): **Doodle** e **Imagem** (Nano Banana). A **Tipografia** migrou pro **ribbon** (faixa "Doodle Studio", `.ppam` VBA — ver seção abaixo), porque VBA aplica a entrelinha que o Office.js não faz. Doodle/Imagem ficam no painel (canvas/Gemini precisam de HTML).
 
 ## Módulo Imagem (Nano Banana / Gemini) — add-in
 Gera/edita imagens **1920×1080** (16:9). Modelos selecionáveis: **Nano Banana 2** (`gemini-3.1-flash-image`, default) e **Pro** (`gemini-3-pro-image`). Arquivos: `src/modules/image-gen.js`, `src/shared/img-library.js`, dialog `src/dialog/imgedit.html`, funções `api/*`.
@@ -24,18 +24,21 @@ Gera/edita imagens **1920×1080** (16:9). Modelos selecionáveis: **Nano Banana 
 
 Chave **nunca** no repo (`.env.local`/`.gitignore`; `.env.example` = placeholder).
 
-## Módulo Tipografia (estilos B+G) — add-in
-Estilos **Hero / Mega / H1** aplicáveis a um objeto ou texto selecionado, com prévia clicável (sem dropdown). Arquivos: `src/modules/typography.js`, `OfficeBridge.applyTextStyle` / `insertStylesReference`, asset `assets/estilos-bg.pptx` (gerado por `tools/build-styles-reference.py`).
+## Módulo Tipografia (estilos B+G) — **faixa de ribbon VBA** (`.ppam` + RibbonX)
+A Tipografia **saiu da sidebar** e virou uma **aba de ribbon "Doodle Studio"** (estilo BrightSlide), 100% VBA. Cada estilo aplica **num clique**: fonte (Avenir Next) + tamanho + negrito + cor + ponto final colorido + **ENTRELINHA exata** (o que o Office.js não consegue). Validado ao vivo no Mac. Arquivos: VBA `assets/BG-DoodleStudio.bas`; ribbon `ribbon/customUI14.xml` (+ `_rels` + `images/*.png`, ícones gerados por `tools/gen-ribbon-icons.py`); build `tools/build-ribbon-ppam.sh`; instalador `tools/install-doodle-ribbon.command` / `uninstall-…`.
 
 | Atributo | Como é aplicado |
 |---|---|
-| Fonte (Avenir Next), negrito, tamanho, cor | **Na hora**, à seleção, via Office.js `TextRange.font` (PowerPointApi **1.6** p/ ler a seleção) |
-| Ponto final em outra cor (Hero) | `getSubstring(len-1,1).font.color` |
-| Cor da fonte conforme o fundo (Hero) | Best-effort: lê o preenchimento do objeto; se `436AE1` → branca (ponto `FC5E6D`) |
-| **Entrelinha (0.8x/0.9x…)** | **Não é setável via Office.js** (confirmado até preview). Via **add-in VBA** `BG-Tipografia.ppam` (gerado de `assets/BG-Tipografia.bas`): `BG_AplicarEntrelinha` (seleção) e `BG_AplicarEntrelinhaTudo` (**todos os slides**, incl. grupos) — lê o tamanho de cada parágrafo e aplica a entrelinha B+G. Roda por **Option+F8** (guiado na sidebar) ou ícone no QAT. **Alternativa sem add-in:** copiar o `.bas` / âncora + Pincel de Formatação |
-| Botão "Tipografia" no ribbon | manifest: 2º botão na faixa (ao lado do Doodle Studio) abre a sidebar direto na aba Tipografia (`taskpane.html?view=type`). Requer reinstalar o manifest (v1.2) |
+| Fonte/negrito/tamanho/cor + ponto final colorido | VBA `ApplyStyle(control)` → `control.id` → spec → `ActiveWindow.Selection` (texto OU shape(s) OU grupos, recursivo) |
+| Cor da fonte conforme o fundo (Hero) | `ShapeFillIsBlue`: se o fill do objeto é `436AE1` → fonte branca, ponto `FC5E6D` |
+| **Entrelinha (0.8x/0.9x…)** | **VBA** `LineRuleWithin=msoTrue; SpaceWithin=múltiplo` — aplicada junto com o estilo. Botões separados **Entrelinha › Seleção** e **› Todos os slides** (lê o tamanho de cada parágrafo). Subs também expostos sem args (`BG_AplicarEntrelinha[Tudo]`) p/ Option+F8 |
+| Como aparece no ribbon | `.ppam` com `customUI14.xml` (schema `2009/07/customui`), **registrado** no `MicrosoftRegistrationDB` (`AutoLoad=1`+`Path`) → aba auto-carrega. **No Mac, macro de `.ppam` não aparece na caixa de Macros, mas o customUI dispara o VBA via `onAction`** |
 
-Estilos (11): **Hero** 120·0.8·`FC5E6D` (ponto `436AE1`; sobre fundo azul → branca) · **Mega** 80·0.9·`436AE1` · **H1** 60·0.9·`FC5E6D` · **Label de Seção** 60·0.9·`FC5E6D` · **Corpo de Texto** 44·1.15·`436AE1`·Reg · **H3** 34·0.95·`FC5E6D` · **H4** 28·1.0·`436AE1` · **H5** 24·1.0·`436AE1`·Reg · **Corpo de Pilar** 20·1.3·`436AE1`·Reg · **Eyebrow** 18·1.0·`FC5E6D` · **Caption** 16·1.3·`436AE1`·Reg. (Bold salvo onde não marcado Reg.) Entrelinha sempre **múltiplo** (spcPct) na referência.
+> **Build/instalar:** compilar a VBA num deck (PowerPoint) → salvar `.pptm` → `tools/build-ribbon-ppam.sh` (injeta a faixa) → `tools/install-doodle-ribbon.command`. Recompilar VBA exige PowerPoint (não dá headless). Cuidado: no Mac `ppSaveAsOpenXMLPresentationMacroEnabled` = **16** (não 25); UDT só passa `ByRef`.
+
+Estilos (11): **Hero** 120·0.8·`FC5E6D` (ponto `436AE1`; sobre fundo azul → branca) · **Mega** 80·0.9·`436AE1` · **H1** 60·0.9·`FC5E6D` · **Label de Seção** 60·0.9·`FC5E6D` · **Corpo de Texto** 44·1.15·`436AE1`·Reg · **H3** 34·0.95·`FC5E6D` · **H4** 28·1.0·`436AE1` · **H5** 24·1.0·`436AE1`·Reg · **Corpo de Pilar** 20·1.3·`436AE1`·Reg · **Eyebrow** 18·1.0·`FC5E6D` · **Caption** 16·1.3·`436AE1`·Reg. (Bold salvo onde não marcado Reg.)
+
+> **Doodle e Imagem** continuam no painel (canvas/Gemini precisam de HTML); o web add-in (manifest v1.3) tem botões no ribbon que **abrem o painel** (`?view=doodle` / `?view=image`).
 
 ---
 
