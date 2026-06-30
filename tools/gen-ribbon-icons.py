@@ -455,6 +455,44 @@ draw_align_top().save(os.path.join(OUT, "alignTop.png"))
 draw_dist_h().save(os.path.join(OUT, "distH.png"))
 
 
+# --- Padrões (Brand Standards): engrenagem / colar-aplicar ---
+def draw_config_open():
+    """Engrenagem azul (abrir a página de padrões)."""
+    import math
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    cx, cy, rO, rI = 32, 32, 22, 14
+    teeth = 8
+    pts = []
+    for i in range(teeth * 2):
+        ang = math.pi * i / teeth
+        r = rO if (i % 2 == 0) else rI
+        pts.append((cx + r * math.cos(ang), cy + r * math.sin(ang)))
+    d.polygon(pts, fill=AZUL)
+    d.ellipse((cx - 8, cy - 8, cx + 8, cy + 8), fill=(0, 0, 0, 0))
+    d.ellipse((cx - 8, cy - 8, cx + 8, cy + 8), outline=(255, 255, 255, 255), width=3)
+    return img
+
+
+def draw_config_apply():
+    """Prancheta com check rosa (colar/aplicar a config)."""
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    try:
+        d.rounded_rectangle((14, 13, 50, 55), radius=6, outline=AZUL, width=4)
+        d.rounded_rectangle((25, 7, 39, 18), radius=3, fill=AZUL)
+    except AttributeError:
+        d.rectangle((14, 13, 50, 55), outline=AZUL, width=4)
+        d.rectangle((25, 7, 39, 18), fill=AZUL)
+    d.line((22, 36, 30, 45), fill=ROSA, width=5)
+    d.line((30, 45, 44, 26), fill=ROSA, width=5)
+    return img
+
+
+draw_config_open().save(os.path.join(OUT, "configOpen.png"))
+draw_config_apply().save(os.path.join(OUT, "configApply.png"))
+
+
 print("Icones gerados em", os.path.normpath(OUT))
 for fn in sorted(os.listdir(OUT)):
     print("  ", fn)

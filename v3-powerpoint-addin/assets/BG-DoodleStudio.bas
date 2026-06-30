@@ -19,13 +19,17 @@ Option Explicit
 
 Private gRibbon As IRibbonUI
 Private gAnchorCm As Single   ' ancora esq. (cm); 0 = nao setado -> usa default
+Private Const C_TRANSP As Long = 5         ' indice da cor = transparente (nao e' cor)
 
-' Cores da marca (RGB usa ordem R,G,B)
-Private Const C_ROSA As Long = 7036668     ' FC5E6D -> RGB(252, 94,109)
-Private Const C_AZUL As Long = 14773315    ' 436AE1 -> RGB( 67,106,225)
-Private Const C_BRANCO As Long = 16777215  ' FFFFFF
-Private Const FONTE As String = "Avenir Next"
-Private Const C_TRANSP As Long = 5         ' indice da cor = transparente
+' ---- Brand Standards (config). SetDefaults preenche os valores de fabrica;
+'      LoadConfig sobrescreve a partir de cba-config.txt (Padroes > Aplicar). ----
+'   Paleta: 0 rosa, 1 azul, 2 bege, 3 branco, 4 preto. As cores de TIPO sao
+'   pal0 (rosa) e pal1 (azul) — fonte unica de verdade da marca.
+Private gFonte As String
+Private gPal(0 To 4) As Long
+Private gRadiusPx As Single            ' raio padrao em px @ canvas de 1080 de altura
+Private gStyle As Object               ' Collection: id -> Array(size, bold, role[0=rosa/1=azul])
+Private gEnt As Object                 ' Collection: CStr(size) -> entrelinha (multiplo)
 
 Private Type StyleSpec
     found As Boolean
@@ -41,6 +45,174 @@ End Type
 ' ============================================================
 Public Sub OnLoad(ribbon As IRibbonUI)
     Set gRibbon = ribbon
+    SetDefaults
+    LoadConfig
+End Sub
+
+' ============================================================
+'  BRAND STANDARDS — defaults, carga e gravacao da config
+' ============================================================
+Private Sub EnsureCfg()
+    If gStyle Is Nothing Then SetDefaults: LoadConfig
+End Sub
+
+Private Sub SetDefaults()
+    gFonte = "Avenir Next"
+    gPal(0) = RGB(253, 94, 109)    ' rosa  FD5E6D
+    gPal(1) = RGB(67, 106, 225)    ' azul  436AE1
+    gPal(2) = RGB(238, 236, 230)   ' bege  EEECE6
+    gPal(3) = RGB(255, 255, 255)   ' branco
+    gPal(4) = RGB(0, 0, 0)         ' preto
+    gRadiusPx = 25
+    Set gStyle = New Collection
+    AddStyle "dsHero", 120, True, 0
+    AddStyle "dsMega", 80, True, 1
+    AddStyle "dsH1", 60, True, 0
+    AddStyle "dsLabelSec", 60, True, 0
+    AddStyle "dsCorpo", 44, False, 1
+    AddStyle "dsH3", 34, True, 0
+    AddStyle "dsH4", 28, True, 1
+    AddStyle "dsH5", 24, False, 1
+    AddStyle "dsCorpoPilar", 20, False, 1
+    AddStyle "dsEyebrow", 18, True, 0
+    AddStyle "dsCaption", 16, False, 1
+    Set gEnt = New Collection
+    AddEnt 120, 0.8
+    AddEnt 80, 0.9
+    AddEnt 60, 0.9
+    AddEnt 44, 1.15
+    AddEnt 34, 0.95
+    AddEnt 28, 1#
+    AddEnt 24, 1#
+    AddEnt 20, 1.3
+    AddEnt 18, 1#
+    AddEnt 16, 1.3
+End Sub
+
+Private Sub AddStyle(ByVal id As String, ByVal sz As Single, ByVal b As Boolean, ByVal role As Long)
+    On Error Resume Next
+    gStyle.Remove id
+    On Error GoTo 0
+    gStyle.Add Array(sz, b, role), id
+End Sub
+
+Private Sub AddEnt(ByVal sz As Long, ByVal mult As Single)
+    On Error Resume Next
+    gEnt.Remove CStr(sz)
+    On Error GoTo 0
+    gEnt.Add mult, CStr(sz)
+End Sub
+
+Private Function ConfigPath() As String
+    ' No Mac, Environ("HOME") dentro do Office = a sandbox do PowerPoint
+    ' (~/Library/Containers/com.microsoft.Powerpoint/Data), que e' gravavel
+    ' por VBA sem pedir permissao. Guardamos a config global ali.
+    ConfigPath = Environ$("HOME") & "/cba-config.txt"
+End Function
+
+Private Sub LoadConfig()
+    Dim p As String, ln As String, s As String, f As Integer
+    p = ConfigPath()
+    f = FreeFile
+    On Error GoTo done
+    Open p For Input As #f
+    Do While Not EOF(f)
+        Line Input #f, ln
+        s = s & ln
+    Loop
+    Close #f
+    If Len(Trim$(s)) > 0 Then ApplyConfigString s
+    Exit Sub
+done:
+    On Error Resume Next
+    Close #f
+    On Error GoTo 0
+End Sub
+
+Private Function WriteConfig(ByVal s As String) As Boolean
+    Dim f As Integer
+    On Error GoTo fail
+    f = FreeFile
+    Open ConfigPath() For Output As #f
+    Print #f, s
+    Close #f
+    WriteConfig = True
+    Exit Function
+fail:
+    On Error Resume Next
+    Close #f
+    On Error GoTo 0
+    WriteConfig = False
+End Function
+
+' formato: pares "chave=valor" separados por ";". Numeros sempre com ponto
+' decimal (parse via Val, independente do locale pt-BR).
+Private Sub ApplyConfigString(ByVal s As String)
+    Dim parts() As String, kv() As String, i As Long
+    s = Replace(s, vbCr, "")
+    s = Replace(s, vbLf, "")
+    parts = Split(s, ";")
+    For i = LBound(parts) To UBound(parts)
+        If InStr(parts(i), "=") > 0 Then
+            kv = Split(parts(i), "=")
+            ApplyKV Trim$(kv(0)), Trim$(kv(1))
+        End If
+    Next i
+End Sub
+
+Private Sub ApplyKV(ByVal k As String, ByVal v As String)
+    Dim pi As Long, id As String, a() As String, sz As Long
+    If k = "fonte" Then
+        If Len(v) > 0 Then gFonte = v
+    ElseIf k = "radiusPx" Then
+        If Val(v) > 0 Then gRadiusPx = CSng(Val(v))
+    ElseIf Left$(k, 3) = "pal" Then
+        pi = CLng(Val(Mid$(k, 4)))
+        If pi >= 0 And pi <= 4 Then gPal(pi) = HexToRGB(v)
+    ElseIf Left$(k, 2) = "s_" Then
+        id = Mid$(k, 3)
+        a = Split(v, "|")
+        If UBound(a) >= 2 Then AddStyle id, CSng(Val(a(0))), (Trim$(a(1)) = "1"), CLng(Val(a(2)))
+    ElseIf Left$(k, 4) = "ent_" Then
+        sz = CLng(Val(Mid$(k, 5)))
+        AddEnt sz, CSng(Val(v))
+    End If
+End Sub
+
+Private Function HexToRGB(ByVal h As String) As Long
+    h = Replace(h, "#", "")
+    If Len(h) < 6 Then HexToRGB = 0: Exit Function
+    Dim r As Long, g As Long, b As Long
+    r = CLng("&H" & Mid$(h, 1, 2))
+    g = CLng("&H" & Mid$(h, 3, 2))
+    b = CLng("&H" & Mid$(h, 5, 2))
+    HexToRGB = RGB(r, g, b)
+End Function
+
+' Padroes > Abrir pagina: abre a tela de Brand Standards no navegador.
+Public Sub ConfigOpen(control As IRibbonControl)
+    On Error Resume Next
+    ActivePresentation.FollowHyperlink "https://doodle-studio-sigma.vercel.app/config.html"
+    On Error GoTo 0
+End Sub
+
+' Padroes > Aplicar config: cola a string da pagina (1 linha), grava e recarrega.
+Public Sub ConfigApply(control As IRibbonControl)
+    Dim s As String
+    s = InputBox("Cole a configuracao copiada da pagina de Brand Standards:", _
+                 "CBA Studio — Aplicar padroes")
+    If Len(Trim$(s)) = 0 Then Exit Sub
+    SetDefaults
+    ApplyConfigString s
+    If WriteConfig(s) Then
+        On Error Resume Next
+        gRibbon.Invalidate
+        On Error GoTo 0
+        MsgBox "Padroes aplicados e salvos.", vbInformation, "CBA Studio"
+    Else
+        MsgBox "Padroes aplicados nesta sessao, mas nao consegui salvar o arquivo" & vbCrLf & _
+               "(permita o acesso a' pasta quando o PowerPoint pedir).", vbExclamation, "CBA Studio"
+    End If
 End Sub
 
 ' Aplica o estilo correspondente ao botao clicado.
@@ -347,7 +519,7 @@ Public Sub InsertTextBox(control As IRibbonControl)
     On Error Resume Next
     tb.TextFrame.WordWrap = msoTrue
     tb.TextFrame.TextRange.Text = "Texto"
-    tb.TextFrame.TextRange.Font.Name = FONTE
+    tb.TextFrame.TextRange.Font.Name = gFonte
     tb.Select
     On Error GoTo 0
 End Sub
@@ -462,7 +634,7 @@ End Sub
 
 Private Sub ApplyCapsLoose(ByVal tr2 As Object)
     On Error Resume Next
-    tr2.Font.Name = FONTE      ' Avenir Next
+    tr2.Font.Name = gFonte      ' Avenir Next
     tr2.Font.Bold = msoTrue    ' -> Avenir Next Bold
     tr2.Font.Caps = 2          ' msoCapsAll (constante nao definida no Mac)
     tr2.Font.Spacing = 3       ' = "Loose" nativo do PowerPoint (3pt fixos)
@@ -507,7 +679,8 @@ End Function
 '  ROUNDED CORNERS (raio ~25px num canvas 1920x1080)
 ' ============================================================
 Private Function StdRadiusPts() As Single
-    StdRadiusPts = (25# / 1080#) * ActivePresentation.PageSetup.SlideHeight
+    EnsureCfg
+    StdRadiusPts = (CDbl(gRadiusPx) / 1080#) * ActivePresentation.PageSetup.SlideHeight
 End Function
 
 Private Function IsRoundedType(ByVal t As Long) As Boolean
@@ -671,14 +844,8 @@ End Function
 '  control.id = "fill0".."fill4" / "font0".."font4"
 ' ============================================================
 Private Function PaletteColor(ByVal i As Long) As Long
-    Select Case i
-        Case 0: PaletteColor = RGB(253, 94, 109)   ' FD5E6D rosa
-        Case 1: PaletteColor = RGB(67, 106, 225)    ' 436AE1 azul
-        Case 2: PaletteColor = RGB(238, 236, 230)   ' EEECE6 bege
-        Case 3: PaletteColor = RGB(255, 255, 255)   ' branco
-        Case 4: PaletteColor = RGB(0, 0, 0)         ' preto
-        Case Else: PaletteColor = RGB(0, 0, 0)
-    End Select
+    EnsureCfg
+    If i >= 0 And i <= 4 Then PaletteColor = gPal(i) Else PaletteColor = gPal(4)
 End Function
 
 Private Function ColorIndexFromId(ByVal id As String) As Long
@@ -884,7 +1051,7 @@ Private Sub ScanShape(ByVal shp As Object, ByVal slideIdx As Long, ByVal col As 
     If shp.HasTextFrame Then
         If shp.TextFrame.HasText Then
             nm = shp.TextFrame.TextRange.Font.Name
-            If Len(nm) > 0 And StrComp(nm, FONTE, vbTextCompare) <> 0 Then
+            If Len(nm) > 0 And StrComp(nm, gFonte, vbTextCompare) <> 0 Then
                 col.Add Array(slideIdx, shp, "Fonte fora do padrao: " & nm)
                 nf = nf + 1
             End If
@@ -1001,7 +1168,7 @@ Private Sub FixTypeRun(ByVal run As Object)
     Dim heavy As Boolean
     On Error Resume Next
     heavy = IsHeavyFont(run.Font.Name, run.Font.Bold)
-    run.Font.Name = FONTE                       ' "Avenir Next"
+    run.Font.Name = gFonte                       ' "Avenir Next"
     If heavy Then run.Font.Bold = msoTrue Else run.Font.Bold = msoFalse
     run.Font.size = SnapSize(run.Font.size)
     On Error GoTo 0
@@ -1019,15 +1186,15 @@ Private Function IsHeavyFont(ByVal nm As String, ByVal isBold As Long) As Boolea
     End If
 End Function
 
-' encaixa o tamanho no valor mais proximo da escala B+G
+' encaixa o tamanho no valor mais proximo da escala configurada (estilos)
 Private Function SnapSize(ByVal sz As Single) As Single
-    Dim sc As Variant, i As Long, best As Single, bd As Single, d As Single
-    sc = Array(16, 18, 20, 24, 28, 34, 44, 60, 80, 120)
+    Dim it As Variant, best As Single, bd As Single, d As Single
+    EnsureCfg
     best = sz: bd = 1E+30
-    For i = LBound(sc) To UBound(sc)
-        d = Abs(sz - sc(i))
-        If d < bd Then bd = d: best = sc(i)
-    Next i
+    For Each it In gStyle
+        d = Abs(sz - it(0))
+        If d < bd Then bd = d: best = it(0)
+    Next it
     SnapSize = best
 End Function
 
@@ -1035,42 +1202,34 @@ End Function
 '  Tabela de estilos B+G (espelha STYLES de typography.js)
 ' ============================================================
 Private Function SpecFor(ByVal id As String) As StyleSpec
-    Dim s As StyleSpec
-    s.found = True
+    Dim s As StyleSpec, a As Variant
+    EnsureCfg
+    s.found = False
     s.periodColor = -1
     s.bgAware = False
-    Select Case id
-        Case "dsHero":       s.size = 120: s.bold = True:  s.color = C_ROSA: s.periodColor = C_AZUL: s.bgAware = True
-        Case "dsMega":       s.size = 80:  s.bold = True:  s.color = C_AZUL
-        Case "dsH1":         s.size = 60:  s.bold = True:  s.color = C_ROSA
-        Case "dsLabelSec":   s.size = 60:  s.bold = True:  s.color = C_ROSA
-        Case "dsCorpo":      s.size = 44:  s.bold = False: s.color = C_AZUL
-        Case "dsH3":         s.size = 34:  s.bold = True:  s.color = C_ROSA
-        Case "dsH4":         s.size = 28:  s.bold = True:  s.color = C_AZUL
-        Case "dsH5":         s.size = 24:  s.bold = False: s.color = C_AZUL
-        Case "dsCorpoPilar": s.size = 20:  s.bold = False: s.color = C_AZUL
-        Case "dsEyebrow":    s.size = 18:  s.bold = True:  s.color = C_ROSA
-        Case "dsCaption":    s.size = 16:  s.bold = False: s.color = C_AZUL
-        Case Else:           s.found = False
-    End Select
+    On Error Resume Next
+    a = gStyle(id)
+    On Error GoTo 0
+    If IsEmpty(a) Then SpecFor = s: Exit Function
+    s.found = True
+    s.size = a(0)
+    s.bold = a(1)
+    If a(2) = 0 Then s.color = gPal(0) Else s.color = gPal(1)
+    If id = "dsHero" Then           ' Hero: ponto azul + ciente do fundo
+        s.periodColor = gPal(1)
+        s.bgAware = True
+    End If
     SpecFor = s
 End Function
 
-' Mapa tamanho(pt) -> entrelinha (multiplo) dos estilos B+G
+' Mapa tamanho(pt) -> entrelinha (multiplo). 0 = fora do mapa, nao mexe.
 Private Function MapSpacing(ByVal sz As Single) As Single
-    Select Case CLng(sz)
-        Case 120: MapSpacing = 0.8
-        Case 80:  MapSpacing = 0.9
-        Case 60:  MapSpacing = 0.9
-        Case 44:  MapSpacing = 1.15
-        Case 34:  MapSpacing = 0.95
-        Case 28:  MapSpacing = 1#
-        Case 24:  MapSpacing = 1#
-        Case 20:  MapSpacing = 1.3
-        Case 18:  MapSpacing = 1#
-        Case 16:  MapSpacing = 1.3
-        Case Else: MapSpacing = 0      ' fora do mapa: nao mexe
-    End Select
+    Dim v As Variant
+    EnsureCfg
+    On Error Resume Next
+    v = gEnt(CStr(CLng(sz)))
+    On Error GoTo 0
+    If IsEmpty(v) Then MapSpacing = 0 Else MapSpacing = v
 End Function
 
 ' ============================================================
@@ -1099,7 +1258,7 @@ End Function
 Private Function ShapeFillIsBlue(ByVal shp As Object) As Boolean
     On Error Resume Next
     If shp.Fill.Type = msoFillSolid Then
-        ShapeFillIsBlue = (shp.Fill.ForeColor.RGB = C_AZUL)
+        ShapeFillIsBlue = (shp.Fill.ForeColor.RGB = gPal(1))
     End If
     On Error GoTo 0
 End Function
@@ -1111,12 +1270,12 @@ Private Sub ApplyStyleToRange(ByVal tr As Object, ByRef spec As StyleSpec, ByVal
     textColor = spec.color
     periodColor = spec.periodColor
     If spec.bgAware And bgBlue Then
-        textColor = C_BRANCO
-        periodColor = C_ROSA
+        textColor = gPal(3)        ' branco
+        periodColor = gPal(0)      ' rosa
     End If
 
     ' fonte / tamanho / negrito / cor
-    tr.Font.Name = FONTE
+    tr.Font.Name = gFonte
     tr.Font.size = spec.size
     If spec.bold Then tr.Font.Bold = msoTrue Else tr.Font.Bold = msoFalse
     tr.Font.Color.RGB = textColor

@@ -96,6 +96,12 @@
           <button id="auditFonts" label="Padronizar tipografia" image="auditFonts" size="large" onAction="AuditFixFonts"
             screentip="Padronizar tipografia" supertip="Troca as fontes por Avenir Next (heavy/black → Bold) e encaixa o tamanho de cada texto na escala B+G mais próxima."/>
         </group>
+        <group id="dsGrpPadroes" label="Padrões">
+          <button id="configOpen" label="Abrir página" image="configOpen" size="large" onAction="ConfigOpen"
+            screentip="Abrir Brand Standards" supertip="Abre a página de Brand Standards no navegador para ajustar paleta, cores de tipo, escala de tamanhos, entrelinha e raio."/>
+          <button id="configApply" label="Aplicar config" image="configApply" size="large" onAction="ConfigApply"
+            screentip="Aplicar configuração" supertip="Cole aqui a configuração copiada da página. Atualiza os padrões da marca (paleta, tipos, tamanhos, entrelinha, raio) e salva para as próximas sessões."/>
+        </group>
       </tab>
     </tabs>
   </ribbon>

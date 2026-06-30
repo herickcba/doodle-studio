@@ -76,4 +76,6 @@
   <Relationship Id="alignLeft" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/alignLeft.png"/>
   <Relationship Id="alignTop" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/alignTop.png"/>
   <Relationship Id="distH" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/distH.png"/>
+  <Relationship Id="configOpen" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/configOpen.png"/>
+  <Relationship Id="configApply" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/configApply.png"/>
 </Relationships>

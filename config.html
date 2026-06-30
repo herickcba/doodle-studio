@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CBA Studio — Brand Standards</title>
+<meta name="description" content="Ajuste os padrões da marca (paleta, cores de tipo, escala de tamanhos, entrelinha e raio) e copie a configuração para o add-in CBA Studio." />
+<style>
+  :root{
+    --bg:#F3F1EB; --surface:#FFFFFF; --surface-2:#FAF9F5;
+    --ink:#1B1B22; --muted:#6E6E78; --line:#E7E4DC;
+    --azul:#436AE1; --azul-d:#3557c8; --rosa:#FD5E6D; --bege:#EEECE6;
+    --radius:14px; --radius-s:10px;
+    --font:"Avenir Next","Avenir",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:96px;}
+  .wrap{max-width:920px;margin:0 auto;padding:0 22px;}
+  header{position:sticky;top:0;z-index:50;background:rgba(243,241,235,.86);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);}
+  .nav{display:flex;align-items:center;gap:11px;height:62px;}
+  .logo{width:36px;height:36px;border-radius:10px;background:var(--azul);color:#fff;display:grid;place-items:center;font-weight:800;font-size:16px;letter-spacing:.5px;}
+  .nav b{font-size:16px;font-weight:800;}
+  .nav b span{display:block;font-size:11px;color:var(--muted);font-weight:600;}
+  .hero{padding:30px 0 6px;}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--rosa);margin-bottom:10px;}
+  .hero h1{margin:0 0 8px;font-size:clamp(26px,4vw,36px);line-height:1.06;font-weight:800;letter-spacing:-.01em;}
+  .hero p{margin:0;font-size:15px;color:var(--muted);max-width:640px;}
+  section{padding:18px 0;}
+  .sec-head h2{margin:0 0 2px;font-size:19px;font-weight:800;}
+  .sec-head p{margin:0 0 14px;color:var(--muted);font-size:13px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
+
+  .palette{display:flex;flex-wrap:wrap;gap:14px;}
+  .swatch{display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
+  .swatch label{font-size:12px;font-weight:700;color:var(--muted);}
+  .swatch .row{display:flex;align-items:center;gap:8px;}
+  input[type=color]{-webkit-appearance:none;appearance:none;width:40px;height:32px;border:1px solid var(--line);border-radius:8px;background:none;cursor:pointer;padding:0;}
+  input[type=color]::-webkit-color-swatch-wrapper{padding:3px;}
+  input[type=color]::-webkit-color-swatch{border:none;border-radius:5px;}
+  .hex{width:84px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;text-transform:uppercase;border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:var(--surface-2);}
+
+  .field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .field label{font-size:13px;font-weight:700;}
+  input[type=text],input[type=number]{font-family:inherit;font-size:13.5px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface-2);color:var(--ink);}
+  input[type=number]{width:78px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800;padding:6px 8px;border-bottom:1px solid var(--line);}
+  td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  td.name{font-weight:700;}
+  td .sz{width:70px;}
+  td .ent{width:70px;}
+  select{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:var(--surface-2);color:var(--ink);}
+  .chip{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;border:1px solid rgba(0,0,0,.08);}
+
+  .bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);}
+  .bar .wrap{display:flex;align-items:center;gap:14px;height:78px;}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-weight:700;font-size:14px;padding:12px 20px;border-radius:11px;border:1px solid transparent;cursor:pointer;}
+  .btn-primary{background:var(--azul);color:#fff;}
+  .btn-primary:hover{background:var(--azul-d);}
+  .btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line);}
+  .out{flex:1;min-width:0;}
+  .out textarea{width:100%;height:42px;resize:none;font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--surface-2);color:var(--muted);}
+  .ok{color:#1f7a4d;font-weight:800;font-size:13px;white-space:nowrap;opacity:0;transition:opacity .2s;}
+  .ok.show{opacity:1;}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:8px;}
+  @media(max-width:680px){ .bar .wrap{height:auto;flex-wrap:wrap;padding-top:12px;padding-bottom:12px;} .out{order:3;width:100%;} }
+</style>
+</head>
+<body>
+  <header><div class="wrap nav">
+    <div class="logo">CB</div>
+    <b>CBA Studio<span>Brand Standards</span></b>
+  </div></header>
+
+  <div class="wrap">
+    <div class="hero">
+      <span class="eyebrow">Padrões da marca</span>
+      <h1>Ajuste os padrões<span style="color:var(--rosa)">.</span></h1>
+      <p>Defina paleta, cores de tipo, a escala de tamanhos, a entrelinha e o raio do rounded. Ao terminar, clique em <b>Copiar configuração</b> e cole no PowerPoint em <b>CBA Studio → Padrões → Aplicar config</b>.</p>
+    </div>
+
+    <section>
+      <div class="sec-head"><h2>Paleta</h2><p>As cores da marca. Rosa e Azul também são as cores que os estilos de texto aplicam.</p></div>
+      <div class="card"><div class="palette" id="palette"></div></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Fonte &amp; raio</h2><p>Fonte base de todos os estilos e o raio padrão do rounded (em px num canvas de 1080 de altura).</p></div>
+      <div class="card" style="display:flex;gap:28px;flex-wrap:wrap;">
+        <div class="field"><label>Fonte</label><input type="text" id="fonte" value="Avenir Next" style="width:180px;" /></div>
+        <div class="field"><label>Raio padrão</label><input type="number" id="radius" value="25" min="0" step="1" /><span style="color:var(--muted);font-size:13px;">px</span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Escala tipográfica</h2><p>Tamanho, peso, cor e entrelinha de cada estilo. A auditoria encaixa textos no tamanho mais próximo desta escala.</p></div>
+      <div class="card" style="padding:6px 8px;">
+        <table>
+          <thead><tr><th>Estilo</th><th>Tamanho</th><th>Peso</th><th>Cor</th><th>Entrelinha</th></tr></thead>
+          <tbody id="styles"></tbody>
+        </table>
+      </div>
+      <p class="hint">Entrelinha é por tamanho — estilos do mesmo tamanho compartilham o valor.</p>
+    </section>
+  </div>
+
+  <div class="bar"><div class="wrap">
+    <button class="btn btn-primary" id="copy">Copiar configuração</button>
+    <button class="btn btn-ghost" id="reset">Restaurar padrão</button>
+    <span class="ok" id="ok">copiado ✓</span>
+    <div class="out"><textarea id="cfgout" readonly spellcheck="false"></textarea></div>
+  </div></div>
+
+<script>
+  // ---- defaults (espelham SetDefaults no VBA) ----
+  var PAL = [
+    {key:"pal0", name:"Rosa",   hex:"#FD5E6D"},
+    {key:"pal1", name:"Azul",   hex:"#436AE1"},
+    {key:"pal2", name:"Bege",   hex:"#EEECE6"},
+    {key:"pal3", name:"Branco", hex:"#FFFFFF"},
+    {key:"pal4", name:"Preto",  hex:"#000000"}
+  ];
+  // role: 0 = rosa(pal0), 1 = azul(pal1)
+  var STYLES = [
+    {id:"dsHero",       name:"Hero",            size:120, bold:1, role:0, ent:0.8},
+    {id:"dsMega",       name:"Mega",            size:80,  bold:1, role:1, ent:0.9},
+    {id:"dsH1",         name:"H1 · Título",     size:60,  bold:1, role:0, ent:0.9},
+    {id:"dsLabelSec",   name:"Label de Seção",  size:60,  bold:1, role:0, ent:0.9},
+    {id:"dsCorpo",      name:"Corpo",           size:44,  bold:0, role:1, ent:1.15},
+    {id:"dsH3",         name:"H3",              size:34,  bold:1, role:0, ent:0.95},
+    {id:"dsH4",         name:"H4",              size:28,  bold:1, role:1, ent:1.0},
+    {id:"dsH5",         name:"H5",              size:24,  bold:0, role:1, ent:1.0},
+    {id:"dsCorpoPilar", name:"Corpo de Pilar",  size:20,  bold:0, role:1, ent:1.3},
+    {id:"dsEyebrow",    name:"Eyebrow",         size:18,  bold:1, role:0, ent:1.0},
+    {id:"dsCaption",    name:"Caption",         size:16,  bold:0, role:1, ent:1.3}
+  ];
+  var DEFAULTS = JSON.parse(JSON.stringify({PAL:PAL, STYLES:STYLES, fonte:"Avenir Next", radius:25}));
+
+  function hex6(h){ return (h||"").replace("#","").toUpperCase().slice(0,6).padEnd(6,"0"); }
+
+  function buildPalette(){
+    var box = document.getElementById("palette"); box.innerHTML="";
+    PAL.forEach(function(p,i){
+      var d=document.createElement("div"); d.className="swatch";
+      d.innerHTML='<label>'+p.name+'</label><div class="row">'+
+        '<input type="color" data-i="'+i+'" value="'+p.hex+'">'+
+        '<input class="hex" data-i="'+i+'" value="'+hex6(p.hex)+'"></div>';
+      box.appendChild(d);
+    });
+    box.querySelectorAll('input[type=color]').forEach(function(c){
+      c.oninput=function(){ var i=+c.dataset.i; PAL[i].hex=c.value; box.querySelector('.hex[data-i="'+i+'"]').value=hex6(c.value); refresh(); };
+    });
+    box.querySelectorAll('.hex').forEach(function(t){
+      t.oninput=function(){ var i=+t.dataset.i; var h="#"+hex6(t.value); PAL[i].hex=h; box.querySelector('input[type=color][data-i="'+i+'"]').value=h; refresh(); };
+    });
+  }
+
+  function buildStyles(){
+    var tb=document.getElementById("styles"); tb.innerHTML="";
+    STYLES.forEach(function(s,i){
+      var tr=document.createElement("tr");
+      tr.innerHTML=
+        '<td class="name">'+s.name+'</td>'+
+        '<td><input class="sz" type="number" min="1" step="1" data-i="'+i+'" data-k="size" value="'+s.size+'"></td>'+
+        '<td><select data-i="'+i+'" data-k="bold"><option value="1"'+(s.bold?' selected':'')+'>Bold</option><option value="0"'+(s.bold?'':' selected')+'>Regular</option></select></td>'+
+        '<td><select data-i="'+i+'" data-k="role"><option value="0"'+(s.role===0?' selected':'')+'>Rosa</option><option value="1"'+(s.role===1?' selected':'')+'>Azul</option></select></td>'+
+        '<td><input class="ent" type="number" min="0" step="0.05" data-i="'+i+'" data-k="ent" value="'+s.ent+'"></td>';
+      tb.appendChild(tr);
+    });
+    tb.querySelectorAll('input,select').forEach(function(el){
+      el.oninput=function(){ var i=+el.dataset.i,k=el.dataset.k,v=el.value;
+        STYLES[i][k]=(k==="size"||k==="ent")?parseFloat(v): (k==="bold"||k==="role")?parseInt(v,10): v; refresh(); };
+    });
+  }
+
+  function buildString(){
+    var parts=[];
+    parts.push("fonte="+document.getElementById("fonte").value.replace(/[;=]/g,"").trim());
+    PAL.forEach(function(p,i){ parts.push("pal"+i+"="+hex6(p.hex)); });
+    parts.push("radiusPx="+(parseFloat(document.getElementById("radius").value)||25));
+    STYLES.forEach(function(s){ parts.push("s_"+s.id+"="+s.size+"|"+(s.bold?1:0)+"|"+s.role); });
+    var ent={};
+    STYLES.forEach(function(s){ ent[Math.round(s.size)]=s.ent; });
+    Object.keys(ent).forEach(function(sz){ parts.push("ent_"+sz+"="+ent[sz]); });
+    return parts.join(";");
+  }
+
+  function refresh(){
+    var s=buildString();
+    document.getElementById("cfgout").value=s;
+    try{ localStorage.setItem("cba.brandcfg", JSON.stringify({PAL:PAL,STYLES:STYLES,fonte:document.getElementById("fonte").value,radius:document.getElementById("radius").value})); }catch(e){}
+  }
+
+  function load(){
+    try{
+      var raw=localStorage.getItem("cba.brandcfg");
+      if(raw){ var o=JSON.parse(raw);
+        if(o.PAL) PAL=o.PAL; if(o.STYLES) STYLES=o.STYLES;
+        if(o.fonte) document.getElementById("fonte").value=o.fonte;
+        if(o.radius) document.getElementById("radius").value=o.radius;
+      }
+    }catch(e){}
+  }
+
+  function init(){
+    load(); buildPalette(); buildStyles();
+    document.getElementById("fonte").oninput=refresh;
+    document.getElementById("radius").oninput=refresh;
+    document.getElementById("copy").onclick=function(){
+      var s=buildString(); var ok=document.getElementById("ok");
+      navigator.clipboard.writeText(s).then(function(){ ok.classList.add("show"); setTimeout(function(){ok.classList.remove("show");},1600); },
+        function(){ var t=document.getElementById("cfgout"); t.select(); document.execCommand("copy"); ok.classList.add("show"); setTimeout(function(){ok.classList.remove("show");},1600); });
+    };
+    document.getElementById("reset").onclick=function(){
+      var d=JSON.parse(JSON.stringify(DEFAULTS)); PAL=d.PAL; STYLES=d.STYLES;
+      document.getElementById("fonte").value=d.fonte; document.getElementById("radius").value=d.radius;
+      buildPalette(); buildStyles(); refresh();
+    };
+    refresh();
+  }
+  init();
+</script>
+</body>
+</html>
