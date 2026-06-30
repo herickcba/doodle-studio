@@ -658,16 +658,15 @@
     }
     return out;
   }
-  /* Reveal lengths for a group of strokes, sequenced from 0 (each starts when
-     the previous ends). Pure — no mutation, works on any stroke subset. */
+  /* Reveal lengths for a group of strokes — all strokes animate TOGETHER on the
+     same 0..1 timeline (each progresses independently from 0 to its full length).
+     The big-canvas GIF has no fine per-stroke timing (that's the v2 web app), so
+     drawing every stroke at once is the default. Pure — no mutation. */
   function strokeRevealsFor(strokes, progress, easing) {
     const ease = EASING[easing] || EASING.linear;
     const durs = strokes.map(strokeDur);
-    const starts = []; let acc = 0;
-    for (let i = 0; i < strokes.length; i++) { starts.push(acc); acc += durs[i]; }
-    const end = Math.max(1, acc);
-    const tc = ease(Math.max(0, Math.min(1, progress))) * end;
-    return strokes.map((s, i) => Math.max(0, Math.min(durs[i], tc - starts[i])));
+    const t = ease(Math.max(0, Math.min(1, progress)));
+    return strokes.map((s, i) => t * durs[i]);
   }
 
   function gifBuildPalette(rgba, maxColors) {

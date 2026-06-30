@@ -275,9 +275,39 @@ Public Sub InsertRoundedBox(control As IRibbonControl)
     h = sh / 4
     Set shp = sld.Shapes.AddShape(msoShapeRoundedRectangle, (sw - w) / 2, (sh - h) / 2, w, h)
     On Error Resume Next
-    shp.Fill.Visible = msoFalse                  ' sem preenchimento
+    shp.Fill.Visible = msoTrue
+    shp.Fill.Solid
+    If SlideBgIsWhite(sld) Then
+        shp.Fill.ForeColor.RGB = PaletteColor(2)   ' bege, se o fundo do slide for branco
+    Else
+        shp.Fill.ForeColor.RGB = PaletteColor(3)   ' branco
+    End If
+    shp.Line.Visible = msoFalse
     SetRoundedRadius shp                          ' raio padrao (~25px @1080)
+    SetRoundedTextInset shp                       ' padding interno = 2x o raio
     shp.Select
+    On Error GoTo 0
+End Sub
+
+' fundo do slide ~ branco? (best-effort; sem leitura -> False)
+Private Function SlideBgIsWhite(ByVal sld As Object) As Boolean
+    Dim c As Long
+    c = -1
+    On Error Resume Next
+    c = sld.Background.Fill.ForeColor.RGB
+    On Error GoTo 0
+    SlideBgIsWhite = (c = RGB(255, 255, 255))
+End Function
+
+' padding interno = 2x o raio padrao (faz sentido em caixa com texto rounded)
+Private Sub SetRoundedTextInset(ByVal shp As Object)
+    Dim m As Single
+    m = 2 * StdRadiusPts
+    On Error Resume Next
+    shp.TextFrame.MarginLeft = m
+    shp.TextFrame.MarginRight = m
+    shp.TextFrame.MarginTop = m
+    shp.TextFrame.MarginBottom = m
     On Error GoTo 0
 End Sub
 
@@ -325,6 +355,9 @@ Private Function MakeRounded(ByVal shp As Object) As Long
         If doIt Then
             shp.AutoShapeType = msoShapeRoundedRectangle   ' imagem = crop rounded
             SetRoundedRadius shp
+            If shp.HasTextFrame Then
+                If shp.TextFrame.HasText Then SetRoundedTextInset shp
+            End If
             done = 1
         End If
     End If
@@ -580,7 +613,7 @@ Private Function OutlineShape(ByVal shp As Object, ByVal i As Long) As Long
         Else
             shp.Line.Visible = msoTrue
             shp.Line.ForeColor.RGB = PaletteColor(i)
-            If shp.Line.Weight < 0.5 Then shp.Line.Weight = 1.5
+            shp.Line.Weight = 2                         ' contorno padrao 2pt
         End If
         cnt = 1
     End If
@@ -720,78 +753,72 @@ Public Sub AuditScan(control As IRibbonControl)
     Next i
 End Sub
 
+' Padronizar tipografia: por run -> Avenir Next (heavy/black/bold -> Bold) e
+' tamanho encaixado na escala B+G mais proxima.
 Public Sub AuditFixFonts(control As IRibbonControl)
     Dim sld As Object, shp As Object, n As Long
     n = 0
     For Each sld In ActivePresentation.Slides
         For Each shp In sld.Shapes
-            n = n + FixFontShape(shp)
+            n = n + FixTypeShape(shp)
         Next shp
     Next sld
-    MsgBox "Fontes padronizadas para " & FONTE & " em " & n & " objeto(s).", vbInformation, "CBA Studio"
+    MsgBox "Tipografia padronizada (Avenir Next + peso + tamanho na escala) em " & n & " objeto(s).", vbInformation, "CBA Studio"
 End Sub
 
-Private Function FixFontShape(ByVal shp As Object) As Long
-    Dim cnt As Long, s As Object
+Private Function FixTypeShape(ByVal shp As Object) As Long
+    Dim cnt As Long, s As Object, tr As Object, k As Long
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + FixFontShape(s)
+            cnt = cnt + FixTypeShape(s)
         Next s
     ElseIf shp.HasTextFrame Then
         If shp.TextFrame.HasText Then
-            shp.TextFrame.TextRange.Font.Name = FONTE
+            Set tr = shp.TextFrame.TextRange
+            For k = 1 To tr.Runs.Count
+                FixTypeRun tr.Runs(k)
+            Next k
             cnt = 1
         End If
     End If
     On Error GoTo 0
-    FixFontShape = cnt
+    FixTypeShape = cnt
 End Function
 
-Public Sub AuditFixColors(control As IRibbonControl)
-    Dim sld As Object, shp As Object, n As Long
-    n = 0
-    For Each sld In ActivePresentation.Slides
-        For Each shp In sld.Shapes
-            n = n + FixColorShape(shp)
-        Next shp
-    Next sld
-    MsgBox "Cores aproximadas a' paleta em " & n & " ponto(s).", vbInformation, "CBA Studio"
+Private Sub FixTypeRun(ByVal run As Object)
+    Dim heavy As Boolean
+    On Error Resume Next
+    heavy = IsHeavyFont(run.Font.Name, run.Font.Bold)
+    run.Font.Name = FONTE                       ' "Avenir Next"
+    If heavy Then run.Font.Bold = msoTrue Else run.Font.Bold = msoFalse
+    run.Font.size = SnapSize(run.Font.size)
+    On Error GoTo 0
 End Sub
 
-Private Function FixColorShape(ByVal shp As Object) As Long
-    Dim cnt As Long, s As Object
-    cnt = 0
-    On Error Resume Next
-    If shp.Type = msoGroup Then
-        For Each s In shp.GroupItems
-            cnt = cnt + FixColorShape(s)
-        Next s
-    Else
-        If shp.Fill.Visible = msoTrue And shp.Fill.Type = msoFillSolid Then
-            If Not IsPaletteColor(shp.Fill.ForeColor.RGB) Then
-                shp.Fill.ForeColor.RGB = NearestPaletteColor(shp.Fill.ForeColor.RGB)
-                cnt = cnt + 1
-            End If
-        End If
-        If shp.Line.Visible = msoTrue Then
-            If Not IsPaletteColor(shp.Line.ForeColor.RGB) Then
-                shp.Line.ForeColor.RGB = NearestPaletteColor(shp.Line.ForeColor.RGB)
-                cnt = cnt + 1
-            End If
-        End If
-        If shp.HasTextFrame Then
-            If shp.TextFrame.HasText Then
-                If Not IsPaletteColor(shp.TextFrame.TextRange.Font.Color.RGB) Then
-                    shp.TextFrame.TextRange.Font.Color.RGB = NearestPaletteColor(shp.TextFrame.TextRange.Font.Color.RGB)
-                    cnt = cnt + 1
-                End If
-            End If
-        End If
+' peso acima de medio (heavy/black/bold/semibold/demi) -> Avenir Next Bold
+Private Function IsHeavyFont(ByVal nm As String, ByVal isBold As Long) As Boolean
+    Dim s As String
+    s = LCase$(nm)
+    If InStr(s, "heavy") > 0 Or InStr(s, "black") > 0 Or InStr(s, "bold") > 0 _
+       Or InStr(s, "semibold") > 0 Or InStr(s, "demi") > 0 Then
+        IsHeavyFont = True
+    ElseIf isBold = msoTrue Then
+        IsHeavyFont = True
     End If
-    On Error GoTo 0
-    FixColorShape = cnt
+End Function
+
+' encaixa o tamanho no valor mais proximo da escala B+G
+Private Function SnapSize(ByVal sz As Single) As Single
+    Dim sc As Variant, i As Long, best As Single, bd As Single, d As Single
+    sc = Array(16, 18, 20, 24, 28, 34, 44, 60, 80, 120)
+    best = sz: bd = 1E+30
+    For i = LBound(sc) To UBound(sc)
+        d = Abs(sz - sc(i))
+        If d < bd Then bd = d: best = sc(i)
+    Next i
+    SnapSize = best
 End Function
 
 ' ============================================================

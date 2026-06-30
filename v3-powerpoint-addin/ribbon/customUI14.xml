@@ -8,10 +8,9 @@
           <button id="insTextBox" label="Caixa de texto" image="insTextBox" size="large" onAction="InsertTextBox"
             screentip="Inserir caixa de texto" supertip="Cria uma caixa de texto no slide atual (Avenir Next), na margem da âncora."/>
           <button id="insRoundBox" label="Rounded box" image="insRoundBox" size="large" onAction="InsertRoundedBox"
-            screentip="Inserir caixa arredondada" supertip="Cria um retângulo de cantos arredondados no raio padrão (~25px @1920×1080), sem preenchimento, no centro do slide."/>
+            screentip="Inserir caixa arredondada" supertip="Cria um retângulo de cantos arredondados no raio padrão (~25px @1920×1080), preenchido (branco, ou bege se o fundo for branco), no centro do slide."/>
         </group>
         <group id="dsGrpTipografia" label="Tipografia">
-          <!-- 5 estilos em destaque (inline), com preview -->
           <button id="dsHero"     label="Hero"           image="sqHero"     size="large" onAction="ApplyStyle"
             screentip="Hero Statement" supertip="Avenir Next Bold · 120pt · 0.8x · rosa, ponto azul (sobre fundo azul → branco)."/>
           <button id="dsH1"       label="H1 Título"      image="sqH1"       size="large" onAction="ApplyStyle"
@@ -22,7 +21,6 @@
             screentip="Corpo de Texto" supertip="Avenir Next Regular · 44pt · 1.15x · azul."/>
           <button id="dsH3"       label="H3"             image="sqH3"       size="large" onAction="ApplyStyle"
             screentip="H3 · Corpo Descritivo" supertip="Avenir Next Bold · 34pt · 0.95x · rosa."/>
-          <!-- demais estilos no dropdown empilhado -->
           <gallery id="dsStyleGallery" label="Mais" image="dsMega" size="large"
             columns="1" itemWidth="88" itemHeight="52" showItemLabel="true" showItemImage="true"
             onAction="ApplyStyleGallery"
@@ -48,55 +46,54 @@
           <button id="ent115" label="1,15×" image="ent115" onAction="SetEntrelinha" screentip="Entrelinha 1,15×" supertip="Fixa a entrelinha da seleção em 1,15× (múltiplo)."/>
           <button id="ent13"  label="1,3×"  image="ent13"  onAction="SetEntrelinha" screentip="Entrelinha 1,3×" supertip="Fixa a entrelinha da seleção em 1,3× (múltiplo)."/>
         </group>
+        <group id="dsGrpTexto" label="Texto">
+          <control idMso="Bold" size="large"/>
+          <control idMso="PasteTextOnly" size="large"/>
+        </group>
         <group id="dsGrpFont" label="Fonte">
-          <button id="font0" image="font0" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Rosa"/>
-          <button id="font1" image="font1" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Azul"/>
-          <button id="font2" image="font2" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Bege"/>
-          <button id="font3" image="font3" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Branco"/>
-          <button id="font4" image="font4" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Preto"/>
-          <button id="font5" image="fontT" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Transparente"/>
+          <button id="font0" image="font0" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Rosa"/>
+          <button id="font1" image="font1" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Azul"/>
+          <button id="font2" image="font2" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Bege"/>
+          <button id="font3" image="font3" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Branco"/>
+          <button id="font4" image="font4" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Preto"/>
+          <button id="font5" image="fontT" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Transparente"/>
         </group>
         <group id="dsGrpFill" label="Preench.">
-          <button id="fill0" image="fill0" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Rosa"/>
-          <button id="fill1" image="fill1" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Azul"/>
-          <button id="fill2" image="fill2" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Bege"/>
-          <button id="fill3" image="fill3" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Branco"/>
-          <button id="fill4" image="fill4" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Preto"/>
-          <button id="fill5" image="fillT" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Transparente (sem preenchimento)"/>
+          <button id="fill0" image="fill0" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Rosa"/>
+          <button id="fill1" image="fill1" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Azul"/>
+          <button id="fill2" image="fill2" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Bege"/>
+          <button id="fill3" image="fill3" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Branco"/>
+          <button id="fill4" image="fill4" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Preto"/>
+          <button id="fill5" image="fillT" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Transparente (sem preenchimento)"/>
         </group>
         <group id="dsGrpOutline" label="Contorno">
-          <button id="outline0" image="outline0" size="large" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Rosa"/>
-          <button id="outline1" image="outline1" size="large" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Azul"/>
-          <button id="outline2" image="outline2" size="large" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Bege"/>
-          <button id="outline3" image="outline3" size="large" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Branco"/>
-          <button id="outline4" image="outline4" size="large" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Preto"/>
-          <button id="outline5" image="outlineT" size="large" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Sem linha (transparente)"/>
+          <button id="outline0" image="outline0" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Rosa"/>
+          <button id="outline1" image="outline1" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Azul"/>
+          <button id="outline2" image="outline2" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Bege"/>
+          <button id="outline3" image="outline3" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Branco"/>
+          <button id="outline4" image="outline4" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Preto"/>
+          <button id="outline5" image="outlineT" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Sem linha (transparente)"/>
         </group>
         <group id="dsGrpFormas" label="Formas">
           <button id="roundOne" label="Rounded" image="rounded" size="large" onAction="RoundCorner"
             screentip="Cantos arredondados (seleção)" supertip="Arredonda a forma/imagem selecionada no raio padrão (~25px num canvas 1920×1080). Imagem = crop arredondado."/>
           <button id="roundAll" label="Padronizar" image="roundedAll" size="large" onAction="RoundAllShapes"
             screentip="Padronizar os já-arredondados" supertip="Em toda a apresentação, padroniza o raio das formas que JÁ são arredondadas. Formas retas continuam retas."/>
-          <button id="roundEvery" label="Tudo rounded" image="roundEvery" size="large" onAction="RoundEverything"
-            screentip="Arredondar TODOS os objetos" supertip="Em toda a apresentação, arredonda todos os retângulos, caixas de texto e imagens. Formas não retangulares (oval, seta) ficam como estão."/>
           <button id="roundOff" label="Tirar rounded" image="roundOff" size="large" onAction="UnroundAll"
             screentip="Remover todos os rounded" supertip="Em toda a apresentação, remove o arredondamento (volta a cantos retos)."/>
         </group>
         <group id="dsGrpAlinhar" label="Alinhar">
           <button id="alignAnchor" label="Âncora esq." image="alignAnchor" size="large" onAction="AlignAnchorLeft"
-            screentip="Alinhar à âncora esquerda" supertip="Alinha a borda esquerda de todos os objetos selecionados à medida definida ao lado (cm da borda esquerda do slide)."/>
+            screentip="Alinhar à âncora esquerda" supertip="Alinha a borda esquerda dos objetos (seleção, ou todos com texto do slide) à medida ao lado. Só o slide atual."/>
+          <control idMso="ObjectsAlignLeft" size="large"/>
           <editBox id="anchorBox" label="cm" sizeString="00000" getText="GetAnchorText" onChange="SetAnchorText"
             screentip="Medida da âncora (cm)" supertip="Distância da borda esquerda do slide onde os objetos vão alinhar."/>
         </group>
         <group id="dsGrpAuditoria" label="Auditoria">
           <button id="auditScan" label="Auditar" image="auditScan" size="large" onAction="AuditScan"
             screentip="Auditar a apresentação" supertip="Procura fontes fora do padrão, cores fora da paleta e raios não-padrão. Mostra um resumo e leva você de alerta em alerta."/>
-          <button id="auditFonts" label="Padronizar fontes" image="auditFonts" size="large" onAction="AuditFixFonts"
-            screentip="Padronizar fontes" supertip="Troca todas as fontes da apresentação por Avenir Next."/>
-          <button id="auditColors" label="Padronizar cores" image="auditColors" size="large" onAction="AuditFixColors"
-            screentip="Padronizar cores" supertip="Troca cada cor fora da paleta (preenchimento, contorno e fonte) pela mais próxima da paleta da marca."/>
-          <button id="auditRadii" label="Padronizar raios" image="roundedAll" size="large" onAction="RoundAllShapes"
-            screentip="Padronizar raios" supertip="Normaliza o raio de todas as formas já arredondadas ao padrão (~25px @1920×1080)."/>
+          <button id="auditFonts" label="Padronizar tipografia" image="auditFonts" size="large" onAction="AuditFixFonts"
+            screentip="Padronizar tipografia" supertip="Troca as fontes por Avenir Next (heavy/black → Bold) e encaixa o tamanho de cada texto na escala B+G mais próxima."/>
         </group>
       </tab>
     </tabs>
