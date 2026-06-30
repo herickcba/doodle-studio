@@ -352,6 +352,109 @@ draw_audit_fonts().save(os.path.join(OUT, "auditFonts.png"))
 draw_audit_colors().save(os.path.join(OUT, "auditColors.png"))
 
 
+# --- Texto: Negrito / Colar texto / Caps / Expandir (hi-res 64px) ---
+INK = (32, 32, 38, 255)
+
+
+def draw_bold():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    f = font(52, bold=True)
+    bb = d.textbbox((0, 0), "B", font=f)
+    w, h = bb[2] - bb[0], bb[3] - bb[1]
+    d.text(((CSIZE - w) / 2 - bb[0], (CSIZE - h) / 2 - bb[1] - 4), "B", font=f, fill=INK)
+    return img
+
+
+def draw_paste():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    try:
+        d.rounded_rectangle((14, 13, 50, 55), radius=6, outline=AZUL, width=4)
+        d.rounded_rectangle((25, 7, 39, 18), radius=3, fill=AZUL)
+    except AttributeError:
+        d.rectangle((14, 13, 50, 55), outline=AZUL, width=4)
+        d.rectangle((25, 7, 39, 18), fill=AZUL)
+    d.line((21, 30, 43, 30), fill=AZUL, width=3)
+    d.line((21, 38, 43, 38), fill=AZUL, width=3)
+    d.line((21, 46, 35, 46), fill=AZUL, width=3)
+    return img
+
+
+def draw_caps():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    f = font(32, bold=True)
+    bb = d.textbbox((0, 0), "AA", font=f)
+    w, h = bb[2] - bb[0], bb[3] - bb[1]
+    d.text(((CSIZE - w) / 2 - bb[0], (CSIZE - h) / 2 - bb[1] - 9), "AA", font=f, fill=INK)
+    for x0 in (12, 28, 44):
+        d.line((x0, CSIZE - 11, x0 + 9, CSIZE - 11), fill=ROSA, width=3)
+    return img
+
+
+def draw_expand():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    try:
+        d.rounded_rectangle((23, 23, 41, 41), radius=4, outline=AZUL, width=3)
+    except AttributeError:
+        d.rectangle((23, 23, 41, 41), outline=AZUL, width=3)
+    corners = [
+        (8, 8, 18, 18, (8, 16), (16, 8)),
+        (56, 8, 46, 18, (56, 16), (48, 8)),
+        (8, 56, 18, 46, (8, 48), (16, 56)),
+        (56, 56, 46, 46, (56, 48), (48, 56)),
+    ]
+    for ax, ay, bx, by, h1, h2 in corners:
+        d.line((ax, ay, bx, by), fill=ROSA, width=3)
+        d.line((ax, ay, h1[0], h1[1]), fill=ROSA, width=3)
+        d.line((ax, ay, h2[0], h2[1]), fill=ROSA, width=3)
+    return img
+
+
+draw_bold().save(os.path.join(OUT, "dsBold.png"))
+draw_paste().save(os.path.join(OUT, "dsPaste.png"))
+draw_caps().save(os.path.join(OUT, "dsCaps.png"))
+draw_expand().save(os.path.join(OUT, "dsExpand.png"))
+
+
+# --- Alinhar / Distribuir (hi-res, mesma familia do grupo Texto) ---
+def draw_align_left():
+    """Barra-guia vertical (rosa) a' esquerda + barras alinhadas (azul)."""
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.line((10, 8, 10, CSIZE - 8), fill=ROSA, width=3)
+    for y, ln in ((16, 34), (29, 46), (42, 26)):
+        d.rectangle((14, y - 4, 14 + ln, y + 4), fill=AZUL)
+    return img
+
+
+def draw_align_top():
+    """Barra-guia horizontal (rosa) no topo + barras alinhadas (azul)."""
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.line((8, 10, CSIZE - 8, 10), fill=ROSA, width=3)
+    for x, ln in ((16, 34), (29, 46), (42, 26)):
+        d.rectangle((x - 4, 14, x + 4, 14 + ln), fill=AZUL)
+    return img
+
+
+def draw_dist_h():
+    """Tres barras verticais com espacamento igual (azul) + setas (rosa)."""
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    for x in (12, 30, 48):
+        d.rectangle((x - 4, 14, x + 4, CSIZE - 14), fill=AZUL)
+    d.line((20, CSIZE - 8, 40, CSIZE - 8), fill=ROSA, width=2)
+    return img
+
+
+draw_align_left().save(os.path.join(OUT, "alignLeft.png"))
+draw_align_top().save(os.path.join(OUT, "alignTop.png"))
+draw_dist_h().save(os.path.join(OUT, "distH.png"))
+
+
 print("Icones gerados em", os.path.normpath(OUT))
 for fn in sorted(os.listdir(OUT)):
     print("  ", fn)

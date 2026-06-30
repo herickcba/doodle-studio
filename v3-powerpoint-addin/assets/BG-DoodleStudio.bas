@@ -182,30 +182,55 @@ End Sub
 '  - Se houver OBJETOS selecionados: alinha esses (qualquer tipo).
 '  - Se NADA estiver selecionado: alinha automaticamente todas as
 '    caixas de TEXTO do slide atual (sem precisar selecionar nada).
+' Ancora a borda esquerda dos OBJETOS SELECIONADOS a' medida (cm). So' seleção.
 Public Sub AlignAnchorLeft(control As IRibbonControl)
     Dim sel As Object, shp As Object, n As Long, x As Single
     Set sel = ActiveWindow.Selection
     x = AnchorCm * 28.3465                 ' cm -> pontos
     n = 0
     If sel.Type = ppSelectionShapes Then
-        ' modo manual: alinha exatamente o que foi selecionado
         On Error Resume Next
         For Each shp In sel.ShapeRange
             shp.Left = x
             n = n + 1
         Next shp
         On Error GoTo 0
-    Else
-        ' modo automatico: varre o slide e alinha so' os objetos com texto
-        Dim sld As Object
-        Set sld = CurrentSlide()
-        If Not sld Is Nothing Then
-            For Each shp In sld.Shapes
-                n = n + AlignTextShape(shp, x)
-            Next shp
-        End If
     End If
-    If n = 0 Then MsgBox "Nenhum objeto de texto neste slide.", vbInformation, "CBA Studio"
+    If n = 0 Then MsgBox "Selecione um ou mais objetos para ancorar.", vbInformation, "CBA Studio"
+End Sub
+
+' Alinhar/distribuir tradicionais (idMso ObjectsAlignLeft/Top nao renderizam no Mac;
+' usamos ShapeRange.Align/Distribute relativo aos objetos selecionados).
+Public Sub AlignLeftEdges(control As IRibbonControl)
+    AlignSel 1          ' msoAlignLefts
+End Sub
+
+Public Sub AlignTopEdges(control As IRibbonControl)
+    AlignSel 4          ' msoAlignTops
+End Sub
+
+Private Sub AlignSel(ByVal mode As Long)
+    Dim sel As Object
+    Set sel = ActiveWindow.Selection
+    If sel.Type <> ppSelectionShapes Then
+        MsgBox "Selecione dois ou mais objetos para alinhar.", vbInformation, "CBA Studio"
+        Exit Sub
+    End If
+    On Error Resume Next
+    sel.ShapeRange.Align mode, msoFalse        ' relativo aos objetos selecionados
+    On Error GoTo 0
+End Sub
+
+Public Sub DistributeH(control As IRibbonControl)
+    Dim sel As Object
+    Set sel = ActiveWindow.Selection
+    If sel.Type <> ppSelectionShapes Then
+        MsgBox "Selecione tres ou mais objetos para distribuir.", vbInformation, "CBA Studio"
+        Exit Sub
+    End If
+    On Error Resume Next
+    sel.ShapeRange.Distribute 1, msoFalse      ' msoDistributeHorizontally, relativo
+    On Error GoTo 0
 End Sub
 
 Private Function CurrentSlide() As Object
@@ -299,17 +324,126 @@ Private Function SlideBgIsWhite(ByVal sld As Object) As Boolean
     SlideBgIsWhite = (c = RGB(255, 255, 255))
 End Function
 
-' padding interno = 2x o raio padrao (faz sentido em caixa com texto rounded)
+' padding interno = 1x o raio REAL do shape (Adjustments(1) * menor lado);
+' em cards menores o raio real e' menor, entao o padding diminui junto.
 Private Sub SetRoundedTextInset(ByVal shp As Object)
-    Dim m As Single
-    m = 2 * StdRadiusPts
+    Dim shorter As Single, r As Single
     On Error Resume Next
-    shp.TextFrame.MarginLeft = m
-    shp.TextFrame.MarginRight = m
-    shp.TextFrame.MarginTop = m
-    shp.TextFrame.MarginBottom = m
+    If shp.Width < shp.Height Then shorter = shp.Width Else shorter = shp.Height
+    r = shp.Adjustments(1) * shorter
+    If r < 0 Then r = 0
+    shp.TextFrame.MarginLeft = r
+    shp.TextFrame.MarginRight = r
+    shp.TextFrame.MarginTop = r
+    shp.TextFrame.MarginBottom = r
     On Error GoTo 0
 End Sub
+
+' ============================================================
+'  TEXTO: negrito / colar texto / CAPS+loose / expandir conteudo
+' ============================================================
+Public Sub ToggleBold(control As IRibbonControl)
+    Dim sel As Object, shp As Object, makeBold As Boolean
+    Set sel = ActiveWindow.Selection
+    On Error Resume Next
+    If sel.Type = ppSelectionText Then
+        makeBold = (sel.TextRange.Font.Bold <> msoTrue)
+        sel.TextRange.Font.Bold = IIf(makeBold, msoTrue, msoFalse)
+    ElseIf sel.Type = ppSelectionShapes Then
+        For Each shp In sel.ShapeRange
+            If shp.HasTextFrame Then
+                If shp.TextFrame.HasText Then
+                    makeBold = (shp.TextFrame.TextRange.Font.Bold <> msoTrue)
+                    shp.TextFrame.TextRange.Font.Bold = IIf(makeBold, msoTrue, msoFalse)
+                End If
+            End If
+        Next shp
+    End If
+    On Error GoTo 0
+End Sub
+
+Public Sub PasteTextOnly(control As IRibbonControl)
+    ' Mac: View.PasteSpecial nao existe; ExecuteMso (late-bound p/ evitar compile-check)
+    Dim cb As Object
+    On Error Resume Next
+    Set cb = Application.CommandBars
+    cb.ExecuteMso "PasteTextOnly"
+    On Error GoTo 0
+End Sub
+
+' ALLCAPS + character spacing "loose" (tracking proporcional ao tamanho)
+Public Sub CapsLoose(control As IRibbonControl)
+    Dim sel As Object, shp As Object, shp2 As Object, tr2 As Object, n As Long
+    Set sel = ActiveWindow.Selection
+    n = 0
+    On Error Resume Next
+    If sel.Type = ppSelectionText Then
+        If sel.TextRange.Length > 0 Then
+            Set shp2 = sel.ShapeRange(1)
+            Set tr2 = shp2.TextFrame2.TextRange.Characters(sel.TextRange.Start, sel.TextRange.Length)
+            ApplyCapsLoose tr2
+            n = 1
+        End If
+    ElseIf sel.Type = ppSelectionShapes Then
+        For Each shp In sel.ShapeRange
+            If shp.HasTextFrame Then
+                If shp.TextFrame.HasText Then
+                    ApplyCapsLoose shp.TextFrame2.TextRange
+                    n = n + 1
+                End If
+            End If
+        Next shp
+    End If
+    On Error GoTo 0
+    If n = 0 Then MsgBox "Selecione um texto.", vbInformation, "CBA Studio"
+End Sub
+
+Private Sub ApplyCapsLoose(ByVal tr2 As Object)
+    On Error Resume Next
+    tr2.Font.Caps = 2          ' msoCapsAll (constante nao definida no Mac)
+    tr2.Font.Spacing = LooseSpacingPts(tr2.Font.size)
+    On Error GoTo 0
+End Sub
+
+' tracking "loose" ~ 6% do tamanho da fonte (em pontos)
+Private Function LooseSpacingPts(ByVal sz As Single) As Single
+    If sz <= 0 Then sz = 18
+    LooseSpacingPts = sz * 0.06
+End Function
+
+' Expandir conteudo: zera as margens internas das formas selecionadas
+Public Sub ExpandContent(control As IRibbonControl)
+    Dim sel As Object, shp As Object, n As Long
+    Set sel = ActiveWindow.Selection
+    n = 0
+    If sel.Type = ppSelectionShapes Or sel.Type = ppSelectionText Then
+        On Error Resume Next
+        For Each shp In sel.ShapeRange
+            n = n + ZeroInsets(shp)
+        Next shp
+        On Error GoTo 0
+    End If
+    If n = 0 Then MsgBox "Selecione uma ou mais formas.", vbInformation, "CBA Studio"
+End Sub
+
+Private Function ZeroInsets(ByVal shp As Object) As Long
+    Dim cnt As Long, s As Object
+    cnt = 0
+    On Error Resume Next
+    If shp.Type = msoGroup Then
+        For Each s In shp.GroupItems
+            cnt = cnt + ZeroInsets(s)
+        Next s
+    ElseIf shp.HasTextFrame Then
+        shp.TextFrame.MarginLeft = 0
+        shp.TextFrame.MarginRight = 0
+        shp.TextFrame.MarginTop = 0
+        shp.TextFrame.MarginBottom = 0
+        cnt = 1
+    End If
+    On Error GoTo 0
+    ZeroInsets = cnt
+End Function
 
 ' ============================================================
 '  ROUNDED CORNERS (raio ~25px num canvas 1920x1080)
@@ -424,17 +558,35 @@ Public Sub RoundEverything(control As IRibbonControl)
     MsgBox "Arredondados " & n & " objetos na apresentacao.", vbInformation, "CBA Studio"
 End Sub
 
-' TIRAR rounded: remove o arredondamento de toda a apresentacao
-' (rounded -> retangulo reto). Imagens com crop rounded voltam a reto.
+' TIRAR rounded pela SELECAO: objetos selecionados, ou os slides selecionados
+' no painel; sem selecao de formas usa o slide atual. Nunca a apresentacao toda.
 Public Sub UnroundAll(control As IRibbonControl)
-    Dim sld As Object, shp As Object, n As Long
+    Dim sel As Object, shp As Object, sld As Object, n As Long
+    Set sel = ActiveWindow.Selection
     n = 0
-    For Each sld In ActivePresentation.Slides
-        For Each shp In sld.Shapes
+    If sel.Type = ppSelectionShapes Then
+        On Error Resume Next
+        For Each shp In sel.ShapeRange
             n = n + MakeStraight(shp)
         Next shp
-    Next sld
-    MsgBox "Removido o arredondamento de " & n & " formas.", vbInformation, "CBA Studio"
+        On Error GoTo 0
+    ElseIf sel.Type = ppSelectionSlides Then
+        On Error Resume Next
+        For Each sld In sel.SlideRange
+            For Each shp In sld.Shapes
+                n = n + MakeStraight(shp)
+            Next shp
+        Next sld
+        On Error GoTo 0
+    Else
+        Set sld = CurrentSlide()
+        If Not sld Is Nothing Then
+            For Each shp In sld.Shapes
+                n = n + MakeStraight(shp)
+            Next shp
+        End If
+    End If
+    MsgBox "Removido o arredondamento de " & n & " forma(s).", vbInformation, "CBA Studio"
 End Sub
 
 Private Function MakeStraight(ByVal shp As Object) As Long

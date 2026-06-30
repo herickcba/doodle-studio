@@ -4,9 +4,12 @@
   <Relationship Id="auditColors" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/auditColors.png"/>
   <Relationship Id="auditFonts" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/auditFonts.png"/>
   <Relationship Id="auditScan" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/auditScan.png"/>
+  <Relationship Id="dsBold" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsBold.png"/>
+  <Relationship Id="dsCaps" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCaps.png"/>
   <Relationship Id="dsCaption" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCaption.png"/>
   <Relationship Id="dsCorpo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCorpo.png"/>
   <Relationship Id="dsCorpoPilar" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCorpoPilar.png"/>
+  <Relationship Id="dsExpand" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsExpand.png"/>
   <Relationship Id="dsEyebrow" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsEyebrow.png"/>
   <Relationship Id="dsH1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsH1.png"/>
   <Relationship Id="dsH3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsH3.png"/>
@@ -15,6 +18,7 @@
   <Relationship Id="dsHero" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsHero.png"/>
   <Relationship Id="dsLabelSec" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsLabelSec.png"/>
   <Relationship Id="dsMega" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsMega.png"/>
+  <Relationship Id="dsPaste" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsPaste.png"/>
   <Relationship Id="ent08" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ent08.png"/>
   <Relationship Id="ent09" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ent09.png"/>
   <Relationship Id="ent095" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ent095.png"/>
@@ -69,4 +73,7 @@
   <Relationship Id="sqHero" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqHero.png"/>
   <Relationship Id="sqLabelSec" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqLabelSec.png"/>
   <Relationship Id="sqMega" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqMega.png"/>
+  <Relationship Id="alignLeft" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/alignLeft.png"/>
+  <Relationship Id="alignTop" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/alignTop.png"/>
+  <Relationship Id="distH" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/distH.png"/>
 </Relationships>
