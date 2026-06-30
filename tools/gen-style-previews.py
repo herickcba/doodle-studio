@@ -71,6 +71,55 @@ for name, pt, bold, col, blue_dot in STYLES:
         d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=AZUL)
     img.save(os.path.join(OUT, name + ".png"))
 
+# --- versao QUADRADA p/ os botoes inline da faixa ---
+# Glifo BEM maior (pedido do usuario): enche o icone, mantendo uma
+# leve hierarquia de tamanho (Hero > Caption). Encolhe pra caber.
+SQ = 64
+PAD = 4
+
+
+def target_px_sq(pt):
+    # alvo de tamanho por hierarquia (piso alto p/ ler grande)
+    lo_pt, hi_pt, lo_px, hi_px = 16, 120, 44, 62
+    t = (pt - lo_pt) / (hi_pt - lo_pt)
+    return int(round(lo_px + t * (hi_px - lo_px)))
+
+
+def fit_font(d, txt, pt, bold, extra):
+    px = target_px_sq(pt)
+    while px > 12:
+        f = font(px, bold)
+        bb = d.textbbox((0, 0), txt, font=f)
+        w, h = bb[2] - bb[0], bb[3] - bb[1]
+        if w + extra <= SQ - PAD and h <= SQ - PAD:
+            return f, px, bb
+        px -= 1
+    f = font(px, bold)
+    return f, px, d.textbbox((0, 0), txt, font=f)
+
+
+for name, pt, bold, col, blue_dot in STYLES:
+    img = Image.new("RGBA", (SQ, SQ), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    txt = "Aa"
+    extra = 0
+    f, px, bb = fit_font(d, txt, pt, bold, extra)
+    tw, th = bb[2] - bb[0], bb[3] - bb[1]
+    if blue_dot:
+        # reservar espaco do ponto: refit com 'extra'
+        f, px, bb = fit_font(d, txt, pt, bold, max(4, px // 6))
+        tw, th = bb[2] - bb[0], bb[3] - bb[1]
+    x = (SQ - tw) / 2 - bb[0]
+    if blue_dot:
+        x -= px // 8
+    y = (SQ - th) / 2 - bb[1]
+    d.text((x, y), txt, font=f, fill=col)
+    if blue_dot:
+        r = max(2, px // 8)
+        cx, cy = x + tw + r + 1, y + th
+        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=AZUL)
+    img.save(os.path.join(OUT, name.replace("prev", "sq") + ".png"))
+
 print("Previews gerados em", os.path.normpath(OUT))
 for s in STYLES:
-    print("  ", s[0] + ".png")
+    print("  ", s[0] + ".png  /  " + s[0].replace("prev", "sq") + ".png")

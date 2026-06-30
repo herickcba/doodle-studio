@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="alignAnchor" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/alignAnchor.png"/>
   <Relationship Id="dsCaption" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCaption.png"/>
   <Relationship Id="dsCorpo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCorpo.png"/>
   <Relationship Id="dsCorpoPilar" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/dsCorpoPilar.png"/>
@@ -19,6 +20,18 @@
   <Relationship Id="ent13" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ent13.png"/>
   <Relationship Id="entreSel" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/entreSel.png"/>
   <Relationship Id="entreTudo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/entreTudo.png"/>
+  <Relationship Id="fill0" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/fill0.png"/>
+  <Relationship Id="fill1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/fill1.png"/>
+  <Relationship Id="fill2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/fill2.png"/>
+  <Relationship Id="fill3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/fill3.png"/>
+  <Relationship Id="fill4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/fill4.png"/>
+  <Relationship Id="fillT" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/fillT.png"/>
+  <Relationship Id="font0" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/font0.png"/>
+  <Relationship Id="font1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/font1.png"/>
+  <Relationship Id="font2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/font2.png"/>
+  <Relationship Id="font3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/font3.png"/>
+  <Relationship Id="font4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/font4.png"/>
+  <Relationship Id="fontT" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/fontT.png"/>
   <Relationship Id="prevCaption" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevCaption.png"/>
   <Relationship Id="prevCorpo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevCorpo.png"/>
   <Relationship Id="prevCorpoPilar" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevCorpoPilar.png"/>
@@ -30,4 +43,19 @@
   <Relationship Id="prevHero" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevHero.png"/>
   <Relationship Id="prevLabelSec" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevLabelSec.png"/>
   <Relationship Id="prevMega" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/prevMega.png"/>
+  <Relationship Id="roundEvery" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/roundEvery.png"/>
+  <Relationship Id="roundOff" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/roundOff.png"/>
+  <Relationship Id="rounded" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/rounded.png"/>
+  <Relationship Id="roundedAll" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/roundedAll.png"/>
+  <Relationship Id="sqCaption" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqCaption.png"/>
+  <Relationship Id="sqCorpo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqCorpo.png"/>
+  <Relationship Id="sqCorpoPilar" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqCorpoPilar.png"/>
+  <Relationship Id="sqEyebrow" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqEyebrow.png"/>
+  <Relationship Id="sqH1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqH1.png"/>
+  <Relationship Id="sqH3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqH3.png"/>
+  <Relationship Id="sqH4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqH4.png"/>
+  <Relationship Id="sqH5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqH5.png"/>
+  <Relationship Id="sqHero" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqHero.png"/>
+  <Relationship Id="sqLabelSec" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqLabelSec.png"/>
+  <Relationship Id="sqMega" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/sqMega.png"/>
 </Relationships>

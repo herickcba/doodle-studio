@@ -5,16 +5,23 @@
     <tabs>
       <tab id="DoodleTab" label="CBA Studio" insertAfterMso="TabHome">
         <group id="dsGrpTipografia" label="Tipografia">
-          <gallery id="dsStyleGallery" label="Estilos" image="dsHero" size="large"
-            columns="2" itemWidth="88" itemHeight="52" showItemLabel="true" showItemImage="true"
+          <!-- 5 estilos em destaque (inline), com preview -->
+          <button id="dsHero"     label="Hero"           image="sqHero"     size="large" onAction="ApplyStyle"
+            screentip="Hero Statement" supertip="Avenir Next Bold · 120pt · 0.8x · rosa, ponto azul (sobre fundo azul → branco)."/>
+          <button id="dsH1"       label="H1 Título"      image="sqH1"       size="large" onAction="ApplyStyle"
+            screentip="H1 · Título de Página" supertip="Avenir Next Bold · 60pt · 0.9x · rosa."/>
+          <button id="dsLabelSec" label="Label de Seção" image="sqLabelSec" size="large" onAction="ApplyStyle"
+            screentip="Label de Seção" supertip="Avenir Next Bold · 60pt · 0.9x · rosa."/>
+          <button id="dsCorpo"    label="Corpo"          image="sqCorpo"    size="large" onAction="ApplyStyle"
+            screentip="Corpo de Texto" supertip="Avenir Next Regular · 44pt · 1.15x · azul."/>
+          <button id="dsH3"       label="H3"             image="sqH3"       size="large" onAction="ApplyStyle"
+            screentip="H3 · Corpo Descritivo" supertip="Avenir Next Bold · 34pt · 0.95x · rosa."/>
+          <!-- demais estilos no dropdown empilhado -->
+          <gallery id="dsStyleGallery" label="Mais" image="dsMega" size="large"
+            columns="1" itemWidth="88" itemHeight="52" showItemLabel="true" showItemImage="true"
             onAction="ApplyStyleGallery"
-            screentip="Estilos B+G" supertip="Escolha um estilo: aplica fonte, tamanho, cor, ponto final e a entrelinha exata — num clique. Vale para o texto ou o objeto selecionado.">
-            <item id="dsHero"       image="prevHero"       label="Hero"/>
+            screentip="Mais estilos" supertip="Mega, H4, H5, Corpo de Pilar, Eyebrow, Caption.">
             <item id="dsMega"       image="prevMega"       label="Mega"/>
-            <item id="dsH1"         image="prevH1"         label="H1 Título"/>
-            <item id="dsLabelSec"   image="prevLabelSec"   label="Label de Seção"/>
-            <item id="dsCorpo"      image="prevCorpo"      label="Corpo de Texto"/>
-            <item id="dsH3"         image="prevH3"         label="H3"/>
             <item id="dsH4"         image="prevH4"         label="H4"/>
             <item id="dsH5"         image="prevH5"         label="H5"/>
             <item id="dsCorpoPilar" image="prevCorpoPilar" label="Corpo de Pilar"/>
@@ -34,6 +41,38 @@
           <button id="ent10"  label="1,0×"  image="ent10"  onAction="SetEntrelinha" screentip="Entrelinha 1,0×" supertip="Fixa a entrelinha da seleção em 1,0× (múltiplo)."/>
           <button id="ent115" label="1,15×" image="ent115" onAction="SetEntrelinha" screentip="Entrelinha 1,15×" supertip="Fixa a entrelinha da seleção em 1,15× (múltiplo)."/>
           <button id="ent13"  label="1,3×"  image="ent13"  onAction="SetEntrelinha" screentip="Entrelinha 1,3×" supertip="Fixa a entrelinha da seleção em 1,3× (múltiplo)."/>
+        </group>
+        <group id="dsGrpAlinhar" label="Alinhar">
+          <button id="alignAnchor" label="Âncora esq." image="alignAnchor" size="large" onAction="AlignAnchorLeft"
+            screentip="Alinhar à âncora esquerda" supertip="Alinha a borda esquerda de todos os objetos selecionados à medida definida ao lado (cm da borda esquerda do slide)."/>
+          <editBox id="anchorBox" label="cm" sizeString="00000" getText="GetAnchorText" onChange="SetAnchorText"
+            screentip="Medida da âncora (cm)" supertip="Distância da borda esquerda do slide onde os objetos vão alinhar."/>
+        </group>
+        <group id="dsGrpFormas" label="Formas">
+          <button id="roundOne" label="Rounded" image="rounded" size="large" onAction="RoundCorner"
+            screentip="Cantos arredondados (seleção)" supertip="Arredonda a forma/imagem selecionada no raio padrão (~25px num canvas 1920×1080). Imagem = crop arredondado."/>
+          <button id="roundAll" label="Padronizar" image="roundedAll" size="large" onAction="RoundAllShapes"
+            screentip="Padronizar os já-arredondados" supertip="Em toda a apresentação, padroniza o raio das formas que JÁ são arredondadas. Formas retas continuam retas."/>
+          <button id="roundEvery" label="Tudo rounded" image="roundEvery" size="large" onAction="RoundEverything"
+            screentip="Arredondar TODOS os objetos" supertip="Em toda a apresentação, arredonda todos os retângulos, caixas de texto e imagens. Formas não retangulares (oval, seta) ficam como estão."/>
+          <button id="roundOff" label="Tirar rounded" image="roundOff" size="large" onAction="UnroundAll"
+            screentip="Remover todos os rounded" supertip="Em toda a apresentação, remove o arredondamento (volta a cantos retos)."/>
+        </group>
+        <group id="dsGrpFill" label="Preench.">
+          <button id="fill0" image="fill0" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Rosa"/>
+          <button id="fill1" image="fill1" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Azul"/>
+          <button id="fill2" image="fill2" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Bege"/>
+          <button id="fill3" image="fill3" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Branco"/>
+          <button id="fill4" image="fill4" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Preto"/>
+          <button id="fill5" image="fillT" size="large" onAction="SetShapeFill" showLabel="false" screentip="Preencher forma: Transparente (sem preenchimento)"/>
+        </group>
+        <group id="dsGrpFont" label="Fonte">
+          <button id="font0" image="font0" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Rosa"/>
+          <button id="font1" image="font1" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Azul"/>
+          <button id="font2" image="font2" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Bege"/>
+          <button id="font3" image="font3" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Branco"/>
+          <button id="font4" image="font4" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Preto"/>
+          <button id="font5" image="fontT" size="large" onAction="SetFontColor" showLabel="false" screentip="Cor da fonte: Transparente"/>
         </group>
       </tab>
     </tabs>
