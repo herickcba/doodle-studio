@@ -199,37 +199,99 @@ Public Sub AlignAnchorLeft(control As IRibbonControl)
     If n = 0 Then MsgBox "Selecione um ou mais objetos para ancorar.", vbInformation, "CBA Studio"
 End Sub
 
-' Alinhar/distribuir tradicionais (idMso ObjectsAlignLeft/Top nao renderizam no Mac;
-' usamos ShapeRange.Align/Distribute relativo aos objetos selecionados).
+' Alinhar/distribuir tradicionais. NAO usamos ShapeRange.Align (no Mac o enum
+' MsoAlignCmd vem deslocado: 1 caiu em "centers", 4 em "middles"). Calculamos
+' o vertice (menor Left / menor Top) manualmente -> alinhamento exato.
 Public Sub AlignLeftEdges(control As IRibbonControl)
-    AlignSel 1          ' msoAlignLefts
-End Sub
-
-Public Sub AlignTopEdges(control As IRibbonControl)
-    AlignSel 4          ' msoAlignTops
-End Sub
-
-Private Sub AlignSel(ByVal mode As Long)
-    Dim sel As Object
+    Dim sel As Object, shp As Object, mn As Single, got As Boolean
     Set sel = ActiveWindow.Selection
     If sel.Type <> ppSelectionShapes Then
         MsgBox "Selecione dois ou mais objetos para alinhar.", vbInformation, "CBA Studio"
         Exit Sub
     End If
     On Error Resume Next
-    sel.ShapeRange.Align mode, msoFalse        ' relativo aos objetos selecionados
+    got = False
+    For Each shp In sel.ShapeRange
+        If Not got Then
+            mn = shp.Left
+            got = True
+        ElseIf shp.Left < mn Then
+            mn = shp.Left
+        End If
+    Next shp
+    For Each shp In sel.ShapeRange
+        shp.Left = mn
+    Next shp
     On Error GoTo 0
 End Sub
 
+Public Sub AlignTopEdges(control As IRibbonControl)
+    Dim sel As Object, shp As Object, mn As Single, got As Boolean
+    Set sel = ActiveWindow.Selection
+    If sel.Type <> ppSelectionShapes Then
+        MsgBox "Selecione dois ou mais objetos para alinhar.", vbInformation, "CBA Studio"
+        Exit Sub
+    End If
+    On Error Resume Next
+    got = False
+    For Each shp In sel.ShapeRange
+        If Not got Then
+            mn = shp.Top
+            got = True
+        ElseIf shp.Top < mn Then
+            mn = shp.Top
+        End If
+    Next shp
+    For Each shp In sel.ShapeRange
+        shp.Top = mn
+    Next shp
+    On Error GoTo 0
+End Sub
+
+' Distribuir horizontalmente: mantem o mais a' esquerda e o mais a' direita
+' fixos e iguala os espacos (gaps) entre os objetos. Tudo manual (enum deslocado).
 Public Sub DistributeH(control As IRibbonControl)
-    Dim sel As Object
+    Dim sel As Object, sr As Object, n As Long, i As Long, j As Long, t As Long
     Set sel = ActiveWindow.Selection
     If sel.Type <> ppSelectionShapes Then
         MsgBox "Selecione tres ou mais objetos para distribuir.", vbInformation, "CBA Studio"
         Exit Sub
     End If
+    Set sr = sel.ShapeRange
+    n = sr.Count
+    If n < 3 Then
+        MsgBox "Selecione tres ou mais objetos para distribuir.", vbInformation, "CBA Studio"
+        Exit Sub
+    End If
+    Dim idx() As Long, lefts() As Single, widths() As Single
+    ReDim idx(1 To n): ReDim lefts(1 To n): ReDim widths(1 To n)
     On Error Resume Next
-    sel.ShapeRange.Distribute 1, msoFalse      ' msoDistributeHorizontally, relativo
+    For i = 1 To n
+        idx(i) = i
+        lefts(i) = sr(i).Left
+        widths(i) = sr(i).Width
+    Next i
+    ' ordena idx por Left (bubble; n pequeno)
+    For i = 1 To n - 1
+        For j = 1 To n - i
+            If lefts(idx(j)) > lefts(idx(j + 1)) Then
+                t = idx(j): idx(j) = idx(j + 1): idx(j + 1) = t
+            End If
+        Next j
+    Next i
+    Dim left0 As Single, rightN As Single, sumW As Single, gap As Single, cur As Single
+    left0 = lefts(idx(1))
+    rightN = lefts(idx(n)) + widths(idx(n))
+    sumW = 0
+    For i = 1 To n
+        sumW = sumW + widths(i)
+    Next i
+    gap = (rightN - left0 - sumW) / (n - 1)
+    cur = left0
+    For i = 1 To n
+        sr(idx(i)).Left = cur
+        cur = cur + widths(idx(i)) + gap
+    Next i
     On Error GoTo 0
 End Sub
 
@@ -400,16 +462,12 @@ End Sub
 
 Private Sub ApplyCapsLoose(ByVal tr2 As Object)
     On Error Resume Next
+    tr2.Font.Name = FONTE      ' Avenir Next
+    tr2.Font.Bold = msoTrue    ' -> Avenir Next Bold
     tr2.Font.Caps = 2          ' msoCapsAll (constante nao definida no Mac)
-    tr2.Font.Spacing = LooseSpacingPts(tr2.Font.size)
+    tr2.Font.Spacing = 3       ' = "Loose" nativo do PowerPoint (3pt fixos)
     On Error GoTo 0
 End Sub
-
-' tracking "loose" ~ 6% do tamanho da fonte (em pontos)
-Private Function LooseSpacingPts(ByVal sz As Single) As Single
-    If sz <= 0 Then sz = 18
-    LooseSpacingPts = sz * 0.06
-End Function
 
 ' Expandir conteudo: zera as margens internas das formas selecionadas
 Public Sub ExpandContent(control As IRibbonControl)
