@@ -1,0 +1,2658 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CBA Studio — PowerPoint toolkit</title>
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --panel: #121214;
+    --panel-2: #18181b;
+    --border: #26262a;
+    --border-2: #1f1f23;
+    --text: #e8e8ea;
+    --muted: #6b6b72;
+    --muted-2: #9a9aa1;
+    --accent: #FFD700;
+    --accent-2: #ffdf3d;
+    --active-bg: #1f1e16;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden; user-select: none;
+  }
+  body { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border-2); background: var(--bg);
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .logo {
+    width: 44px; height: 44px; border-radius: 12px; background: var(--accent);
+    display: grid; place-items: center; color: #222; font-size: 22px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset;
+  }
+  .brand h1 {
+    margin: 0; font-size: 20px; letter-spacing: 0.5px; font-weight: 800;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .pill {
+    font-size: 10px; letter-spacing: 1.5px; padding: 3px 8px; border-radius: 999px;
+    background: #232326; color: var(--muted-2); font-weight: 700;
+  }
+  .brand small {
+    display: block; font-size: 10px; letter-spacing: 2.5px; color: var(--muted);
+    text-transform: uppercase; font-weight: 600;
+  }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .res-chip {
+    display: inline-flex; align-items: center; gap: 10px; font-size: 13px; letter-spacing: 1px;
+    padding: 10px 16px; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--panel); color: var(--muted-2); font-variant-numeric: tabular-nums;
+  }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px;
+    background: linear-gradient(180deg, #ffe14a, #e8b800); color: #1b1b1b;
+    font-weight: 800; letter-spacing: 2px; font-size: 13px; border: none; border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.2) inset, 0 6px 20px rgba(255,215,0,0.15);
+    transition: transform 0.08s ease;
+  }
+  .btn-primary:hover { transform: translateY(-1px); }
+  .btn-svg {
+    font-weight: 700; letter-spacing: 1.5px; font-size: 12px;
+    padding: 12px 16px; border-radius: 12px;
+  }
+  .btn-svg:hover { border-color: var(--accent); color: var(--accent); }
+
+  main { display: grid; grid-template-columns: 360px 1fr; min-height: 0; }
+
+  aside {
+    border-right: 1px solid var(--border-2); padding: 20px 18px; overflow-y: auto; background: var(--bg);
+  }
+  aside::-webkit-scrollbar { width: 8px; }
+  aside::-webkit-scrollbar-thumb { background: #1c1c20; border-radius: 8px; }
+
+  .section-title {
+    font-size: 11px; letter-spacing: 2px; color: var(--muted-2); text-transform: uppercase;
+    margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; font-weight: 700;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  .color-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 10px; }
+  .hex-input {
+    display: flex; align-items: center; gap: 10px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px;
+  }
+  .hex-input input {
+    background: transparent; border: none; outline: none; color: var(--text);
+    font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 13px; width: 100%; letter-spacing: 0.5px;
+  }
+  .hex-input .sw { width: 20px; height: 16px; border-radius: 4px; background: var(--accent); flex-shrink: 0; }
+  .pick-btn {
+    position: relative; width: 42px; height: 38px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--accent); cursor: pointer; overflow: hidden;
+  }
+  .pick-btn input[type="color"] {
+    position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none;
+  }
+  .palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .swatch {
+    aspect-ratio: 1 / 1; border-radius: 10px; cursor: pointer;
+    border: 2px solid transparent; position: relative; transition: transform 0.1s ease;
+  }
+  .swatch:hover { transform: scale(1.05); }
+  .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,215,0,0.15); }
+
+  .slider-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px; font-size: 11px; letter-spacing: 2px; color: var(--muted-2);
+    text-transform: uppercase; font-weight: 700;
+  }
+  .slider-row .val { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+    background: #242428; border-radius: 4px; outline: none; margin: 4px 0 14px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: #fff; cursor: pointer;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.2);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%; background: #fff; cursor: pointer; border: none;
+  }
+
+  .texture-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tex-btn {
+    background: var(--panel); border: 1px solid var(--border); color: var(--muted-2);
+    padding: 10px 8px; border-radius: 10px; font-size: 11px; letter-spacing: 1.5px;
+    text-transform: uppercase; font-weight: 700; cursor: pointer; transition: all 0.12s ease;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-family: inherit;
+  }
+  .tex-btn:hover { border-color: #3a3a42; color: var(--text); }
+  .tex-btn.active { background: var(--active-bg); border-color: var(--accent); color: var(--accent); }
+  .tex-btn.active.secondary {
+    background: #1a1820;
+    border-color: #b58bff;
+    color: #b58bff;
+    box-shadow: 0 0 0 1px rgba(181,139,255,0.2) inset;
+  }
+  .tex-btn canvas { width: 100%; height: 22px; background: #fff; border-radius: 4px; }
+
+  .hint {
+    font-size: 9px; letter-spacing: 1.5px; color: var(--muted);
+    background: #1a1a1d; padding: 2px 6px; border-radius: 999px;
+    font-weight: 700; margin-left: auto;
+  }
+
+  .fault-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 4px;
+  }
+  .fault-btn {
+    background: var(--panel); border: 1px solid var(--border); color: var(--muted-2);
+    padding: 8px 4px; border-radius: 8px; font-size: 10px; letter-spacing: 1px;
+    text-transform: uppercase; font-weight: 700; cursor: pointer;
+    transition: all 0.12s ease; font-family: inherit;
+  }
+  .fault-btn:hover { border-color: #3a3a42; color: var(--text); }
+  .fault-btn.active {
+    background: #2a1616; border-color: #ff7b7b; color: #ff9c9c;
+  }
+
+  .export-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; margin: 16px 0;
+  }
+  .export-card h4 {
+    margin: 0 0 6px; font-size: 12px; letter-spacing: 2px; color: var(--accent);
+    text-transform: uppercase; display: flex; align-items: center; gap: 8px;
+  }
+  .export-card p { margin: 0; font-size: 12px; color: var(--muted-2); line-height: 1.5; }
+  .export-card p b { color: var(--text); font-weight: 600; }
+
+  .img-actions, .bottom-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn-ghost {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 12px; border-radius: 10px; font-size: 13px; cursor: pointer;
+    transition: all 0.12s ease; font-family: inherit;
+  }
+  .btn-ghost:hover { border-color: #3a3a42; background: #161619; }
+  .btn-ghost.danger:hover { color: #ff7b7b; border-color: #5a2a2a; }
+
+  .canvas-area {
+    position: relative; display: grid; place-items: center;
+    background: radial-gradient(ellipse at center, #111114 0%, #0a0a0b 70%);
+    overflow: hidden; padding: 40px;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.035) 1px, transparent 0);
+    background-size: 20px 20px;
+  }
+  .canvas-wrap {
+    position: relative; width: 100%; max-width: 100%; max-height: 100%;
+    aspect-ratio: 16 / 9; background: #fff; border-radius: 18px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5); touch-action: none;
+  }
+  .canvas-wrap canvas, .canvas-wrap .ref-img {
+    position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  }
+  .ref-img { pointer-events: none; object-fit: contain; opacity: 0.4; }
+  #drawCanvas { cursor: crosshair; }
+
+  .stat-bar {
+    position: absolute; top: 12px; left: 12px; z-index: 5;
+    display: flex; gap: 6px; pointer-events: none;
+  }
+  .chip {
+    font-size: 10px; letter-spacing: 1.5px; font-weight: 700; text-transform: uppercase;
+    padding: 4px 8px; border-radius: 6px; background: rgba(0,0,0,0.55); color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+
+  footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 24px; border-top: 1px solid var(--border-2);
+    font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase;
+  }
+  footer span b { color: var(--muted-2); font-weight: 600; }
+
+  .toast {
+    position: fixed; bottom: 60px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1a1a1d; border: 1px solid var(--border); color: var(--text);
+    padding: 12px 22px; border-radius: 10px; font-size: 13px;
+    opacity: 0; transition: all 0.25s ease; pointer-events: none; z-index: 100;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50;
+    display: none; place-items: center;
+  }
+  .modal-overlay.show { display: grid; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; min-width: 360px; max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal h3 {
+    margin: 0 0 6px; font-size: 16px; color: var(--text); font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+  .modal p { margin: 0 0 16px; font-size: 12px; color: var(--muted-2); line-height: 1.5; }
+  .export-original-row {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 11px 13px; margin-bottom: 16px; font-size: 13px; color: var(--text);
+  }
+  .export-original-row input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+  .export-original-row small { color: var(--muted); }
+  .export-colors-label {
+    font-size: 10px; letter-spacing: 1.5px; color: var(--muted-2); text-transform: uppercase;
+    font-weight: 700; margin-bottom: 8px;
+  }
+  .modal-colors { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .modal-swatch {
+    width: 42px; height: 42px; border-radius: 10px; cursor: pointer;
+    border: 3px solid transparent; transition: all 0.12s; position: relative;
+  }
+  .modal-swatch:hover { transform: scale(1.08); }
+  .modal-swatch.selected {
+    border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,215,0,0.3);
+  }
+  .modal-swatch .remove-color {
+    position: absolute; top: -6px; right: -6px; width: 16px; height: 16px;
+    border-radius: 50%; background: #ff4444; color: #fff; font-size: 10px;
+    border: none; cursor: pointer; display: none; align-items: center;
+    justify-content: center; line-height: 1;
+  }
+  .modal-swatch:hover .remove-color { display: flex; }
+  .modal-add-row {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 20px;
+  }
+  .modal-add-row .pick-btn { width: 36px; height: 36px; border-radius: 8px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  .stroke-selected-info {
+    display: none; align-items: center; gap: 8px; padding: 10px 12px;
+    background: var(--active-bg); border: 1px solid var(--accent);
+    border-radius: 10px; margin-bottom: 12px; font-size: 12px; color: var(--accent);
+    letter-spacing: 1px; font-weight: 700;
+  }
+  .stroke-selected-info.show { display: flex; }
+  .stroke-selected-info .deselect-btn {
+    margin-left: auto; background: none; border: 1px solid var(--accent);
+    color: var(--accent); padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; font-family: inherit;
+  }
+
+  .anim-actions, .anim-export { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .anim-export { margin-top: 14px; }
+  .anim-field { margin: 12px 0; }
+  .anim-field > label {
+    display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted-2);
+    text-transform: uppercase; font-weight: 700; margin-bottom: 6px;
+  }
+  .anim-field select {
+    width: 100%; background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); border-radius: 10px; padding: 9px 12px; font-size: 13px;
+    font-family: inherit; outline: none; cursor: pointer;
+  }
+  .anim-field select:focus { border-color: var(--accent); }
+  .anim-check {
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted-2);
+    letter-spacing: 1px; text-transform: none; font-weight: 600; cursor: pointer; margin: 0;
+  }
+  .anim-check input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+  .webm-bg-row { display: flex; align-items: center; gap: 10px; }
+  .anim-note { font-size: 10px; color: var(--muted); line-height: 1.4; }
+  #playBtn.playing { border-color: var(--accent); color: var(--accent); }
+
+  .tl-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 16px 0 8px; font-size: 11px; letter-spacing: 2px; color: var(--muted-2);
+    text-transform: uppercase; font-weight: 700;
+  }
+  .tl-quick { display: flex; gap: 6px; }
+  .tl-quick button {
+    background: var(--panel); border: 1px solid var(--border); color: var(--muted-2);
+    border-radius: 7px; padding: 4px 8px; font-size: 9px; letter-spacing: 1px;
+    text-transform: uppercase; font-weight: 700; cursor: pointer; font-family: inherit;
+  }
+  .tl-quick button:hover { border-color: var(--accent); color: var(--accent); }
+  .tl-wrap {
+    position: relative; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px; overflow: hidden;
+    background-image: linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 25% 100%;
+  }
+  .tl-empty { font-size: 11px; color: var(--muted); text-align: center; padding: 14px 4px; }
+  .tl-lanes { display: flex; flex-direction: column; gap: 5px; }
+  .tl-lane { position: relative; height: 22px; border-radius: 5px; background: rgba(255,255,255,0.025); }
+  .tl-block {
+    position: absolute; top: 0; height: 100%; min-width: 8px; border-radius: 5px;
+    cursor: grab; box-shadow: 0 0 0 1px rgba(0,0,0,0.3) inset;
+    display: flex; align-items: center; padding-left: 6px; overflow: hidden;
+    font-size: 10px; font-weight: 800; color: rgba(0,0,0,0.55); user-select: none;
+    transition: box-shadow 0.1s ease;
+  }
+  .tl-block:hover { box-shadow: 0 0 0 1px rgba(255,255,255,0.25) inset; }
+  .tl-block.dragging { cursor: grabbing; box-shadow: 0 0 0 2px var(--accent); z-index: 4; }
+  .tl-block.selected { box-shadow: 0 0 0 2px var(--accent), 0 0 10px rgba(255,215,0,0.35); }
+  .tl-playhead {
+    position: absolute; top: 6px; bottom: 6px; width: 2px; background: var(--accent);
+    left: 8px; pointer-events: none; opacity: 0; box-shadow: 0 0 6px rgba(255,215,0,0.6);
+  }
+  .tl-playhead.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="logo">🍌</div>
+      <div>
+        <h1>CBA <span class="pill">STUDIO</span></h1>
+        <small>PowerPoint toolkit</small>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="res-chip">🖥 <span id="resLabel">1920 x 1080</span></div>
+      <a class="btn-ghost" href="/v2.html" target="_blank" rel="noopener" title="Abrir o Doodle Studio 100% online (não precisa instalar nada)" style="white-space:nowrap">🎨 Doodle Studio online ↗</a>
+      <button class="btn-ghost" id="installBtn" title="Instalar no PowerPoint">📥 Instalar no PowerPoint</button>
+      <button class="btn-ghost btn-svg" id="svgBtn" title="Exportar SVG Vetorial">⬇ SVG</button>
+      <button class="btn-primary" id="exportBtn">⬇ PNG</button>
+    </div>
+  </header>
+
+  <main>
+    <aside>
+      <div class="section-title">🎨 Cor &amp; Opacidade</div>
+      <div class="color-row">
+        <div class="hex-input">
+          <input type="text" id="hexInput" value="#FD5E6D" maxlength="7" />
+          <div class="sw" id="hexSw" style="background:#FD5E6D"></div>
+        </div>
+        <label class="pick-btn" id="pickBtn" style="background:#FD5E6D;">
+          <input type="color" id="colorPicker" value="#FD5E6D" />
+        </label>
+      </div>
+
+      <div class="palette" id="palette"></div>
+
+      <div class="stroke-selected-info" id="strokeSelectedInfo">
+        <span>Traço selecionado</span>
+        <button class="deselect-btn" id="deselectBtn">Deselecionar</button>
+      </div>
+
+      <div class="slider-row" style="margin-top:18px;">
+        <span>Opacidade</span>
+        <span class="val" id="opacityVal">100%</span>
+      </div>
+      <input type="range" id="opacity" min="0" max="100" value="100" />
+
+      <div class="slider-row">
+        <span>Tamanho do Pincel</span>
+        <span class="val" id="sizeVal">8px</span>
+      </div>
+      <input type="range" id="size" min="1" max="60" value="8" />
+
+      <div class="section-title">
+        Textura do Traço
+        <span class="hint" id="texHint">1/2</span>
+      </div>
+      <div class="texture-grid" id="textureGrid">
+        <button class="tex-btn active" data-tex="giz"><canvas width="120" height="22"></canvas>Giz</button>
+        <button class="tex-btn" data-tex="solido"><canvas width="120" height="22"></canvas>Sólido</button>
+        <button class="tex-btn" data-tex="marcador"><canvas width="120" height="22"></canvas>Marcador</button>
+        <button class="tex-btn" data-tex="lapis"><canvas width="120" height="22"></canvas>Lápis</button>
+        <button class="tex-btn" data-tex="aquarela"><canvas width="120" height="22"></canvas>Aquarela</button>
+        <button class="tex-btn" data-tex="spray"><canvas width="120" height="22"></canvas>Spray</button>
+        <button class="tex-btn" data-tex="nanquim"><canvas width="120" height="22"></canvas>Nanquim</button>
+        <button class="tex-btn" data-tex="pontilhado"><canvas width="120" height="22"></canvas>Pontilhado</button>
+        <button class="tex-btn" data-tex="patinhas"><canvas width="120" height="22"></canvas>Patinhas</button>
+      </div>
+
+      <div class="slider-row" style="margin-top:18px;">
+        <span>Estabilizador do Movimento</span>
+        <span class="val" id="mouseSmoothVal">50%</span>
+      </div>
+      <input type="range" id="mouseSmooth" min="0" max="100" value="50" />
+
+      <div class="slider-row">
+        <span>Suavização Vetorial</span>
+        <span class="val" id="vectorSmoothVal">0%</span>
+      </div>
+      <input type="range" id="vectorSmooth" min="0" max="100" value="0" />
+
+      <div class="section-title">
+        ⚡ Falhas na Tinta
+        <span class="hint" id="faultHint">Nenhuma</span>
+      </div>
+      <div class="fault-grid" id="faultGrid">
+        <button class="fault-btn active" data-fault="none">Nenhuma</button>
+        <button class="fault-btn" data-fault="quebra">Quebra</button>
+        <button class="fault-btn" data-fault="falha">Falha</button>
+        <button class="fault-btn" data-fault="respingo">Respingo</button>
+      </div>
+      <div class="slider-row" style="margin-top:10px;">
+        <span>Intensidade</span>
+        <span class="val" id="faultLvlVal">16%</span>
+      </div>
+      <input type="range" id="faultLvl" min="0" max="100" value="16" />
+
+      <div class="slider-row">
+        <span>Tamanho da Quebra</span>
+        <span class="val" id="gapSizeVal">54%</span>
+      </div>
+      <input type="range" id="gapSize" min="0" max="100" value="54" />
+
+      <div class="section-title">🖼 Imagem de Referência</div>
+      <div class="img-actions">
+        <button class="btn-ghost" id="loadImgBtn">Carregar</button>
+        <button class="btn-ghost danger" id="removeImgBtn">Remover</button>
+      </div>
+      <input type="file" id="imgInput" accept="image/*" style="display:none;" />
+      <div class="slider-row" style="margin-top:14px;">
+        <span>Opacidade Ref.</span>
+        <span class="val" id="refOpVal">40%</span>
+      </div>
+      <input type="range" id="refOp" min="0" max="100" value="40" />
+
+      <div class="section-title">🎬 Traço Animado</div>
+      <div class="anim-actions">
+        <button class="btn-ghost" id="playBtn">▶ Reproduzir</button>
+        <button class="btn-ghost" id="resetAnimBtn">↺ Início</button>
+      </div>
+
+      <div class="tl-head">
+        <span>Linha do Tempo</span>
+        <span class="tl-quick">
+          <button id="tlSeqBtn" title="Um após o outro">Sequencial</button>
+          <button id="tlTogetherBtn" title="Todos começam juntos">Juntos</button>
+        </span>
+      </div>
+      <div class="tl-wrap" id="tlWrap">
+        <div class="tl-empty" id="tlEmpty">Desenhe traços para organizá-los aqui.</div>
+        <div class="tl-lanes" id="tlLanes"></div>
+        <div class="tl-playhead" id="tlPlayhead"></div>
+      </div>
+      <div class="anim-note" style="margin:-2px 0 8px;">Arraste cada bloco para definir quando o traço começa. Clique para selecioná-lo.</div>
+
+      <div class="slider-row" style="margin-top:14px;">
+        <span>Duração</span>
+        <span class="val" id="animDurVal">4.0s</span>
+      </div>
+      <input type="range" id="animDur" min="5" max="150" value="40" />
+
+      <div class="slider-row">
+        <span>Segurar no Final</span>
+        <span class="val" id="animHoldVal">600ms</span>
+      </div>
+      <input type="range" id="animHold" min="0" max="2000" value="600" step="50" />
+
+      <div class="anim-field">
+        <label for="animEasing">Curva</label>
+        <select id="animEasing">
+          <option value="linear">Constante (Linear)</option>
+          <option value="easeIn">Ease-In (acelera)</option>
+          <option value="easeOut">Ease-Out (desacelera)</option>
+          <option value="easeInOut">Ease-In-Out</option>
+        </select>
+      </div>
+
+      <div class="anim-field">
+        <label class="anim-check"><input type="checkbox" id="animLoop" checked /> Loop no preview</label>
+      </div>
+
+      <div class="anim-field anim-adv">
+        <label for="animFps">FPS</label>
+        <select id="animFps">
+          <option value="12">12</option>
+          <option value="15" selected>15</option>
+          <option value="25">25</option>
+          <option value="30">30</option>
+        </select>
+      </div>
+
+      <div class="anim-field anim-adv">
+        <label for="animScale">Tamanho do GIF</label>
+        <select id="animScale">
+          <option value="480">480 × 270</option>
+          <option value="640" selected>640 × 360</option>
+          <option value="960">960 × 540</option>
+          <option value="1280">1280 × 720</option>
+          <option value="1920">1920 × 1080</option>
+        </select>
+      </div>
+
+      <div class="anim-field">
+        <label for="webmBg">Fundo do WebM</label>
+        <div class="webm-bg-row">
+          <label class="pick-btn" id="webmBgPick" style="background:#FFFFFF; width:38px; height:34px;">
+            <input type="color" id="webmBg" value="#FFFFFF" />
+          </label>
+          <span class="anim-note">WebM não tem transparência — usa fundo sólido.</span>
+        </div>
+      </div>
+
+      <div class="anim-export">
+        <button class="btn-ghost" id="gifBtn">⬇ GIF transparente</button>
+        <button class="btn-ghost" id="webmBtn">⬇ WebM (vídeo)</button>
+      </div>
+
+      <div class="export-card">
+        <h4>✦ Exportação PRO</h4>
+        <p><b>PNG</b> transparente ou <b>SVG</b> vetorial em <b>1920×1080</b>.<br/>A imagem de referência não é incluída.</p>
+      </div>
+
+      <div class="bottom-actions">
+        <button class="btn-ghost" id="undoBtn">↶ Desfazer</button>
+        <button class="btn-ghost danger" id="clearBtn">🗑 Limpar</button>
+      </div>
+    </aside>
+
+    <div class="canvas-area">
+      <div class="canvas-wrap" id="canvasWrap">
+        <img class="ref-img" id="refImg" alt="" style="display:none;" />
+        <canvas id="drawCanvas" width="1920" height="1080"></canvas>
+        <div class="stat-bar">
+          <span class="chip" id="statChip">0 strokes · 0 anchors</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span>Status: <b id="status">Ready</b></span>
+    <span>Engine: <b>Vector Harmonizer Pro</b></span>
+    <span>© 2026 CBA Studio</span>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ============================================================
+       Instalar no PowerPoint — modal autocontido (CSS/HTML/JS proprios)
+       ============================================================ -->
+  <style>
+    .inst-overlay{position:fixed;inset:0;background:rgba(18,18,26,.62);display:none;align-items:center;justify-content:center;z-index:99999;padding:20px}
+    .inst-overlay.open{display:flex}
+    .inst-modal{background:#fff;color:#1c1c28;max-width:640px;width:100%;max-height:88vh;overflow:auto;border-radius:16px;padding:26px 26px 30px;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.4);font-family:inherit}
+    .inst-modal h3{margin:0 0 4px;font-size:22px;font-weight:700}
+    .inst-sub{margin:0 0 16px;color:#6b6b78;font-size:13px}
+    .inst-close{position:absolute;top:12px;right:16px;border:0;background:none;font-size:28px;line-height:1;cursor:pointer;color:#9a9aa6}
+    .inst-os{display:inline-flex;background:#f0f0f4;border-radius:10px;padding:4px;margin-bottom:18px;gap:4px}
+    .inst-os-btn{border:0;background:none;padding:7px 20px;border-radius:8px;font-weight:600;cursor:pointer;color:#5a5a66;font-size:13px}
+    .inst-os-btn.active{background:#fff;color:#1c1c28;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+    .inst-card{border:1px solid #ececf2;border-radius:12px;padding:15px 18px;margin-bottom:14px}
+    .inst-card-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:6px}
+    .inst-card-h b{font-size:15px}
+    .inst-card-h span{font-size:11px;color:#8a8a96}
+    .inst-beta{background:#FFE9B0;color:#7a5d00;padding:2px 8px;border-radius:6px;font-weight:700;font-size:10px;letter-spacing:.02em}
+    .inst-dl{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+    .inst-b{display:inline-block;background:#436AE1;color:#fff;text-decoration:none;padding:9px 14px;border-radius:9px;font-size:13px;font-weight:600}
+    .inst-b:hover{background:#3559cf}
+    .inst-b.ghost{background:#f2f3f8;color:#33333f}
+    .inst-modal ol{margin:6px 0 2px;padding-left:20px;font-size:13px;line-height:1.7;color:#33333f}
+    .inst-note{font-size:12px;color:#5e5e6a;background:#f7f7fb;border-radius:8px;padding:9px 11px;margin:8px 0 0}
+  </style>
+  <div class="inst-overlay" id="instOverlay">
+    <div class="inst-modal">
+      <button class="inst-close" id="instClose" aria-label="Fechar">×</button>
+      <h3>Instalar no PowerPoint</h3>
+      <p class="inst-sub">São dois componentes — instale os que quiser. Os arquivos vão para a pasta <b>Downloads</b>.</p>
+      <p class="inst-note" style="margin:0 0 16px">Não quer instalar nada? Use o <a href="/v2.html" target="_blank" rel="noopener"><b>Doodle Studio 100% online ↗</b></a>.</p>
+
+      <div class="inst-os" id="instOs">
+        <button class="inst-os-btn active" data-os="mac">macOS</button>
+        <button class="inst-os-btn" data-os="win">Windows</button>
+      </div>
+
+      <!-- macOS -->
+      <div class="inst-pane" data-os="mac">
+        <div class="inst-card">
+          <div class="inst-card-h"><b>Faixa “CBA Studio”</b><span>tipografia · entrelinha · âncora · cantos arredondados · cores</span></div>
+          <div class="inst-dl">
+            <a class="inst-b" href="/download/BG-DoodleStudio.ppam" download>⬇ Add-in (.ppam)</a>
+            <a class="inst-b" href="/download/instalar-faixa-mac.command" download>⬇ Instalador (Mac)</a>
+          </div>
+          <ol>
+            <li>Baixe os <b>dois</b> arquivos acima (vão para Downloads).</li>
+            <li>Abra o <b>instalador</b>. Se o Mac bloquear, clique com o botão direito → <b>Abrir</b>.</li>
+            <li>Reabra o PowerPoint → <b>Habilitar Macros</b>. A aba <b>CBA Studio</b> aparece.</li>
+          </ol>
+        </div>
+        <div class="inst-card">
+          <div class="inst-card-h"><b>Extensão</b><span>painel Doodle + ImaGen</span></div>
+          <div class="inst-dl">
+            <a class="inst-b" href="/download/instalar-extensao-mac.command" download>⬇ Instalador da extensão (Mac)</a>
+            <a class="inst-b ghost" href="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html" target="_blank" rel="noopener">↗ Abrir no navegador</a>
+          </div>
+          <ol>
+            <li>Abra o instalador (botão direito → <b>Abrir</b> se for bloqueado).</li>
+            <li>No PowerPoint: <b>Inserir → Suplementos → Meus Suplementos → CBA Studio</b>.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Windows -->
+      <div class="inst-pane" data-os="win" hidden>
+        <div class="inst-card">
+          <div class="inst-card-h"><b>Faixa “CBA Studio”</b><span class="inst-beta">INSTALADOR BETA</span></div>
+          <div class="inst-dl">
+            <a class="inst-b" href="/download/BG-DoodleStudio.ppam" download>⬇ Add-in (.ppam)</a>
+            <a class="inst-b" href="/download/instalar-faixa-windows.bat" download>⬇ Instalador (.bat)</a>
+          </div>
+          <ol>
+            <li>Baixe os <b>dois</b> arquivos para a pasta Downloads.</li>
+            <li>Rode o <b>instalar-faixa-windows.bat</b>.</li>
+            <li>Abra o PowerPoint → <b>Habilitar Macros</b>. A aba <b>CBA Studio</b> aparece.</li>
+          </ol>
+          <p class="inst-note"><b>Manual</b> (se a aba não aparecer): Arquivo → Opções → Suplementos → em “Gerenciar”, escolha <b>Suplementos do PowerPoint</b> → Ir… → <b>Adicionar Novo…</b> → selecione o .ppam.</p>
+        </div>
+        <div class="inst-card">
+          <div class="inst-card-h"><b>Extensão</b><span>painel Doodle + ImaGen</span></div>
+          <div class="inst-dl">
+            <a class="inst-b" href="/download/manifest.xml" download>⬇ manifest.xml</a>
+            <a class="inst-b ghost" href="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html" target="_blank" rel="noopener">↗ Abrir no navegador</a>
+          </div>
+          <ol>
+            <li>No PowerPoint: <b>Inserir → Suplementos → Meus Suplementos</b>.</li>
+            <li><b>Carregar Meu Suplemento</b> (Upload My Add-in) → escolha o <b>manifest.xml</b>.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ov = document.getElementById('instOverlay');
+      var openBtn = document.getElementById('installBtn');
+      var closeBtn = document.getElementById('instClose');
+      if (openBtn) openBtn.addEventListener('click', function () { ov.classList.add('open'); });
+      if (closeBtn) closeBtn.addEventListener('click', function () { ov.classList.remove('open'); });
+      ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.remove('open'); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') ov.classList.remove('open'); });
+      var btns = document.querySelectorAll('.inst-os-btn');
+      btns.forEach(function (b) {
+        b.addEventListener('click', function () {
+          btns.forEach(function (x) { x.classList.remove('active'); });
+          b.classList.add('active');
+          var os = b.getAttribute('data-os');
+          document.querySelectorAll('.inst-pane').forEach(function (p) {
+            p.hidden = (p.getAttribute('data-os') !== os);
+          });
+        });
+      });
+    })();
+  </script>
+
+  <div class="modal-overlay" id="exportModal">
+    <div class="modal">
+      <h3>Exportar PNG</h3>
+      <p>Exporte com as cores que você desenhou, e/ou escolha cores extras — uma imagem é salva para cada opção marcada.</p>
+      <label class="export-original-row" id="exportOriginalRow">
+        <input type="checkbox" id="exportOriginal" checked />
+        <span>Cores originais <small>(como desenhei)</small></span>
+      </label>
+      <div class="export-colors-label">Recolorir para (opcional)</div>
+      <div class="modal-colors" id="exportColors"></div>
+      <div class="modal-add-row">
+        <label class="pick-btn" style="background:#FF6B6B; width:36px; height:36px; border-radius:8px;">
+          <input type="color" id="exportColorPicker" value="#FF6B6B" />
+        </label>
+        <button class="btn-ghost" id="addExportColor" style="font-size:12px;">+ Adicionar Cor</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="cancelExport">Cancelar</button>
+        <button class="btn-primary" id="confirmExport" style="padding:10px 20px;">Exportar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+   Vector Studio Pro
+   - Raw points are stored forever per stroke.
+   - Render time: apply Ramer–Douglas–Peucker simplification using
+     the CURRENT smoothing value, then render as smooth Catmull-Rom
+     beziers. Moving the slider re-vectorizes every stroke live.
+   - Each texture is a distinct rendering pipeline over those vector
+     points.
+   ============================================================ */
+
+const canvas = document.getElementById('drawCanvas');
+const ctx = canvas.getContext('2d');
+const refImg = document.getElementById('refImg');
+const toast = document.getElementById('toast');
+const statChip = document.getElementById('statChip');
+
+const state = {
+  color: '#FD5E6D',
+  opacity: 1,
+  size: 8,
+  textures: ['giz'],      // up to 2 active textures, composited in order
+  mouseSmoothing: 50,     // Gaussian low-pass on raw input (tremor filter)
+  vectorSmoothing: 0,     // RDP + Chaikin (anchor count + harmonic curve)
+  faultTypes: [],         // subset of ['quebra','falha','respingo'] — empty = none
+  faultLevel: 16,         // 0..100 (how often faults occur)
+  gapSize: 54,            // 0..100 (how long each dropped chunk is)
+  strokes: [],
+  current: null,
+  isDrawing: false,
+  selectedStrokeIdx: -1,
+  pointerStart: null,
+  anim: {
+    playing: false,
+    duration: 4,      // seconds
+    easing: 'linear',
+    loop: true,
+    holdMs: 600,
+    fps: 15,
+    gifScale: 640,    // longest side (px) for GIF export
+    webmBg: '#FFFFFF',
+    _raf: null,
+    _t0: 0,
+  },
+};
+
+/* ---------- PALETTE ---------- */
+const PALETTE = [
+  '#FD5E6D', '#436AE1', '#EEECE6', '#FFFFFF', '#000000'
+];
+const paletteEl = document.getElementById('palette');
+PALETTE.forEach((c, i) => {
+  const s = document.createElement('div');
+  s.className = 'swatch' + (i === 0 ? ' active' : '');
+  s.style.background = c;
+  s.dataset.color = c;
+  s.addEventListener('click', () => selectColor(c, s));
+  paletteEl.appendChild(s);
+});
+function selectColor(c, el) {
+  state.color = c;
+  document.getElementById('hexInput').value = c.toUpperCase();
+  document.getElementById('hexSw').style.background = c;
+  document.getElementById('pickBtn').style.background = c;
+  document.getElementById('colorPicker').value = c;
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (state.selectedStrokeIdx >= 0 && state.selectedStrokeIdx < state.strokes.length) {
+    state.strokes[state.selectedStrokeIdx].color = c;
+    state.strokes[state.selectedStrokeIdx]._cache = null;
+    render();
+  }
+  renderThumbs();
+}
+document.getElementById('hexInput').addEventListener('input', e => {
+  let v = e.target.value.trim();
+  if (!v.startsWith('#')) v = '#' + v;
+  if (/^#[0-9A-Fa-f]{6}$/.test(v)) selectColor(v.toUpperCase());
+});
+document.getElementById('colorPicker').addEventListener('input', e => {
+  selectColor(e.target.value.toUpperCase());
+});
+
+/* ---------- SLIDERS ---------- */
+const opSlider = document.getElementById('opacity');
+opSlider.addEventListener('input', () => {
+  state.opacity = +opSlider.value / 100;
+  document.getElementById('opacityVal').textContent = opSlider.value + '%';
+});
+const sizeSlider = document.getElementById('size');
+sizeSlider.addEventListener('input', () => {
+  state.size = +sizeSlider.value;
+  document.getElementById('sizeVal').textContent = sizeSlider.value + 'px';
+});
+const mouseSmoothSlider = document.getElementById('mouseSmooth');
+mouseSmoothSlider.addEventListener('input', () => {
+  state.mouseSmoothing = +mouseSmoothSlider.value;
+  document.getElementById('mouseSmoothVal').textContent = mouseSmoothSlider.value + '%';
+  render();
+});
+const vectorSmoothSlider = document.getElementById('vectorSmooth');
+vectorSmoothSlider.addEventListener('input', () => {
+  state.vectorSmoothing = +vectorSmoothSlider.value;
+  document.getElementById('vectorSmoothVal').textContent = vectorSmoothSlider.value + '%';
+  render();
+});
+const refOpSlider = document.getElementById('refOp');
+refOpSlider.addEventListener('input', () => {
+  refImg.style.opacity = +refOpSlider.value / 100;
+  document.getElementById('refOpVal').textContent = refOpSlider.value + '%';
+});
+
+/* ---------- TEXTURE BUTTONS (multi-select, max 2) ---------- */
+function updateTextureUI() {
+  document.querySelectorAll('.tex-btn').forEach(btn => {
+    const idx = state.textures.indexOf(btn.dataset.tex);
+    btn.classList.toggle('active', idx >= 0);
+    btn.classList.toggle('secondary', idx === 1); // 2nd texture styled differently
+  });
+  document.getElementById('texHint').textContent = `${state.textures.length}/2`;
+}
+document.querySelectorAll('.tex-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    const tex = b.dataset.tex;
+    const idx = state.textures.indexOf(tex);
+    if (idx >= 0) {
+      // Deactivate, but always keep at least 1 active
+      if (state.textures.length > 1) state.textures.splice(idx, 1);
+    } else {
+      // Activate; drop the oldest if already 2
+      if (state.textures.length >= 2) state.textures.shift();
+      state.textures.push(tex);
+    }
+    updateTextureUI();
+  });
+});
+
+/* ---------- FAULT BUTTONS (multi-select) ---------- */
+const FAULT_LABELS = { quebra: 'Quebra', falha: 'Falha', respingo: 'Respingo' };
+function updateFaultUI() {
+  document.querySelectorAll('.fault-btn').forEach(btn => {
+    const f = btn.dataset.fault;
+    if (f === 'none') {
+      btn.classList.toggle('active', state.faultTypes.length === 0);
+    } else {
+      btn.classList.toggle('active', state.faultTypes.includes(f));
+    }
+  });
+  const hint = document.getElementById('faultHint');
+  hint.textContent = state.faultTypes.length === 0
+    ? 'Nenhuma'
+    : state.faultTypes.map(t => FAULT_LABELS[t]).join(' + ');
+}
+document.querySelectorAll('.fault-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    const f = b.dataset.fault;
+    if (f === 'none') {
+      state.faultTypes = [];
+    } else {
+      const idx = state.faultTypes.indexOf(f);
+      if (idx >= 0) state.faultTypes.splice(idx, 1);
+      else state.faultTypes.push(f);
+    }
+    updateFaultUI();
+    render(); // faults are live — re-render all existing strokes
+  });
+});
+const faultLvl = document.getElementById('faultLvl');
+faultLvl.addEventListener('input', () => {
+  state.faultLevel = +faultLvl.value;
+  document.getElementById('faultLvlVal').textContent = faultLvl.value + '%';
+  render();
+});
+const gapSizeSlider = document.getElementById('gapSize');
+gapSizeSlider.addEventListener('input', () => {
+  state.gapSize = +gapSizeSlider.value;
+  document.getElementById('gapSizeVal').textContent = gapSizeSlider.value + '%';
+  render();
+});
+
+/* ---------- REFERENCE IMAGE ---------- */
+const imgInput = document.getElementById('imgInput');
+document.getElementById('loadImgBtn').addEventListener('click', () => imgInput.click());
+imgInput.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    refImg.src = r.result;
+    refImg.style.display = 'block';
+    showToast('Imagem de referência carregada');
+  };
+  r.readAsDataURL(f);
+});
+document.getElementById('removeImgBtn').addEventListener('click', () => {
+  refImg.src = '';
+  refImg.style.display = 'none';
+  imgInput.value = '';
+  showToast('Imagem removida');
+});
+
+/* ============================================================
+   DRAWING INPUT
+   ============================================================ */
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width;
+  const sy = canvas.height / rect.height;
+  return { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy };
+}
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  canvas.setPointerCapture(e.pointerId);
+  state.isDrawing = true;
+  const p = getPos(e);
+  state.pointerStart = { x: e.clientX, y: e.clientY };
+  state.current = {
+    raw: [p],
+    color: state.color, opacity: state.opacity,
+    size: state.size,
+    textures: state.textures.slice(),
+    seed: Math.floor(Math.random() * 1e6),
+  };
+});
+canvas.addEventListener('pointermove', e => {
+  if (!state.isDrawing) return;
+  e.preventDefault();
+  const p = getPos(e);
+  const last = state.current.raw[state.current.raw.length - 1];
+  const dx = p.x - last.x, dy = p.y - last.y;
+  if (dx*dx + dy*dy < 1.5) return;
+  state.current.raw.push(p);
+  state.current._cache = null;
+  render();
+});
+function finishStroke(e) {
+  if (!state.isDrawing) return;
+  state.isDrawing = false;
+  const wasClick = state.current && state.current.raw.length <= 3 && state.pointerStart && e &&
+    Math.hypot(e.clientX - state.pointerStart.x, e.clientY - state.pointerStart.y) < 6;
+  if (wasClick) {
+    const p = getPos(e);
+    state.current = null;
+    handleStrokeClick(p);
+  } else if (state.current && state.current.raw.length > 0) {
+    // New stroke starts on the timeline right after everything drawn so far.
+    let end = 0;
+    for (const s of state.strokes) end = Math.max(end, (s.animStart || 0) + strokeDur(s));
+    state.current.animStart = end;
+    state.strokes.push(state.current);
+    state.current = null;
+    deselectStroke();
+    if (typeof renderTimeline === 'function') renderTimeline();
+  }
+  state.pointerStart = null;
+  render();
+}
+canvas.addEventListener('pointerup', finishStroke);
+canvas.addEventListener('pointercancel', finishStroke);
+window.addEventListener('pointerup', finishStroke);
+
+function distToStroke(p, stroke) {
+  const pts = vectorize(stroke);
+  const dense = densify(pts, 10);
+  let minD = Infinity;
+  for (const q of dense) {
+    const d = Math.hypot(p.x - q.x, p.y - q.y);
+    if (d < minD) minD = d;
+  }
+  return minD;
+}
+
+function handleStrokeClick(p) {
+  let bestIdx = -1, bestDist = Infinity;
+  for (let i = 0; i < state.strokes.length; i++) {
+    const d = distToStroke(p, state.strokes[i]);
+    const threshold = Math.max(20, state.strokes[i].size * 2.5);
+    if (d < threshold && d < bestDist) {
+      bestDist = d;
+      bestIdx = i;
+    }
+  }
+  if (bestIdx >= 0) {
+    state.selectedStrokeIdx = bestIdx;
+    const stroke = state.strokes[bestIdx];
+    selectColor(stroke.color);
+    document.getElementById('strokeSelectedInfo').classList.add('show');
+  } else {
+    deselectStroke();
+  }
+  if (typeof renderTimeline === 'function') renderTimeline();
+}
+
+function deselectStroke() {
+  state.selectedStrokeIdx = -1;
+  document.getElementById('strokeSelectedInfo').classList.remove('show');
+  if (typeof renderTimeline === 'function') renderTimeline();
+}
+
+document.getElementById('deselectBtn').addEventListener('click', () => {
+  deselectStroke();
+  render();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { deselectStroke(); render(); }
+});
+
+/* ============================================================
+   VECTORIZATION
+   ============================================================ */
+/* ---------- Smoothing parameter mapping ----------
+   Three stages are driven by the single 0–100 slider:
+     1) Gaussian low-pass on raw coordinates (kills tremor)
+     2) Ramer–Douglas–Peucker simplification (sparse anchors)
+     3) Chaikin corner-cutting on the anchor polyline (harmonic curve)
+
+   IMPORTANT — All parameters are CLAMPED by the stroke's own
+   geometry (bounding-box diagonal and sample count). This keeps
+   compact curves like circles and loops intact: a tight circle
+   only gets the amount of smoothing that fits inside it, so its
+   shape is preserved instead of collapsing to a line. */
+function bboxDiag(pts) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of pts) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return Math.hypot(maxX - minX, maxY - minY);
+}
+
+function smoothingParams(mouse, vector, raw) {
+  const diag = bboxDiag(raw);
+  const n = raw.length;
+
+  // MOVEMENT stabilizer → Gaussian window ONLY. Relative to raw
+  // sample count so a tight circle (few samples) never averages
+  // across more than ~12% of its own perimeter.
+  const gwinTarget = Math.round((mouse / 100) * 34);
+  const gwinCap    = Math.max(0, Math.floor(n * 0.12));
+  const gwin       = Math.min(gwinTarget, gwinCap);
+
+  // VECTOR smoothing → RDP epsilon + Chaikin. Capped at a fraction
+  // of the bbox diagonal so compact shapes aren't destroyed.
+  const epsTarget = Math.pow(vector / 100, 1.35) * 70;
+  const epsCap    = Math.max(0, diag * 0.10);
+  const eps       = Math.min(epsTarget, epsCap);
+
+  let iters;
+  if (vector <= 5)       iters = 0;
+  else if (vector <= 30) iters = 1;
+  else if (vector <= 60) iters = 2;
+  else if (vector <= 85) iters = 3;
+  else                   iters = 4;
+
+  return { gwin, eps, iters };
+}
+
+function rdp(points, epsilon) {
+  if (points.length < 3 || epsilon <= 0) return points.slice();
+  const end = points.length - 1;
+  let idx = 0, dmax = 0;
+  for (let i = 1; i < end; i++) {
+    const d = perpDist(points[i], points[0], points[end]);
+    if (d > dmax) { dmax = d; idx = i; }
+  }
+  if (dmax > epsilon) {
+    const left = rdp(points.slice(0, idx + 1), epsilon);
+    const right = rdp(points.slice(idx), epsilon);
+    return left.slice(0, -1).concat(right);
+  }
+  return [points[0], points[end]];
+}
+function perpDist(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  if (dx === 0 && dy === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+  const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx*dx + dy*dy);
+  const cx = a.x + t * dx, cy = a.y + t * dy;
+  return Math.hypot(p.x - cx, p.y - cy);
+}
+
+/* Gaussian low-pass on coordinates. Preserves endpoints. */
+function gaussianSmooth(pts, windowSize) {
+  if (pts.length < 3 || windowSize < 1) return pts.slice();
+  const half = Math.floor(windowSize / 2);
+  const sigma = Math.max(1, windowSize / 3);
+  const w = new Array(half * 2 + 1);
+  for (let i = -half; i <= half; i++) {
+    w[i + half] = Math.exp(-(i * i) / (2 * sigma * sigma));
+  }
+  const out = new Array(pts.length);
+  for (let i = 0; i < pts.length; i++) {
+    let sx = 0, sy = 0, sw = 0;
+    for (let k = -half; k <= half; k++) {
+      const j = i + k;
+      if (j < 0 || j >= pts.length) continue;
+      const ww = w[k + half];
+      sx += pts[j].x * ww; sy += pts[j].y * ww; sw += ww;
+    }
+    out[i] = { x: sx / sw, y: sy / sw };
+  }
+  // Pin endpoints so the user's start/end stay anchored
+  out[0] = pts[0];
+  out[out.length - 1] = pts[pts.length - 1];
+  return out;
+}
+
+/* Chaikin's corner-cutting: each iteration replaces every inner
+   segment by two points at 1/4 and 3/4, producing a C1-continuous
+   curve that rapidly approaches a quadratic B-spline. */
+function chaikin(pts, iters) {
+  if (iters <= 0 || pts.length < 3) return pts;
+  let out = pts;
+  for (let it = 0; it < iters; it++) {
+    const next = [out[0]];
+    for (let i = 0; i < out.length - 1; i++) {
+      const p = out[i], q = out[i + 1];
+      next.push({ x: 0.75 * p.x + 0.25 * q.x, y: 0.75 * p.y + 0.25 * q.y });
+      next.push({ x: 0.25 * p.x + 0.75 * q.x, y: 0.25 * p.y + 0.75 * q.y });
+    }
+    next.push(out[out.length - 1]);
+    out = next;
+  }
+  return out;
+}
+
+/* Vectorize a stroke with the CURRENT smoothing sliders.
+   Caches result per stroke keyed by both slider values. */
+function vectorize(stroke) {
+  const key = state.mouseSmoothing * 1000 + state.vectorSmoothing;
+  if (stroke._cache && stroke._cache.k === key) return stroke._cache.pts;
+  const raw = stroke.raw;
+  if (raw.length < 3) {
+    const pts = raw.slice();
+    stroke._cache = { k: key, pts };
+    return pts;
+  }
+  const { gwin, eps, iters } = smoothingParams(
+    state.mouseSmoothing, state.vectorSmoothing, raw
+  );
+  // Stage 1 — movement stabilizer (low-pass)
+  const filtered = gwin > 0 ? gaussianSmooth(raw, gwin) : raw;
+  // Stage 2 — RDP to sparse anchors (bbox-clamped)
+  const simplified = eps > 0 ? rdp(filtered, eps) : filtered;
+  // Stage 3 — Chaikin for harmonic curves
+  const pts = chaikin(simplified, iters);
+  stroke._cache = { k: key, pts };
+  return pts;
+}
+
+/* Count the sparse anchors (pre-Chaikin) for the status chip */
+function anchorCount(stroke) {
+  const raw = stroke.raw;
+  if (raw.length < 3) return raw.length;
+  const { gwin, eps } = smoothingParams(
+    state.mouseSmoothing, state.vectorSmoothing, raw
+  );
+  const filtered = gwin > 0 ? gaussianSmooth(raw, gwin) : raw;
+  const simplified = eps > 0 ? rdp(filtered, eps) : filtered;
+  return simplified.length;
+}
+
+/* Sample Catmull-Rom path densely for effects that need regular
+   spacing along the actual curve (spray, pontilhado, giz etc). */
+function densify(pts, stepsPerSeg = 20) {
+  if (pts.length < 2) return pts.slice();
+  const out = [pts[0]];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    for (let s = 1; s <= stepsPerSeg; s++) {
+      const t = s / stepsPerSeg, u = 1 - t;
+      out.push({
+        x: u*u*u*p1.x + 3*u*u*t*c1x + 3*u*t*t*c2x + t*t*t*p2.x,
+        y: u*u*u*p1.y + 3*u*u*t*c1y + 3*u*t*t*c2y + t*t*t*p2.y,
+      });
+    }
+  }
+  return out;
+}
+
+/* Walk densified path at a constant arc-length interval */
+function walkPath(dense, step, fn) {
+  let carry = 0;
+  for (let i = 0; i < dense.length - 1; i++) {
+    const a = dense[i], b = dense[i + 1];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 1e-6) continue;
+    const ux = dx / d, uy = dy / d;
+    let t = step - carry;
+    while (t <= d) { fn(a.x + ux * t, a.y + uy * t, ux, uy); t += step; }
+    carry = d - (t - step);
+  }
+}
+
+/* Seeded pseudo-random */
+function rand(x, y) {
+  const v = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+/* ============================================================
+   CATMULL-ROM SMOOTH STROKE
+   ============================================================ */
+function strokeBezier(c, pts) {
+  if (pts.length === 0) return;
+  if (pts.length === 1) {
+    c.beginPath();
+    c.arc(pts[0].x, pts[0].y, Math.max(0.5, c.lineWidth / 2), 0, Math.PI * 2);
+    c.fill();
+    return;
+  }
+  c.beginPath();
+  c.moveTo(pts[0].x, pts[0].y);
+  if (pts.length === 2) { c.lineTo(pts[1].x, pts[1].y); c.stroke(); return; }
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    c.bezierCurveTo(c1x, c1y, c2x, c2y, p2.x, p2.y);
+  }
+  c.stroke();
+}
+
+/* ============================================================
+   TEXTURES — each is a distinct brush shape
+   ============================================================ */
+const TEXTURES = {
+  solido(c, pts, s) {
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = s.color; c.globalAlpha = s.opacity; c.lineWidth = s.size;
+    strokeBezier(c, pts);
+  },
+
+  giz(c, pts, s) {
+    // Chalk: rough broken core + speckled grain along path.
+    // Grains are drawn as anti-aliased circles (not 1×1 fillRects) so
+    // they survive downsampling when the PNG is viewed at any zoom.
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = s.color;
+    c.globalAlpha = s.opacity * 0.35;
+    c.lineWidth = s.size * 0.85;
+    strokeBezier(c, pts);
+
+    const dense = densify(pts, 16);
+    c.fillStyle = s.color;
+    c.globalAlpha = s.opacity * 0.7;
+    walkPath(dense, Math.max(1, s.size * 0.25), (x, y, ux, uy) => {
+      const nx = -uy, ny = ux;
+      for (let k = 0; k < 4; k++) {
+        const off = (rand(x + k * 3.1, y + k * 7.7) - 0.5) * s.size * 1.4;
+        const jx = (rand(x * 2 + k, y) - 0.5) * 0.6;
+        const jy = (rand(x, y * 2 + k) - 0.5) * 0.6;
+        const px = x + nx * off + jx;
+        const py = y + ny * off + jy;
+        const r = 0.6 + rand(x + k, y - k) * Math.max(0.8, s.size * 0.12);
+        c.beginPath();
+        c.arc(px, py, r, 0, Math.PI * 2);
+        c.fill();
+      }
+    });
+  },
+
+  marcador(c, pts, s) {
+    // Marker: wide translucent body + darker core, chiseled flat feel
+    c.lineCap = 'butt'; c.lineJoin = 'round';
+    c.strokeStyle = s.color;
+    c.globalAlpha = s.opacity * 0.35;
+    c.lineWidth = s.size * 1.8;
+    strokeBezier(c, pts);
+    c.globalAlpha = s.opacity * 0.7;
+    c.lineWidth = s.size * 1.1;
+    strokeBezier(c, pts);
+  },
+
+  lapis(c, pts, s) {
+    // Pencil — "split graphite" effect: 4 parallel tips running along
+    // the same vector path, each offset by a different perpendicular
+    // distance. Each tip drops random segments so the graphite looks
+    // broken / failing, plus a sparse grain scatter for paper texture.
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = s.color; c.fillStyle = s.color;
+
+    const dense = densify(pts, 14);
+
+    const tips = [
+      { off: -0.48, alpha: 0.55, width: 0.34, gap: 0.16 },
+      { off: -0.16, alpha: 0.38, width: 0.26, gap: 0.08 },
+      { off:  0.14, alpha: 0.50, width: 0.30, gap: 0.11 },
+      { off:  0.44, alpha: 0.62, width: 0.36, gap: 0.19 },
+    ];
+
+    for (const tip of tips) {
+      c.globalAlpha = s.opacity * tip.alpha;
+      c.lineWidth = Math.max(0.3, s.size * tip.width);
+      c.beginPath();
+      let open = false;
+      for (let i = 0; i < dense.length - 1; i++) {
+        const a = dense[i], b = dense[i + 1];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 1e-6) continue;
+        const nx = -dy / d, ny = dx / d;
+
+        // Drop-outs for the broken-graphite look
+        const r = rand(a.x * 0.8 + tip.off * 51, a.y * 0.8 + tip.off * 89);
+        if (r < tip.gap) { open = false; continue; }
+
+        // Micro-jitter of the offset so each tip wanders slightly
+        const j = (rand(a.x * 2.3 + tip.off * 7, a.y * 2.7) - 0.5) * 0.18;
+        const off = (tip.off + j) * s.size;
+        const x1 = a.x + nx * off, y1 = a.y + ny * off;
+        const x2 = b.x + nx * off, y2 = b.y + ny * off;
+
+        if (!open) { c.moveTo(x1, y1); open = true; }
+        c.lineTo(x2, y2);
+      }
+      c.stroke();
+    }
+
+    // Graphite grain — sparse circular flecks around the path
+    c.globalAlpha = s.opacity * 0.38;
+    walkPath(dense, 2, (x, y, ux, uy) => {
+      if (rand(x * 3.1, y * 3.7) > 0.72) {
+        const nx = -uy, ny = ux;
+        const off = (rand(x, y) - 0.5) * s.size * 1.1;
+        const r = 0.5 + rand(x * 1.3, y * 1.7) * Math.max(0.6, s.size * 0.08);
+        c.beginPath();
+        c.arc(x + nx * off, y + ny * off, r, 0, Math.PI * 2);
+        c.fill();
+      }
+    });
+  },
+
+  aquarela(c, pts, s) {
+    // Watercolor: 3 soft layers + bleed splatters
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = s.color;
+    c.globalAlpha = s.opacity * 0.12;  c.lineWidth = s.size * 3.2; strokeBezier(c, pts);
+    c.globalAlpha = s.opacity * 0.20;  c.lineWidth = s.size * 2.0; strokeBezier(c, pts);
+    c.globalAlpha = s.opacity * 0.35;  c.lineWidth = s.size * 1.0; strokeBezier(c, pts);
+
+    const dense = densify(pts, 14);
+    c.fillStyle = s.color;
+    walkPath(dense, s.size * 2.5, (x, y, ux, uy) => {
+      const nx = -uy, ny = ux;
+      for (let k = 0; k < 2; k++) {
+        if (rand(x * 0.3 + k, y * 0.3) > 0.55) {
+          const off = (rand(x + k, y) - 0.5) * s.size * 5;
+          const r  = 0.4 + rand(x * 2, y * 2 + k) * s.size * 0.7;
+          c.globalAlpha = s.opacity * 0.18;
+          c.beginPath();
+          c.arc(x + nx * off, y + ny * off, r, 0, Math.PI * 2);
+          c.fill();
+        }
+      }
+    });
+  },
+
+  spray(c, pts, s) {
+    // Airbrush: no core line. Only particles with gaussian-ish falloff.
+    // Each particle is a small anti-aliased arc so it renders crisply
+    // at any zoom and survives PNG downsampling.
+    c.fillStyle = s.color;
+    const dense = densify(pts, 18);
+    const radius = s.size * 2.2;
+    const density = Math.max(10, Math.floor(s.size * 2.6));
+    const dotMin  = Math.max(0.6, s.size * 0.06);
+    const dotMax  = Math.max(1.0, s.size * 0.14);
+    walkPath(dense, 1.2, (x, y) => {
+      for (let i = 0; i < density; i++) {
+        const ang = rand(x + i * 0.31, y + i * 0.77) * Math.PI * 2;
+        const rr  = Math.pow(rand(x * 3 + i, y * 3 + i), 2) * radius;
+        const dr  = dotMin + rand(x + i * 0.7, y * 1.3 + i) * (dotMax - dotMin);
+        c.globalAlpha = s.opacity * 0.35;
+        c.beginPath();
+        c.arc(x + Math.cos(ang) * rr, y + Math.sin(ang) * rr, dr, 0, Math.PI * 2);
+        c.fill();
+      }
+    });
+  },
+
+  nanquim(c, pts, s) {
+    // Calligraphy ink: tapered variable-width bezier segments
+    if (pts.length < 2) return TEXTURES.solido(c, pts, s);
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = s.color; c.globalAlpha = s.opacity;
+    const dense = densify(pts, 10);
+    const n = dense.length;
+    for (let i = 0; i < n - 1; i++) {
+      const t = i / Math.max(1, n - 1);
+      // Sine taper: thin at ends, thick middle
+      const w = s.size * (0.2 + 1.0 * Math.sin(Math.PI * t));
+      c.lineWidth = Math.max(0.4, w);
+      c.beginPath();
+      c.moveTo(dense[i].x, dense[i].y);
+      c.lineTo(dense[i + 1].x, dense[i + 1].y);
+      c.stroke();
+    }
+  },
+
+  pontilhado(c, pts, s) {
+    // True circular dots at constant arc-length intervals
+    c.fillStyle = s.color; c.globalAlpha = s.opacity;
+    const dense = densify(pts, 20);
+    const spacing = Math.max(s.size * 2.0, 3);
+    const radius = Math.max(s.size * 0.55, 0.8);
+    walkPath(dense, spacing, (x, y) => {
+      c.beginPath();
+      c.arc(x, y, radius, 0, Math.PI * 2);
+      c.fill();
+    });
+  },
+
+  patinhas(c, pts, s) {
+    // Dog paw trail: paw prints placed along the path, alternating left/right
+    // like a walking animal. Reuses the fault sliders as the user requested:
+    //   gapSize    (Tamanho da Quebra) → spacing BETWEEN paws
+    //   faultLevel (Intensidade)       → how far they alternate to the sides
+    c.fillStyle = s.color; c.globalAlpha = s.opacity;
+    const dense = densify(pts, 16);
+    const { spacing, offsetAmt } = pawParams(s.size);
+    let toggle = 0;
+    walkPath(dense, spacing, (x, y, ux, uy) => {
+      const nx = -uy, ny = ux;
+      const side = (toggle % 2 === 0) ? 1 : -1;
+      drawPaw(c, x + nx * side * offsetAmt, y + ny * side * offsetAmt, ux, uy, s.size);
+      toggle++;
+    });
+  },
+};
+
+/* Paw spacing/offset derived from size + the (repurposed) fault sliders. */
+function pawParams(size) {
+  const gap = Math.max(0, Math.min(100, state.gapSize || 0));
+  const intensity = Math.max(0, Math.min(100, state.faultLevel || 0));
+  return {
+    spacing: Math.max(size * 2.4, 7) * (0.6 + (gap / 100) * 2.4),
+    offsetAmt: (intensity / 100) * size * 1.8,
+  };
+}
+
+/* One dog paw print (1 palm pad + 4 toe beans), rotated to face travel dir. */
+function drawPaw(c, x, y, ux, uy, size) {
+  const r = Math.max(size * 0.9, 1.2);
+  c.save();
+  c.translate(x, y);
+  c.rotate(Math.atan2(uy, ux));
+  c.beginPath();
+  c.ellipse(-0.25 * r, 0, 0.5 * r, 0.62 * r, 0, 0, Math.PI * 2); // palm
+  c.fill();
+  const toes = [[0.55, -0.5], [0.82, -0.18], [0.82, 0.18], [0.55, 0.5]];
+  for (const [tx, ty] of toes) {
+    c.beginPath();
+    c.ellipse(tx * r, ty * r, 0.26 * r, 0.3 * r, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+  c.restore();
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+/* ============================================================
+   INK FAULTS — breaks the vectorized path into sub-segments with
+   per-segment alpha, or emits extra splatters. Rendered BEFORE
+   texture composition so all textures respect the fault pattern.
+   ============================================================ */
+function buildFaultPlan(pts, types, level, gapSize, seed) {
+  if (!types || !types.length || level <= 0 || pts.length < 3) {
+    return { segments: [{ pts, alpha: 1 }], splatter: 0 };
+  }
+  const segments = [];
+  const N = pts.length;
+  const rate = Math.pow(level / 100, 1.25) * 0.55;
+  // gapSize maps to max chunk length in RAW samples:
+  //   0   → max 2  (tiny gaps, barely perceptible)
+  //   30  → max 5  (short breaks)
+  //   50  → max 8
+  //   100 → max 18 (long gaps)
+  const g = Math.max(0, Math.min(100, gapSize || 0)) / 100;
+  const chunkMax = 2 + Math.round(Math.pow(g, 1.2) * 16);
+  let i = 0;
+  while (i < N - 1) {
+    const sx = pts[i].x + seed * 0.13;
+    const sy = pts[i].y + seed * 0.19;
+    const chunk = 2 + Math.floor(rand(sx * 0.37, sy * 0.71 + i) * (chunkMax - 1));
+    const end = Math.min(i + chunk, N - 1);
+    const seg = pts.slice(i, end + 1);
+    const r = rand(sx + 11, sy * 2.3 + i * 3.1);
+    if (r < rate) {
+      // Pick which active fault type applies to this chunk.
+      // With multiple faults active, each faulted chunk picks one
+      // at random (uniform) — so a "Quebra + Falha" combo produces
+      // some hard gaps and some ghost-opacity sections.
+      const pickIdx = Math.floor(rand(sx + 17 + seed, sy + 29) * types.length);
+      const picked = types[pickIdx];
+      if (picked === 'quebra') {
+        // drop — clean gap
+      } else if (picked === 'falha') {
+        const a = 0.08 + rand(sx, sy + i) * 0.28;
+        segments.push({ pts: seg, alpha: a });
+      } else if (picked === 'respingo') {
+        // Respingo keeps the line and emits splatters globally
+        segments.push({ pts: seg, alpha: 1 });
+      }
+    } else {
+      segments.push({ pts: seg, alpha: 1 });
+    }
+    i = end;
+  }
+  return {
+    segments,
+    splatter: types.includes('respingo') ? level : 0,
+  };
+}
+
+function drawSplatter(c, pts, stroke, level) {
+  const dense = densify(pts, 12);
+  const density = Math.pow(level / 100, 1.1) * 0.35;
+  const reach = stroke.size * 3.5;
+  c.fillStyle = stroke.color;
+  walkPath(dense, 3, (x, y, ux, uy) => {
+    const nx = -uy, ny = ux;
+    for (let k = 0; k < 3; k++) {
+      const rr = rand(x + k * 1.9 + stroke.seed, y + k * 2.7);
+      if (rr >= density) continue;
+      const ang = rand(x + k * 3.1, y - k * 1.7 + stroke.seed) * Math.PI * 2;
+      const dist = 0.2 + rand(x * 2, y * 2 + k) * reach;
+      const sz = 0.5 + rand(x - k, y + k + stroke.seed) * Math.max(1, stroke.size * 0.35);
+      c.globalAlpha = stroke.opacity * (0.25 + rand(x * 3 + stroke.seed, y) * 0.55);
+      c.beginPath();
+      c.arc(x + Math.cos(ang) * dist, y + Math.sin(ang) * dist, sz, 0, Math.PI * 2);
+      c.fill();
+    }
+  });
+}
+
+function drawStroke(c, stroke, ptsOverride) {
+  const pts = ptsOverride || vectorize(stroke);
+  const textures = (stroke.textures && stroke.textures.length)
+    ? stroke.textures
+    : [stroke.texture || 'solido']; // back-compat with older strokes
+  const seed = stroke.seed || 0;
+  // Faults are read from GLOBAL state so they can be edited after drawing.
+  // Back-compat fallback: if a stroke was serialized with its own fault
+  // fields (old API), honor those when the global state has no faults.
+  let faultTypes = state.faultTypes;
+  let faultLevel = state.faultLevel;
+  if ((!faultTypes || !faultTypes.length) && stroke.faultTypes && stroke.faultTypes.length) {
+    faultTypes = stroke.faultTypes;
+    faultLevel = stroke.faultLevel ?? faultLevel;
+  }
+  const plan = buildFaultPlan(pts, faultTypes, faultLevel, state.gapSize, seed);
+
+  c.save();
+  for (const seg of plan.segments) {
+    if (seg.pts.length < 2) continue;
+    const sub = { ...stroke, opacity: stroke.opacity * seg.alpha };
+    for (const tex of textures) {
+      c.save();
+      (TEXTURES[tex] || TEXTURES.solido)(c, seg.pts, sub);
+      c.restore();
+    }
+  }
+  if (plan.splatter > 0) drawSplatter(c, pts, stroke, plan.splatter);
+  c.restore();
+}
+
+/* ============================================================
+   ANIMATION ENGINE — progressive reveal by arc length.
+   Reuses vectorize/densify/drawStroke; the active stroke is drawn
+   truncated at an exact arc-length cutoff so the pen tip grows
+   smoothly. Texture grain/faults are position-seeded, so the
+   revealed portion is stable frame to frame.
+   ============================================================ */
+const EASING = {
+  linear:    t => t,
+  easeIn:    t => t * t,
+  easeOut:   t => 1 - (1 - t) * (1 - t),
+  easeInOut: t => t * t * (3 - 2 * t), // smoothstep
+};
+
+/* Arc length of a stroke's vectorized+densified path. Cached per
+   smoothing key so it invalidates together with the vector cache. */
+function strokeArcLen(stroke) {
+  const key = state.mouseSmoothing * 1000 + state.vectorSmoothing;
+  if (stroke._arc && stroke._arc.k === key) return stroke._arc.len;
+  const dense = densify(vectorize(stroke), 10);
+  let len = 0;
+  for (let i = 0; i < dense.length - 1; i++) {
+    len += Math.hypot(dense[i + 1].x - dense[i].x, dense[i + 1].y - dense[i].y);
+  }
+  stroke._arc = { k: key, len, dense };
+  return len;
+}
+
+/* Truncate a polyline at a target arc length, interpolating the
+   final point exactly at the cutoff. */
+function truncatePts(pts, targetLen) {
+  if (pts.length < 2 || targetLen <= 0) return pts.length ? [pts[0]] : [];
+  const out = [pts[0]];
+  let acc = 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    const seg = Math.hypot(b.x - a.x, b.y - a.y);
+    if (acc + seg < targetLen) {
+      out.push(b);
+      acc += seg;
+    } else {
+      const t = seg < 1e-6 ? 0 : (targetLen - acc) / seg;
+      out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+      return out;
+    }
+  }
+  return out;
+}
+
+/* Draw time (≈ length, since speed is constant) of one stroke. Min so that
+   tiny strokes/dots still occupy a sliver of the timeline. */
+function strokeDur(s) { return Math.max(strokeArcLen(s), 4); }
+
+/* Each stroke owns an `animStart` (in the same length/time units) — when it
+   begins on the timeline. Default = laid out sequentially (each starts when the
+   previous ends), which reproduces the original behavior. Assign it to any
+   stroke that lacks it (back-compat, after undo/clear, or freshly drawn). */
+function ensureAnimDefaults() {
+  let acc = 0;
+  for (const s of state.strokes) {
+    if (typeof s.animStart !== 'number') s.animStart = acc;
+    acc = Math.max(acc, s.animStart + strokeDur(s));
+  }
+}
+
+/* Per-stroke revealed length at a given global progress. Constant speed:
+   a stroke reveals = elapsed time since its own start, capped at its length.
+   The timeline ends at the latest stroke end; progress 0..1 maps to 0..end. */
+function strokeReveals(progress, easing) {
+  const ease = EASING[easing] || EASING.linear;
+  ensureAnimDefaults();
+  const durs = state.strokes.map(strokeDur);
+  let end = 1;
+  for (let i = 0; i < state.strokes.length; i++) {
+    end = Math.max(end, (state.strokes[i].animStart || 0) + durs[i]);
+  }
+  const tc = ease(Math.max(0, Math.min(1, progress))) * end;
+  return state.strokes.map((s, i) =>
+    Math.max(0, Math.min(durs[i], tc - (s.animStart || 0)))
+  );
+}
+
+/* Draw the scene at a given global progress (0..1) onto any context.
+   Strokes are drawn in array order (z-order = creation order); WHEN each is
+   revealed is governed by the timeline (strokeReveals). */
+function renderAnimated(c, progress, easing) {
+  const reveals = strokeReveals(progress, easing);
+  for (let i = 0; i < state.strokes.length; i++) {
+    const s = state.strokes[i];
+    const r = reveals[i];
+    if (r <= 0) continue;
+    if (r >= strokeDur(s)) {
+      drawStroke(c, s);                 // fully drawn
+    } else {
+      const partial = truncatePts(vectorize(s), r);
+      if (partial.length >= 1) drawStroke(c, s, partial);
+    }
+  }
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Invalidate any cached vector whose smoothing keys no longer match
+  const key = state.mouseSmoothing * 1000 + state.vectorSmoothing;
+  for (const s of state.strokes) {
+    if (s._cache && s._cache.k !== key) s._cache = null;
+  }
+  for (const s of state.strokes) drawStroke(ctx, s);
+  if (state.current) drawStroke(ctx, state.current);
+
+  if (state.selectedStrokeIdx >= 0 && state.selectedStrokeIdx < state.strokes.length) {
+    const sel = state.strokes[state.selectedStrokeIdx];
+    const pts = vectorize(sel);
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = sel.size + 8;
+    ctx.globalAlpha = 0.35;
+    ctx.setLineDash([12, 8]);
+    strokeBezier(ctx, pts);
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // chip stats (sparse anchor count, pre-Chaikin)
+  let total = 0;
+  for (const s of state.strokes) total += anchorCount(s);
+  if (state.current) total += anchorCount(state.current);
+  const sc = state.strokes.length + (state.current ? 1 : 0);
+  statChip.textContent = `${sc} stroke${sc !== 1 ? 's' : ''} · ${total} anchors`;
+}
+
+/* ============================================================
+   TEXTURE THUMBNAILS (live preview in each button)
+   ============================================================ */
+function renderThumbs() {
+  document.querySelectorAll('.tex-btn').forEach(btn => {
+    const tex = btn.dataset.tex;
+    const c = btn.querySelector('canvas');
+    const cx = c.getContext('2d');
+    const w = c.width, h = c.height;
+    cx.clearRect(0, 0, w, h);
+    // Smooth sample wave
+    const raw = [];
+    const n = 14;
+    for (let i = 0; i <= n; i++) {
+      const x = (i / n) * (w - 8) + 4;
+      const y = h / 2 + Math.sin(i * 0.9) * (h * 0.3);
+      raw.push({ x, y });
+    }
+    const stroke = { color: state.color, opacity: 1, size: 3, texture: tex };
+    const pts = raw;
+    cx.save();
+    (TEXTURES[tex] || TEXTURES.solido)(cx, pts, stroke);
+    cx.restore();
+  });
+}
+
+/* ============================================================
+   ACTIONS
+   ============================================================ */
+document.getElementById('undoBtn').addEventListener('click', () => {
+  if (state.strokes.length === 0) return;
+  state.strokes.pop();
+  render();
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (state.strokes.length === 0) return;
+  if (!confirm('Limpar o canvas inteiro?')) return;
+  state.strokes = [];
+  render();
+  showToast('Canvas limpo');
+});
+/* ---------- MULTI-COLOR PNG EXPORT ---------- */
+let exportColors = ['#FD5E6D', '#436AE1', '#EEECE6', '#FFFFFF', '#000000'];
+let selectedExportColors = new Set();
+
+function renderExportSwatches() {
+  const container = document.getElementById('exportColors');
+  container.innerHTML = '';
+  exportColors.forEach((c, i) => {
+    const sw = document.createElement('div');
+    sw.className = 'modal-swatch' + (selectedExportColors.has(c) ? ' selected' : '');
+    sw.style.background = c;
+    if (c === '#FFFFFF' || c === '#EEECE6') sw.style.border = selectedExportColors.has(c)
+      ? '3px solid var(--accent)' : '3px solid #333';
+    const rm = document.createElement('button');
+    rm.className = 'remove-color';
+    rm.textContent = '×';
+    rm.addEventListener('click', e => {
+      e.stopPropagation();
+      exportColors.splice(i, 1);
+      selectedExportColors.delete(c);
+      renderExportSwatches();
+    });
+    sw.appendChild(rm);
+    sw.addEventListener('click', () => {
+      if (selectedExportColors.has(c)) selectedExportColors.delete(c);
+      else selectedExportColors.add(c);
+      renderExportSwatches();
+    });
+    container.appendChild(sw);
+  });
+}
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  if (state.strokes.length === 0) { showToast('Nenhum traço para exportar'); return; }
+  selectedExportColors.clear();
+  document.getElementById('exportOriginal').checked = true;
+  renderExportSwatches();
+  document.getElementById('exportModal').classList.add('show');
+});
+
+document.getElementById('addExportColor').addEventListener('click', () => {
+  const c = document.getElementById('exportColorPicker').value.toUpperCase();
+  if (!exportColors.includes(c)) exportColors.push(c);
+  renderExportSwatches();
+});
+
+document.getElementById('exportColorPicker').addEventListener('input', e => {
+  e.target.parentElement.style.background = e.target.value;
+});
+
+document.getElementById('cancelExport').addEventListener('click', () => {
+  document.getElementById('exportModal').classList.remove('show');
+});
+
+document.getElementById('confirmExport').addEventListener('click', () => {
+  const useOriginal = document.getElementById('exportOriginal').checked;
+  // Build the list of exports: null = original colors, otherwise a recolor.
+  const jobs = [];
+  if (useOriginal) jobs.push(null);
+  for (const color of selectedExportColors) jobs.push(color);
+  if (jobs.length === 0) {
+    showToast('Marque "Cores originais" ou escolha ao menos uma cor');
+    return;
+  }
+  document.getElementById('exportModal').classList.remove('show');
+  const timestamp = Date.now();
+  for (const color of jobs) {
+    const exp = document.createElement('canvas');
+    exp.width = 1920; exp.height = 1080;
+    const ex = exp.getContext('2d');
+    ex.imageSmoothingEnabled = true;
+    ex.imageSmoothingQuality = 'high';
+    for (const s of state.strokes) {
+      if (color === null) {
+        drawStroke(ex, s);                          // keep the colors as drawn
+      } else {
+        drawStroke(ex, { ...s, color, _cache: null }); // recolor everything
+      }
+    }
+    const url = exp.toDataURL('image/png');
+    const a = document.createElement('a');
+    const safeName = color === null ? 'original' : color.replace('#', '');
+    a.href = url; a.download = `doodle-${safeName}-${timestamp}.png`;
+    a.click();
+  }
+  showToast(`${jobs.length} PNG(s) 1920×1080 exportado(s)`);
+});
+
+/* ============================================================
+   SVG EXPORT — mirrors the canvas pipeline but emits true vector
+   primitives. Each texture renders as <path>, <line> or <circle>
+   groups using the stroke's original color. Faults and combos are
+   respected (same buildFaultPlan used by the canvas renderer).
+   ============================================================ */
+const _fmt = n => (Math.round(n * 100) / 100).toString();
+function svgEscape(str) {
+  return String(str).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+/* Catmull-Rom polyline → SVG path data (cubic beziers). */
+function svgPathD(pts) {
+  if (pts.length === 0) return '';
+  if (pts.length === 1) return `M ${_fmt(pts[0].x)} ${_fmt(pts[0].y)}`;
+  let d = `M ${_fmt(pts[0].x)} ${_fmt(pts[0].y)}`;
+  if (pts.length === 2) return d + ` L ${_fmt(pts[1].x)} ${_fmt(pts[1].y)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${_fmt(c1x)} ${_fmt(c1y)}, ${_fmt(c2x)} ${_fmt(c2y)}, ${_fmt(p2.x)} ${_fmt(p2.y)}`;
+  }
+  return d;
+}
+function svgStrokePath(d, color, width, alpha, cap = 'round', join = 'round') {
+  if (!d) return '';
+  return `<path d="${d}" fill="none" stroke="${color}" stroke-width="${_fmt(width)}" stroke-linecap="${cap}" stroke-linejoin="${join}" opacity="${_fmt(alpha)}"/>`;
+}
+function svgDot(x, y, r, color, alpha) {
+  return `<circle cx="${_fmt(x)}" cy="${_fmt(y)}" r="${_fmt(r)}" fill="${color}" opacity="${_fmt(alpha)}"/>`;
+}
+function svgPaw(x, y, ux, uy, size, color, alpha) {
+  const r = Math.max(size * 0.9, 1.2);
+  const ang = Math.atan2(uy, ux) * 180 / Math.PI;
+  const e = (cx, cy, rx, ry) =>
+    `<ellipse cx="${_fmt(cx)}" cy="${_fmt(cy)}" rx="${_fmt(rx)}" ry="${_fmt(ry)}" fill="${color}" opacity="${_fmt(alpha)}"/>`;
+  let g = e(-0.25 * r, 0, 0.5 * r, 0.62 * r);
+  const toes = [[0.55, -0.5], [0.82, -0.18], [0.82, 0.18], [0.55, 0.5]];
+  for (const [tx, ty] of toes) g += e(tx * r, ty * r, 0.26 * r, 0.3 * r);
+  return `<g transform="translate(${_fmt(x)},${_fmt(y)}) rotate(${_fmt(ang)})">${g}</g>`;
+}
+
+const SVG_TEXTURES = {
+  solido(pts, s, am) {
+    return svgStrokePath(svgPathD(pts), s.color, s.size, s.opacity * am);
+  },
+  marcador(pts, s, am) {
+    const a = s.opacity * am, d = svgPathD(pts);
+    return svgStrokePath(d, s.color, s.size * 1.8, a * 0.35, 'butt')
+         + svgStrokePath(d, s.color, s.size * 1.1, a * 0.7,  'butt');
+  },
+  nanquim(pts, s, am) {
+    if (pts.length < 2) return SVG_TEXTURES.solido(pts, s, am);
+    const dense = densify(pts, 10);
+    const n = dense.length, a = s.opacity * am;
+    let out = '';
+    for (let i = 0; i < n - 1; i++) {
+      const t = i / Math.max(1, n - 1);
+      const w = Math.max(0.4, s.size * (0.2 + 1.0 * Math.sin(Math.PI * t)));
+      out += `<line x1="${_fmt(dense[i].x)}" y1="${_fmt(dense[i].y)}" x2="${_fmt(dense[i+1].x)}" y2="${_fmt(dense[i+1].y)}" stroke="${s.color}" stroke-width="${_fmt(w)}" stroke-linecap="round" opacity="${_fmt(a)}"/>`;
+    }
+    return out;
+  },
+  pontilhado(pts, s, am) {
+    const dense = densify(pts, 20);
+    const spacing = Math.max(s.size * 2.0, 3);
+    const radius = Math.max(s.size * 0.55, 0.8);
+    let out = '';
+    walkPath(dense, spacing, (x, y) => {
+      out += svgDot(x, y, radius, s.color, s.opacity * am);
+    });
+    return out;
+  },
+  patinhas(pts, s, am) {
+    const dense = densify(pts, 16);
+    const { spacing, offsetAmt } = pawParams(s.size);
+    const a = s.opacity * am;
+    let out = '', toggle = 0;
+    walkPath(dense, spacing, (x, y, ux, uy) => {
+      const nx = -uy, ny = ux;
+      const side = (toggle % 2 === 0) ? 1 : -1;
+      out += svgPaw(x + nx * side * offsetAmt, y + ny * side * offsetAmt, ux, uy, s.size, s.color, a);
+      toggle++;
+    });
+    return out;
+  },
+  spray(pts, s, am) {
+    const dense = densify(pts, 18);
+    const radius = s.size * 2.2;
+    const density = Math.max(10, Math.floor(s.size * 2.6));
+    const dotMin = Math.max(0.6, s.size * 0.06);
+    const dotMax = Math.max(1.0, s.size * 0.14);
+    const alpha = s.opacity * am * 0.35;
+    let out = '';
+    walkPath(dense, 1.2, (x, y) => {
+      for (let i = 0; i < density; i++) {
+        const ang = rand(x + i * 0.31, y + i * 0.77) * Math.PI * 2;
+        const rr = Math.pow(rand(x * 3 + i, y * 3 + i), 2) * radius;
+        const dr = dotMin + rand(x + i * 0.7, y * 1.3 + i) * (dotMax - dotMin);
+        out += svgDot(x + Math.cos(ang) * rr, y + Math.sin(ang) * rr, dr, s.color, alpha);
+      }
+    });
+    return out;
+  },
+  giz(pts, s, am) {
+    const a = s.opacity * am;
+    let out = svgStrokePath(svgPathD(pts), s.color, s.size * 0.85, a * 0.35);
+    const dense = densify(pts, 16);
+    walkPath(dense, Math.max(1, s.size * 0.25), (x, y, ux, uy) => {
+      const nx = -uy, ny = ux;
+      for (let k = 0; k < 4; k++) {
+        const off = (rand(x + k * 3.1, y + k * 7.7) - 0.5) * s.size * 1.4;
+        const jx = (rand(x * 2 + k, y) - 0.5) * 0.6;
+        const jy = (rand(x, y * 2 + k) - 0.5) * 0.6;
+        const r = 0.6 + rand(x + k, y - k) * Math.max(0.8, s.size * 0.12);
+        out += svgDot(x + nx * off + jx, y + ny * off + jy, r, s.color, a * 0.7);
+      }
+    });
+    return out;
+  },
+  lapis(pts, s, am) {
+    const a = s.opacity * am;
+    const dense = densify(pts, 14);
+    const tips = [
+      { off: -0.48, alpha: 0.55, width: 0.34, gap: 0.16 },
+      { off: -0.16, alpha: 0.38, width: 0.26, gap: 0.08 },
+      { off:  0.14, alpha: 0.50, width: 0.30, gap: 0.11 },
+      { off:  0.44, alpha: 0.62, width: 0.36, gap: 0.19 },
+    ];
+    let out = '';
+    for (const tip of tips) {
+      const alpha = a * tip.alpha;
+      const w = Math.max(0.3, s.size * tip.width);
+      const segs = [];
+      let cur = null;
+      for (let i = 0; i < dense.length - 1; i++) {
+        const aP = dense[i], bP = dense[i + 1];
+        const dx = bP.x - aP.x, dy = bP.y - aP.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 1e-6) continue;
+        const nx = -dy / d, ny = dx / d;
+        const r = rand(aP.x * 0.8 + tip.off * 51, aP.y * 0.8 + tip.off * 89);
+        if (r < tip.gap) { if (cur) { segs.push(cur); cur = null; } continue; }
+        const j = (rand(aP.x * 2.3 + tip.off * 7, aP.y * 2.7) - 0.5) * 0.18;
+        const off = (tip.off + j) * s.size;
+        const x1 = aP.x + nx * off, y1 = aP.y + ny * off;
+        const x2 = bP.x + nx * off, y2 = bP.y + ny * off;
+        if (!cur) cur = `M ${_fmt(x1)} ${_fmt(y1)}`;
+        cur += ` L ${_fmt(x2)} ${_fmt(y2)}`;
+      }
+      if (cur) segs.push(cur);
+      for (const d of segs) out += svgStrokePath(d, s.color, w, alpha, 'round');
+    }
+    walkPath(dense, 2, (x, y, ux, uy) => {
+      if (rand(x * 3.1, y * 3.7) > 0.72) {
+        const nx = -uy, ny = ux;
+        const off = (rand(x, y) - 0.5) * s.size * 1.1;
+        const r = 0.5 + rand(x * 1.3, y * 1.7) * Math.max(0.6, s.size * 0.08);
+        out += svgDot(x + nx * off, y + ny * off, r, s.color, a * 0.38);
+      }
+    });
+    return out;
+  },
+  aquarela(pts, s, am) {
+    const a = s.opacity * am;
+    const d = svgPathD(pts);
+    let out = svgStrokePath(d, s.color, s.size * 3.2, a * 0.12)
+            + svgStrokePath(d, s.color, s.size * 2.0, a * 0.20)
+            + svgStrokePath(d, s.color, s.size * 1.0, a * 0.35);
+    const dense = densify(pts, 14);
+    walkPath(dense, s.size * 2.5, (x, y, ux, uy) => {
+      const nx = -uy, ny = ux;
+      for (let k = 0; k < 2; k++) {
+        if (rand(x * 0.3 + k, y * 0.3) > 0.55) {
+          const off = (rand(x + k, y) - 0.5) * s.size * 5;
+          const r = 0.4 + rand(x * 2, y * 2 + k) * s.size * 0.7;
+          out += svgDot(x + nx * off, y + ny * off, r, s.color, a * 0.18);
+        }
+      }
+    });
+    return out;
+  },
+};
+
+function svgSplatter(pts, stroke, level) {
+  const dense = densify(pts, 12);
+  const density = Math.pow(level / 100, 1.1) * 0.35;
+  const reach = stroke.size * 3.5;
+  let out = '';
+  walkPath(dense, 3, (x, y, ux, uy) => {
+    for (let k = 0; k < 3; k++) {
+      const rr = rand(x + k * 1.9 + stroke.seed, y + k * 2.7);
+      if (rr >= density) continue;
+      const ang = rand(x + k * 3.1, y - k * 1.7 + stroke.seed) * Math.PI * 2;
+      const dist = 0.2 + rand(x * 2, y * 2 + k) * reach;
+      const sz = 0.5 + rand(x - k, y + k + stroke.seed) * Math.max(1, stroke.size * 0.35);
+      const a = stroke.opacity * (0.25 + rand(x * 3 + stroke.seed, y) * 0.55);
+      out += svgDot(x + Math.cos(ang) * dist, y + Math.sin(ang) * dist, sz, stroke.color, a);
+    }
+  });
+  return out;
+}
+
+function strokeToSVG(stroke) {
+  const pts = vectorize(stroke);
+  const textures = (stroke.textures && stroke.textures.length)
+    ? stroke.textures : [stroke.texture || 'solido'];
+  const seed = stroke.seed || 0;
+  let faultTypes = state.faultTypes;
+  let faultLevel = state.faultLevel;
+  if ((!faultTypes || !faultTypes.length) && stroke.faultTypes && stroke.faultTypes.length) {
+    faultTypes = stroke.faultTypes;
+    faultLevel = stroke.faultLevel ?? faultLevel;
+  }
+  const plan = buildFaultPlan(pts, faultTypes, faultLevel, state.gapSize, seed);
+
+  let body = '';
+  for (const seg of plan.segments) {
+    if (seg.pts.length < 2) continue;
+    for (const tex of textures) {
+      body += (SVG_TEXTURES[tex] || SVG_TEXTURES.solido)(seg.pts, stroke, seg.alpha);
+    }
+  }
+  if (plan.splatter > 0) body += svgSplatter(pts, stroke, plan.splatter);
+  return `<g data-color="${svgEscape(stroke.color)}" data-textures="${svgEscape(textures.join(','))}">${body}</g>`;
+}
+
+document.getElementById('svgBtn').addEventListener('click', () => {
+  const parts = state.strokes.map(strokeToSVG);
+  const svg =
+`<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+${parts.join('\n')}
+</svg>`;
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `doodle-${Date.now()}.svg`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast(`SVG 1920×1080 · ${state.strokes.length} stroke(s) exportado(s)`);
+});
+
+/* ============================================================
+   ANIMATION — UI CONTROLS, PREVIEW, AND EXPORT (GIF + WebM)
+   ============================================================ */
+function download(blob, name) {
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = u; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(u), 1500);
+}
+
+/* ---------- Controls ---------- */
+const animDurSlider = document.getElementById('animDur');
+animDurSlider.addEventListener('input', () => {
+  state.anim.duration = +animDurSlider.value / 10;
+  document.getElementById('animDurVal').textContent = state.anim.duration.toFixed(1) + 's';
+});
+const animHoldSlider = document.getElementById('animHold');
+animHoldSlider.addEventListener('input', () => {
+  state.anim.holdMs = +animHoldSlider.value;
+  document.getElementById('animHoldVal').textContent = animHoldSlider.value + 'ms';
+});
+document.getElementById('animEasing').addEventListener('change', e => {
+  state.anim.easing = e.target.value;
+});
+document.getElementById('animLoop').addEventListener('change', e => {
+  state.anim.loop = e.target.checked;
+});
+document.getElementById('animFps').addEventListener('change', e => {
+  state.anim.fps = +e.target.value;
+});
+document.getElementById('animScale').addEventListener('change', e => {
+  state.anim.gifScale = +e.target.value;
+});
+document.getElementById('webmBg').addEventListener('input', e => {
+  state.anim.webmBg = e.target.value;
+  document.getElementById('webmBgPick').style.background = e.target.value;
+});
+
+/* ---------- Preview ---------- */
+function setPlayBtn(playing) {
+  const b = document.getElementById('playBtn');
+  b.textContent = playing ? '⏸ Pausar' : '▶ Reproduzir';
+  b.classList.toggle('playing', playing);
+}
+function stopPreview() {
+  state.anim.playing = false;
+  if (state.anim._raf) { cancelAnimationFrame(state.anim._raf); state.anim._raf = null; }
+  setPlayBtn(false);
+  if (typeof updatePlayhead === 'function') updatePlayhead(null);
+}
+function playPreview() {
+  if (state.strokes.length === 0) { showToast('Nada para animar'); return; }
+  deselectStroke();
+  state.anim.playing = true;
+  setPlayBtn(true);
+  const dur = Math.max(100, state.anim.duration * 1000);
+  const hold = state.anim.holdMs;
+  state.anim._t0 = performance.now();
+  const loop = (now) => {
+    if (!state.anim.playing) return;
+    const el = now - state.anim._t0;
+    const p = Math.min(1, el / dur);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    renderAnimated(ctx, p, state.anim.easing);
+    updatePlayhead(p);
+    if (el < dur + hold) {
+      state.anim._raf = requestAnimationFrame(loop);
+    } else if (state.anim.loop) {
+      state.anim._t0 = now;
+      state.anim._raf = requestAnimationFrame(loop);
+    } else {
+      stopPreview();
+      render();
+    }
+  };
+  state.anim._raf = requestAnimationFrame(loop);
+}
+document.getElementById('playBtn').addEventListener('click', () => {
+  if (state.anim.playing) { stopPreview(); render(); }
+  else playPreview();
+});
+document.getElementById('resetAnimBtn').addEventListener('click', () => {
+  stopPreview();
+  render();
+});
+// Stop preview when the user interacts with the drawing
+canvas.addEventListener('pointerdown', () => { if (state.anim.playing) stopPreview(); }, true);
+document.getElementById('undoBtn').addEventListener('click', () => {
+  if (state.anim.playing) { stopPreview(); render(); }
+  renderTimeline();
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (state.anim.playing) stopPreview();
+  renderTimeline();
+});
+
+/* ============================================================
+   DRAGGABLE TIMELINE — one lane per stroke over a shared time axis.
+   Block width ∝ draw time (= arc length, constant speed); block x =
+   when the stroke starts (stroke.animStart). Dragging changes the
+   start; clicking selects the stroke. The axis length is the stable
+   "sequential total" so blocks don't rescale while you drag.
+   ============================================================ */
+const tlLanes = document.getElementById('tlLanes');
+const tlEmpty = document.getElementById('tlEmpty');
+const tlPlayhead = document.getElementById('tlPlayhead');
+const tlWrap = document.getElementById('tlWrap');
+
+function timelineAxis() {
+  ensureAnimDefaults();
+  let sum = 0;
+  for (const s of state.strokes) sum += strokeDur(s);
+  return Math.max(1, sum);
+}
+
+function renderTimeline() {
+  if (!tlLanes) return;
+  ensureAnimDefaults();
+  const n = state.strokes.length;
+  tlEmpty.style.display = n ? 'none' : 'block';
+  tlLanes.innerHTML = '';
+  const axis = timelineAxis();
+  state.strokes.forEach((s, i) => {
+    const lane = document.createElement('div');
+    lane.className = 'tl-lane';
+    const dur = strokeDur(s);
+    const block = document.createElement('div');
+    block.className = 'tl-block' + (i === state.selectedStrokeIdx ? ' selected' : '');
+    block.style.left = (100 * (s.animStart || 0) / axis) + '%';
+    block.style.width = Math.max(2, 100 * dur / axis) + '%';
+    block.style.background = s.color;
+    block.textContent = i + 1;
+    block.dataset.idx = i;
+    lane.appendChild(block);
+    tlLanes.appendChild(lane);
+  });
+}
+
+// Drag + select (event delegation on the lanes container).
+let tlDrag = null;
+tlLanes.addEventListener('pointerdown', e => {
+  const block = e.target.closest('.tl-block');
+  if (!block) return;
+  e.preventDefault();
+  const idx = +block.dataset.idx;
+  // Select the stroke (reuse canvas selection + highlight).
+  state.selectedStrokeIdx = idx;
+  document.getElementById('strokeSelectedInfo').classList.add('show');
+  selectColor(state.strokes[idx].color);
+  if (state.anim.playing) { stopPreview(); }
+  render();
+  const axis = timelineAxis();
+  const laneW = block.parentElement.getBoundingClientRect().width || 1;
+  tlDrag = {
+    idx, block, axis, laneW,
+    startX: e.clientX,
+    startVal: state.strokes[idx].animStart || 0,
+    dur: strokeDur(state.strokes[idx]),
+    moved: false,
+  };
+  block.setPointerCapture(e.pointerId);
+  block.classList.add('dragging');
+  renderTimeline();
+  // keep dragging class after re-render
+  const fresh = tlLanes.querySelector('.tl-block[data-idx="' + idx + '"]');
+  if (fresh) { fresh.classList.add('dragging'); tlDrag.block = fresh; fresh.setPointerCapture(e.pointerId); }
+});
+tlLanes.addEventListener('pointermove', e => {
+  if (!tlDrag) return;
+  const d = tlDrag;
+  const deltaLen = ((e.clientX - d.startX) / d.laneW) * d.axis;
+  if (Math.abs(e.clientX - d.startX) > 3) d.moved = true;
+  let val = d.startVal + deltaLen;
+  val = Math.max(0, Math.min(d.axis - d.dur, val));
+  // Snap to 0 and to the start/end of other strokes (within a few px).
+  const snapTol = (8 / d.laneW) * d.axis;
+  const points = [0];
+  state.strokes.forEach((s, i) => {
+    if (i === d.idx) return;
+    points.push(s.animStart || 0);
+    points.push((s.animStart || 0) + strokeDur(s));
+  });
+  let best = val, bestDist = snapTol;
+  for (const pt of points) {
+    if (Math.abs(val - pt) < bestDist) { bestDist = Math.abs(val - pt); best = pt; }            // snap start
+    if (Math.abs((val + d.dur) - pt) < bestDist) { bestDist = Math.abs((val + d.dur) - pt); best = pt - d.dur; } // snap end
+  }
+  val = Math.max(0, Math.min(d.axis - d.dur, best));
+  state.strokes[d.idx].animStart = val;
+  d.block.style.left = (100 * val / d.axis) + '%';
+});
+tlLanes.addEventListener('pointerup', e => {
+  if (!tlDrag) return;
+  tlDrag.block.classList.remove('dragging');
+  tlDrag = null;
+  renderTimeline();
+});
+
+// Quick presets.
+document.getElementById('tlSeqBtn').addEventListener('click', () => {
+  let acc = 0;
+  for (const s of state.strokes) { s.animStart = acc; acc += strokeDur(s); }
+  renderTimeline();
+  if (state.anim.playing) { /* live */ } else render();
+  showToast('Traços em sequência');
+});
+document.getElementById('tlTogetherBtn').addEventListener('click', () => {
+  for (const s of state.strokes) s.animStart = 0;
+  renderTimeline();
+  showToast('Traços começam juntos');
+});
+
+function updatePlayhead(progress) {
+  if (!tlPlayhead) return;
+  if (progress == null) { tlPlayhead.classList.remove('show'); return; }
+  // Map global eased progress to the stable axis position.
+  const axis = timelineAxis();
+  let end = 1;
+  state.strokes.forEach((s, i) => { end = Math.max(end, (s.animStart || 0) + strokeDur(s)); });
+  const ease = EASING[state.anim.easing] || EASING.linear;
+  const tc = ease(Math.max(0, Math.min(1, progress))) * end;
+  const frac = Math.min(1, tc / axis);
+  // 8px padding inside .tl-wrap on each side.
+  const w = tlWrap.clientWidth - 16;
+  tlPlayhead.style.left = (8 + frac * w) + 'px';
+  tlPlayhead.classList.add('show');
+}
+
+/* ============================================================
+   GIF89a ENCODER — embedded, offline, with binary transparency.
+   Palette is built once from the FINAL frame (strokes accumulate,
+   so the last frame contains every color that ever appears). Each
+   frame is full-frame with disposal=restore-to-background and a
+   reserved transparent index, so the background stays transparent.
+   ============================================================ */
+function buildPalette(rgba, maxColors) {
+  let samples = [];
+  for (let i = 0; i < rgba.length; i += 4) {
+    if (rgba[i + 3] >= 128) samples.push([rgba[i], rgba[i + 1], rgba[i + 2]]);
+  }
+  if (samples.length === 0) return [[0, 0, 0]];
+  if (samples.length > 20000) {
+    const s = [], stp = samples.length / 20000;
+    for (let k = 0; k < 20000; k++) s.push(samples[Math.floor(k * stp)]);
+    samples = s;
+  }
+  let boxes = [samples];
+  while (boxes.length < maxColors) {
+    let bi = -1, brange = -1, bchan = 0;
+    for (let i = 0; i < boxes.length; i++) {
+      const b = boxes[i];
+      if (b.length < 2) continue;
+      const mn = [255, 255, 255], mx = [0, 0, 0];
+      for (const p of b) for (let c = 0; c < 3; c++) {
+        if (p[c] < mn[c]) mn[c] = p[c];
+        if (p[c] > mx[c]) mx[c] = p[c];
+      }
+      for (let c = 0; c < 3; c++) {
+        const r = mx[c] - mn[c];
+        if (r > brange) { brange = r; bi = i; bchan = c; }
+      }
+    }
+    if (bi < 0) break;
+    const box = boxes[bi];
+    box.sort((a, b) => a[bchan] - b[bchan]);
+    const mid = box.length >> 1;
+    boxes.splice(bi, 1, box.slice(0, mid), box.slice(mid));
+  }
+  return boxes.map(b => {
+    let r = 0, g = 0, bl = 0;
+    for (const p of b) { r += p[0]; g += p[1]; bl += p[2]; }
+    const n = Math.max(1, b.length);
+    return [Math.round(r / n), Math.round(g / n), Math.round(bl / n)];
+  });
+}
+function nearestIndex(pal, r, g, b, cache) {
+  // Quantize to 4 bits/channel for the cache key. Grainy textures (giz,
+  // spray…) produce tens of thousands of near-identical shades; collapsing
+  // them to <=4096 buckets caps the number of linear palette searches and
+  // turns nearly every per-pixel lookup into a Map hit. Visually harmless —
+  // the GIF is already reduced to <=255 colors.
+  const qr = r & 0xF0, qg = g & 0xF0, qb = b & 0xF0;
+  const key = (qr << 16) | (qg << 8) | qb;
+  const hit = cache.get(key);
+  if (hit !== undefined) return hit;
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < pal.length; i++) {
+    const dr = pal[i][0] - qr, dg = pal[i][1] - qg, db = pal[i][2] - qb;
+    const d = dr * dr + dg * dg + db * db;
+    if (d < bd) { bd = d; best = i; }
+  }
+  cache.set(key, best);
+  return best;
+}
+/* Variable-width LZW (GIF flavor). Returns an array of bytes.
+   Faithful port of Kevin Weiner's LZWEncoder (the AnimatedGifEncoder / gif.js
+   reference): the code-width grows INSIDE output() after each emit, using
+   `freeEnt > maxcode` with maxcode = (1<<nBits)-1 except at 12 bits where it is
+   maxmaxcode (4096); a Clear resets the width via clearFlg. This exact timing is
+   what strict decoders (PIL/giflib/Windows) require. Uses a reusable Int32Array
+   dictionary (key = prefix<<8 | k) for speed. */
+const LZW_DICT = new Int32Array(1 << 20); // prefix(0..4095)<<8 | k(0..255)
+function lzwEncode(minCodeSize, indices) {
+  const initBits = minCodeSize + 1;
+  const clearCode = 1 << minCodeSize;
+  const eofCode = clearCode + 1;
+  const maxbits = 12, maxmaxcode = 1 << maxbits; // 4096
+  const dict = LZW_DICT;
+  dict.fill(-1);
+  const out = [];
+  let nBits = initBits;
+  let maxcode = (1 << nBits) - 1;
+  let freeEnt = clearCode + 2;
+  let clearFlg = false;
+  let cur = 0, curBits = 0;
+  const MAXCODE = (n) => (1 << n) - 1;
+  const output = (code) => {
+    cur |= code << curBits;
+    curBits += nBits;
+    while (curBits >= 8) { out.push(cur & 0xff); cur >>= 8; curBits -= 8; }
+    if (freeEnt > maxcode || clearFlg) {
+      if (clearFlg) { nBits = initBits; maxcode = MAXCODE(nBits); clearFlg = false; }
+      else { nBits++; maxcode = (nBits === maxbits) ? maxmaxcode : MAXCODE(nBits); }
+    }
+  };
+  const clBlock = () => { dict.fill(-1); freeEnt = clearCode + 2; clearFlg = true; output(clearCode); };
+  output(clearCode);
+  let ent = indices[0];
+  for (let i = 1; i < indices.length; i++) {
+    const c = indices[i];
+    const fcode = (ent << 8) | c;
+    const got = dict[fcode];
+    if (got !== -1) { ent = got; continue; }
+    output(ent);
+    ent = c;
+    if (freeEnt < maxmaxcode) dict[fcode] = freeEnt++;
+    else clBlock();
+  }
+  output(ent);
+  output(eofCode);
+  if (curBits > 0) out.push(cur & 0xff);
+  return out;
+}
+
+let _gifBusy = false;
+async function exportGif() {
+  if (state.strokes.length === 0) { showToast('Nada para animar'); return; }
+  // Guard against concurrent exports: lzwEncode reuses a single global
+  // dictionary (LZW_DICT), so two exports running at once would clobber each
+  // other and corrupt the stream. One at a time.
+  if (_gifBusy) { showToast('Aguarde o GIF atual terminar…'); return; }
+  _gifBusy = true;
+  try {
+  stopPreview();
+  const easing = state.anim.easing;
+  const fps = state.anim.fps;
+  const W = state.anim.gifScale, H = Math.round(W * 9 / 16);
+  const sx = W / 1920;
+  // Persistent base layer accumulates COMPLETED strokes (drawn once each);
+  // each frame only redraws the single active (growing) stroke. Frames are
+  // rendered directly at GIF resolution, so arc rasterization is far cheaper
+  // than rendering at 1920×1080 and downscaling every frame.
+  const base = document.createElement('canvas'); base.width = W; base.height = H;
+  const bctx = base.getContext('2d');
+  const gif = document.createElement('canvas'); gif.width = W; gif.height = H;
+  const gctx = gif.getContext('2d');
+  const durs = state.strokes.map(strokeDur);
+  const drawScaled = (c, stroke, pts) => {
+    c.setTransform(sx, 0, 0, sx, 0, 0);
+    drawStroke(c, stroke, pts);
+    c.setTransform(1, 0, 0, 1, 0, 0);
+  };
+  // Timeline-aware baking: bake the LEADING run of strokes (array order) that
+  // are fully revealed into `base` once; every other still-visible stroke is
+  // redrawn on top each frame. Keeping the baked set a z-order prefix preserves
+  // correct layering even when strokes start/overlap arbitrarily on the timeline.
+  let bakedUpTo = 0;
+  const frameData = (p) => {
+    const reveals = strokeReveals(p, easing);
+    while (bakedUpTo < state.strokes.length && reveals[bakedUpTo] >= durs[bakedUpTo]) {
+      drawScaled(bctx, state.strokes[bakedUpTo]);
+      bakedUpTo++;
+    }
+    gctx.setTransform(1, 0, 0, 1, 0, 0);
+    gctx.clearRect(0, 0, W, H);
+    gctx.drawImage(base, 0, 0);
+    for (let i = bakedUpTo; i < state.strokes.length; i++) {
+      const r = reveals[i];
+      if (r <= 0) continue;
+      const s = state.strokes[i];
+      const pts = r >= durs[i] ? vectorize(s) : truncatePts(vectorize(s), r);
+      if (pts.length >= 1) drawScaled(gctx, s, pts);
+    }
+    return gctx.getImageData(0, 0, W, H).data;
+  };
+
+  const N = Math.max(2, Math.round(state.anim.duration * fps));
+  const baseDelay = Math.max(2, Math.round(100 / fps));
+  const holdCenti = Math.round(state.anim.holdMs / 10);
+  showToast('Gerando GIF… 0%');
+  await new Promise(r => setTimeout(r));
+
+  // Palette from a full render of every stroke (all colors that appear),
+  // then reset the base layer for the incremental frame loop.
+  for (const s of state.strokes) drawScaled(bctx, s);
+  const palette = buildPalette(bctx.getImageData(0, 0, W, H).data, 255);
+  bctx.clearRect(0, 0, W, H);
+  const realCount = palette.length;
+  const transIndex = realCount;
+  let tableSize = 2; while (tableSize < realCount + 1) tableSize <<= 1;
+  const minCodeSize = Math.max(2, Math.round(Math.log2(tableSize)));
+  const gctSizeField = Math.round(Math.log2(tableSize)) - 1;
+
+  const bytes = [];
+  const write16 = v => { bytes.push(v & 0xff, (v >> 8) & 0xff); };
+  const writeStr = s => { for (let i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i)); };
+  // Header + Logical Screen Descriptor. Background color index points at the
+  // transparent slot so any viewer that paints the background (or honors
+  // "restore to background") clears to TRANSPARENT, not to a palette color.
+  writeStr('GIF89a');
+  write16(W); write16(H);
+  bytes.push(0x80 | ((minCodeSize - 1) << 4) | gctSizeField, transIndex, 0);
+  // Global Color Table
+  for (let i = 0; i < tableSize; i++) {
+    if (i < realCount) bytes.push(palette[i][0], palette[i][1], palette[i][2]);
+    else bytes.push(0, 0, 0);
+  }
+  // Loop forever (NETSCAPE2.0)
+  bytes.push(0x21, 0xFF, 0x0B);
+  writeStr('NETSCAPE2.0');
+  bytes.push(0x03, 0x01, 0x00, 0x00, 0x00);
+
+  const idx = new Uint8Array(W * H);
+  const cache = new Map(); // RGB→index, shared across frames (near-100% hits after frame 1)
+  for (let f = 0; f < N; f++) {
+    const p = N === 1 ? 1 : f / (N - 1);
+    const data = frameData(p);
+    for (let i = 0, pix = 0; i < data.length; i += 4, pix++) {
+      idx[pix] = data[i + 3] < 128
+        ? transIndex
+        : nearestIndex(palette, data[i], data[i + 1], data[i + 2], cache);
+    }
+    const delay = f === N - 1 ? baseDelay + holdCenti : baseDelay;
+    // Graphic Control Extension. Disposal=1 ("do not dispose"): frames are
+    // cumulative supersets (the reveal only grows), so leaving prior pixels
+    // in place is correct and avoids the solid-fill artifact some viewers
+    // produce with disposal=2. Transparency flag on, transparent = transIndex.
+    bytes.push(0x21, 0xF9, 0x04, (1 << 2) | 0x01, delay & 0xff, (delay >> 8) & 0xff, transIndex, 0x00);
+    // Image Descriptor
+    bytes.push(0x2C); write16(0); write16(0); write16(W); write16(H); bytes.push(0x00);
+    bytes.push(minCodeSize);
+    const lzw = lzwEncode(minCodeSize, idx);
+    for (let o = 0; o < lzw.length; o += 255) {
+      const len = Math.min(255, lzw.length - o);
+      bytes.push(len);
+      for (let j = 0; j < len; j++) bytes.push(lzw[o + j]);
+    }
+    bytes.push(0x00);
+    showToast(`Gerando GIF… ${Math.round(((f + 1) / N) * 100)}%`);
+    await new Promise(r => setTimeout(r));
+  }
+  bytes.push(0x3B);
+  download(new Blob([new Uint8Array(bytes)], { type: 'image/gif' }), `doodle-anim-${Date.now()}.gif`);
+  render();
+  showToast(`GIF ${W}×${H} · ${N} quadros exportado(s)`);
+  } catch (err) {
+    console.error(err);
+    showToast('Erro ao gerar o GIF');
+  } finally {
+    _gifBusy = false;
+  }
+}
+document.getElementById('gifBtn').addEventListener('click', () => { exportGif(); });
+
+/* ============================================================
+   WebM EXPORT — native MediaRecorder over a solid background
+   (browser WebM alpha is unreliable). Real-time rAF playback.
+   ============================================================ */
+function exportWebM() {
+  if (state.strokes.length === 0) { showToast('Nada para animar'); return; }
+  if (typeof MediaRecorder === 'undefined') { showToast('WebM não suportado neste navegador'); return; }
+  stopPreview();
+  const W = 1920, H = 1080;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const cx = c.getContext('2d');
+  const fps = state.anim.fps;
+  const stream = c.captureStream(fps);
+  let mime = 'video/webm;codecs=vp9';
+  if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8';
+  if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12000000 });
+  const chunks = [];
+  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  rec.onstop = () => {
+    download(new Blob(chunks, { type: 'video/webm' }), `doodle-anim-${Date.now()}.webm`);
+    showToast(`WebM ${W}×${H} exportado`);
+  };
+  const dur = Math.max(100, state.anim.duration * 1000);
+  const hold = state.anim.holdMs;
+  const interval = 1000 / fps;
+  rec.start();
+  showToast('Gravando WebM…');
+  // Drive with setTimeout (works even if the tab is backgrounded, where
+  // requestAnimationFrame would be throttled and could stall the capture).
+  const t0 = performance.now();
+  const frame = () => {
+    const el = performance.now() - t0;
+    const p = Math.min(1, el / dur);
+    cx.globalCompositeOperation = 'source-over';
+    cx.fillStyle = state.anim.webmBg;
+    cx.fillRect(0, 0, W, H);
+    renderAnimated(cx, p, state.anim.easing);
+    if (el < dur + hold) setTimeout(frame, interval);
+    else setTimeout(() => rec.stop(), 120);
+  };
+  frame();
+}
+document.getElementById('webmBtn').addEventListener('click', () => { exportWebM(); });
+
+/* ---------- TOAST ---------- */
+let toastTimer = null;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+/* ---------- STATUS ---------- */
+setInterval(() => {
+  document.getElementById('status').textContent =
+    state.isDrawing ? 'Drawing' : `Ready — ${state.strokes.length} stroke(s)`;
+}, 200);
+
+/* ---------- INIT ---------- */
+updateTextureUI();
+updateFaultUI();
+render();
+renderThumbs();
+renderTimeline();
+</script>
+</body>
+</html>
