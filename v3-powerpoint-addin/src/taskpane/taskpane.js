@@ -100,10 +100,14 @@
   function saveGifToLibrary() {
     const strokes = Doodle.state.strokes;
     if (!strokes.length) { setStatus('Nada para salvar.', 'warn'); return; }
-    DoodleLibrary.saveGifSet(Doodle.payload(), Doodle.thumbnailOf(strokes), DEFAULT_GIF);
-    $('saveGifBtn').textContent = '✓ 3 versões salvas';
+    const ok = DoodleLibrary.saveGifSet(Doodle.payload(), Doodle.thumbnailOf(strokes), DEFAULT_GIF);
     renderLibrary();
-    setStatus('GIF salvo na biblioteca (loop, sem loop e PNG) ✓', 'ok');
+    if (ok) {
+      $('saveGifBtn').textContent = '✓ 3 versões salvas';
+      setStatus('GIF salvo na biblioteca (loop, sem loop e PNG) ✓', 'ok');
+    } else {
+      setStatus('Biblioteca cheia — apague alguns itens e tente de novo.', 'warn');
+    }
   }
 
   function toggleLibrary() {

@@ -254,6 +254,104 @@ draw_fill_transp().save(os.path.join(OUT, "fillT.png"))
 draw_font_transp().save(os.path.join(OUT, "fontT.png"))
 
 
+# --- Contorno (outline): swatch VAZADO (anel colorido sobre anel cinza) ---
+def draw_outline_swatch(rgb):
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    box = (4, 4, CSIZE - 5, CSIZE - 5)
+    try:
+        d.rounded_rectangle(box, radius=12, outline=GRAY, width=7)
+        d.rounded_rectangle(box, radius=12, outline=rgb + (255,), width=4)
+    except AttributeError:
+        d.rectangle(box, outline=GRAY, width=7)
+        d.rectangle(box, outline=rgb + (255,), width=4)
+    return img
+
+
+def draw_outline_transp():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    box = (4, 4, CSIZE - 5, CSIZE - 5)
+    try:
+        d.rounded_rectangle(box, radius=12, outline=GRAY, width=2)
+    except AttributeError:
+        d.rectangle(box, outline=GRAY, width=2)
+    d.line((10, CSIZE - 10, CSIZE - 10, 10), fill=ROSA, width=4)   # slash = sem linha
+    return img
+
+
+for i, rgb in enumerate(PALETTE):
+    draw_outline_swatch(rgb).save(os.path.join(OUT, "outline%d.png" % i))
+draw_outline_transp().save(os.path.join(OUT, "outlineT.png"))
+
+
+# --- Inserir: caixa de texto / rounded box ---
+def draw_ins_textbox():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle((8, 13, CSIZE - 9, CSIZE - 14), outline=AZUL, width=3)
+    f = font(30, bold=True)
+    bb = d.textbbox((0, 0), "T", font=f)
+    w, h = bb[2] - bb[0], bb[3] - bb[1]
+    d.text(((CSIZE - w) / 2 - bb[0], (CSIZE - h) / 2 - bb[1] - 4), "T", font=f, fill=AZUL)
+    return img
+
+
+def draw_ins_roundbox():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    box = (8, 15, CSIZE - 9, CSIZE - 12)
+    try:
+        d.rounded_rectangle(box, radius=11, outline=AZUL, width=3)
+    except AttributeError:
+        d.rectangle(box, outline=AZUL, width=3)
+    cx, cy = CSIZE - 16, 15
+    d.line((cx - 7, cy, cx + 7, cy), fill=ROSA, width=3)
+    d.line((cx, cy - 7, cx, cy + 7), fill=ROSA, width=3)
+    return img
+
+
+draw_ins_textbox().save(os.path.join(OUT, "insTextBox.png"))
+draw_ins_roundbox().save(os.path.join(OUT, "insRoundBox.png"))
+
+
+# --- Auditoria ---
+def draw_audit_scan():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.ellipse((10, 10, 40, 40), outline=AZUL, width=4)
+    d.line((37, 37, CSIZE - 11, CSIZE - 11), fill=AZUL, width=6)
+    return img
+
+
+def draw_audit_fonts():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    f = font(30, bold=True)
+    bb = d.textbbox((0, 0), "Aa", font=f)
+    w, h = bb[2] - bb[0], bb[3] - bb[1]
+    d.text(((CSIZE - w) / 2 - bb[0] - 4, (CSIZE - h) / 2 - bb[1] - 8), "Aa", font=f, fill=(30, 30, 30, 255))
+    d.line((CSIZE - 28, CSIZE - 18, CSIZE - 19, CSIZE - 9), fill=ROSA, width=4)
+    d.line((CSIZE - 19, CSIZE - 9, CSIZE - 6, CSIZE - 27), fill=ROSA, width=4)
+    return img
+
+
+def draw_audit_colors():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.ellipse((9, 12, 27, 30), fill=ROSA)
+    d.ellipse((23, 12, 41, 30), fill=AZUL)
+    d.ellipse((37, 12, 55, 30), fill=(0, 0, 0, 255))
+    d.line((16, 46, 26, 56), fill=ROSA, width=4)
+    d.line((26, 56, 47, 37), fill=ROSA, width=4)
+    return img
+
+
+draw_audit_scan().save(os.path.join(OUT, "auditScan.png"))
+draw_audit_fonts().save(os.path.join(OUT, "auditFonts.png"))
+draw_audit_colors().save(os.path.join(OUT, "auditColors.png"))
+
+
 print("Icones gerados em", os.path.normpath(OUT))
 for fn in sorted(os.listdir(OUT)):
     print("  ", fn)

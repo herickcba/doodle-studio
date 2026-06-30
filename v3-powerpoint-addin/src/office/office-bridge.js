@@ -296,6 +296,15 @@
       }
       const dialog = asyncResult.value;
       dialog.addEventHandler(Office.EventType.DialogMessageReceived, (arg) => {
+        // Novo formato: a mensagem É o resultado { kind, payload } — sem localStorage.
+        let parsed = null;
+        try { parsed = JSON.parse(arg.message); } catch (_) {}
+        if (parsed && parsed.kind) {
+          dialog.close();
+          if (parsed.kind === 'inserted') onResult(parsed.payload || null);
+          return;
+        }
+        // Fallback (compat / payload grande): string 'inserted'/'cancel' + localStorage.
         const msg = arg.message;
         if (msg === 'inserted') {
           let res = null;

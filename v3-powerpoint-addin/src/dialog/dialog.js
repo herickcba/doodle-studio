@@ -72,21 +72,30 @@
   }
 
   function finish(kind, gif) {
+    let p = null;
     if (kind === 'inserted') {
-      const p = Doodle.payload();
+      p = Doodle.payload();
       if (gif) {
         const o = gifOpts();
         p.asGif = true; p.gifLoop = false;   // inserted GIFs go in without loop
         p.gifDuration = o.duration; p.gifEasing = o.easing; p.gifFps = o.fps; p.gifHold = o.holdMs;
       }
-      try { localStorage.setItem('doodle.result', JSON.stringify(p)); } catch (_) {}
     }
-    if (window.opener) {            // standalone window.open()
+    if (window.opener) {            // standalone window.open() (modo navegador)
+      try { localStorage.setItem('doodle.result', JSON.stringify(p)); } catch (_) {}
       try { window.close(); } catch (_) {}
       return;
     }
-    try { Office.context.ui.messageParent(kind); }
-    catch (e) { try { window.close(); } catch (_) {} }
+    // Office Dialog: entrega o payload DENTRO da mensagem (sem localStorage),
+    // eliminando a falha silenciosa quando a gravação no localStorage falhava.
+    try {
+      Office.context.ui.messageParent(JSON.stringify({ kind: kind, payload: p }));
+    } catch (e) {
+      // payload grande demais p/ a mensagem: cai no localStorage + sinal curto
+      try { localStorage.setItem('doodle.result', JSON.stringify(p)); } catch (_) {}
+      try { Office.context.ui.messageParent(kind); }
+      catch (_) { try { window.close(); } catch (_) {} }
+    }
   }
 
   function boot() {

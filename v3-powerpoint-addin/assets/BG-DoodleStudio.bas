@@ -248,6 +248,40 @@ Private Function GroupHasText(ByVal grp As Object) As Boolean
 End Function
 
 ' ============================================================
+'  INSERIR formas (caixa de texto / rounded box no padrao)
+' ============================================================
+Public Sub InsertTextBox(control As IRibbonControl)
+    Dim sld As Object, tb As Object, x As Single, w As Single
+    Set sld = CurrentSlide()
+    If sld Is Nothing Then Exit Sub
+    x = AnchorCm * 28.3465                       ' margem esquerda da ancora
+    w = ActivePresentation.PageSetup.SlideWidth / 3
+    Set tb = sld.Shapes.AddTextbox(msoTextOrientationHorizontal, x, 80, w, 60)
+    On Error Resume Next
+    tb.TextFrame.WordWrap = msoTrue
+    tb.TextFrame.TextRange.Text = "Texto"
+    tb.TextFrame.TextRange.Font.Name = FONTE
+    tb.Select
+    On Error GoTo 0
+End Sub
+
+Public Sub InsertRoundedBox(control As IRibbonControl)
+    Dim sld As Object, shp As Object, sw As Single, sh As Single, w As Single, h As Single
+    Set sld = CurrentSlide()
+    If sld Is Nothing Then Exit Sub
+    sw = ActivePresentation.PageSetup.SlideWidth
+    sh = ActivePresentation.PageSetup.SlideHeight
+    w = sw / 4
+    h = sh / 4
+    Set shp = sld.Shapes.AddShape(msoShapeRoundedRectangle, (sw - w) / 2, (sh - h) / 2, w, h)
+    On Error Resume Next
+    shp.Fill.Visible = msoFalse                  ' sem preenchimento
+    SetRoundedRadius shp                          ' raio padrao (~25px @1080)
+    shp.Select
+    On Error GoTo 0
+End Sub
+
+' ============================================================
 '  ROUNDED CORNERS (raio ~25px num canvas 1920x1080)
 ' ============================================================
 Private Function StdRadiusPts() As Single
@@ -510,6 +544,254 @@ Private Function FontColorShape(ByVal shp As Object, ByVal i As Long) As Long
     End If
     On Error GoTo 0
     FontColorShape = cnt
+End Function
+
+' ============================================================
+'  Cor de CONTORNO (outline) — espelha o preenchimento
+'  control.id = "outline0".."outline5" (5 = transparente/sem linha)
+' ============================================================
+Public Sub SetShapeOutline(control As IRibbonControl)
+    Dim sel As Object, shp As Object, i As Long, n As Long
+    i = ColorIndexFromId(control.id)
+    If i < 0 Then Exit Sub
+    Set sel = ActiveWindow.Selection
+    n = 0
+    If sel.Type = ppSelectionShapes Or sel.Type = ppSelectionText Then
+        On Error Resume Next
+        For Each shp In sel.ShapeRange
+            n = n + OutlineShape(shp, i)
+        Next shp
+        On Error GoTo 0
+    End If
+    If n = 0 Then MsgBox "Selecione uma ou mais formas.", vbInformation, "CBA Studio"
+End Sub
+
+Private Function OutlineShape(ByVal shp As Object, ByVal i As Long) As Long
+    Dim cnt As Long, s As Object
+    cnt = 0
+    On Error Resume Next
+    If shp.Type = msoGroup Then
+        For Each s In shp.GroupItems
+            cnt = cnt + OutlineShape(s, i)
+        Next s
+    Else
+        If i = C_TRANSP Then
+            shp.Line.Visible = msoFalse
+        Else
+            shp.Line.Visible = msoTrue
+            shp.Line.ForeColor.RGB = PaletteColor(i)
+            If shp.Line.Weight < 0.5 Then shp.Line.Weight = 1.5
+        End If
+        cnt = 1
+    End If
+    On Error GoTo 0
+    OutlineShape = cnt
+End Function
+
+' ============================================================
+'  AUDITORIA — fontes / cores / raios fora do padrao
+'  Saida: janela-resumo + navegacao alerta-a-alerta (Mac-safe).
+'  Paleta de referencia = as 5 cores da marca (PaletteColor 0..4).
+' ============================================================
+Private Function IsPaletteColor(ByVal rgbVal As Long) As Boolean
+    Dim i As Long
+    For i = 0 To 4
+        If rgbVal = PaletteColor(i) Then IsPaletteColor = True: Exit Function
+    Next i
+End Function
+
+Private Function NearestPaletteColor(ByVal rgbVal As Long) As Long
+    Dim i As Long, best As Long, pc As Long
+    Dim r As Long, g As Long, b As Long, pr As Long, pg As Long, pb As Long
+    Dim d As Double, bd As Double
+    r = rgbVal And &HFF
+    g = (rgbVal \ &H100) And &HFF
+    b = (rgbVal \ &H10000) And &HFF
+    bd = 1E+99
+    best = PaletteColor(0)
+    For i = 0 To 4
+        pc = PaletteColor(i)
+        pr = pc And &HFF
+        pg = (pc \ &H100) And &HFF
+        pb = (pc \ &H10000) And &HFF
+        d = CDbl(r - pr) * (r - pr) + CDbl(g - pg) * (g - pg) + CDbl(b - pb) * (b - pb)
+        If d < bd Then bd = d: best = pc
+    Next i
+    NearestPaletteColor = best
+End Function
+
+Private Function ShorterSide(ByVal shp As Object) As Single
+    If shp.Width < shp.Height Then ShorterSide = shp.Width Else ShorterSide = shp.Height
+End Function
+
+' Coleta findings recursivamente. col guarda Array(slideIdx, shape, detalhe).
+Private Sub ScanShape(ByVal shp As Object, ByVal slideIdx As Long, ByVal col As Collection, _
+                      ByRef nf As Long, ByRef nc As Long, ByRef nr As Long)
+    Dim s As Object, std As Single, adj As Single, nm As String
+    On Error Resume Next
+    If shp.Type = msoGroup Then
+        For Each s In shp.GroupItems
+            ScanShape s, slideIdx, col, nf, nc, nr
+        Next s
+        On Error GoTo 0
+        Exit Sub
+    End If
+
+    ' fonte (nome + cor)
+    If shp.HasTextFrame Then
+        If shp.TextFrame.HasText Then
+            nm = shp.TextFrame.TextRange.Font.Name
+            If Len(nm) > 0 And StrComp(nm, FONTE, vbTextCompare) <> 0 Then
+                col.Add Array(slideIdx, shp, "Fonte fora do padrao: " & nm)
+                nf = nf + 1
+            End If
+            If Not IsPaletteColor(shp.TextFrame.TextRange.Font.Color.RGB) Then
+                col.Add Array(slideIdx, shp, "Cor da fonte fora da paleta")
+                nc = nc + 1
+            End If
+        End If
+    End If
+
+    ' raio (so' formas ja' arredondadas)
+    If shp.Type = msoAutoShape Then
+        If IsRoundedType(shp.AutoShapeType) Then
+            If ShorterSide(shp) > 0 Then
+                std = StdRadiusPts / ShorterSide(shp)
+                If std > 0.5 Then std = 0.5
+                adj = shp.Adjustments(1)
+                If Abs(adj - std) > 0.02 Then
+                    col.Add Array(slideIdx, shp, "Raio fora do padrao")
+                    nr = nr + 1
+                End If
+            End If
+        End If
+    End If
+
+    ' cor de preenchimento
+    If shp.Fill.Visible = msoTrue And shp.Fill.Type = msoFillSolid Then
+        If Not IsPaletteColor(shp.Fill.ForeColor.RGB) Then
+            col.Add Array(slideIdx, shp, "Cor de preenchimento fora da paleta")
+            nc = nc + 1
+        End If
+    End If
+    ' cor de contorno
+    If shp.Line.Visible = msoTrue Then
+        If Not IsPaletteColor(shp.Line.ForeColor.RGB) Then
+            col.Add Array(slideIdx, shp, "Cor de contorno fora da paleta")
+            nc = nc + 1
+        End If
+    End If
+    On Error GoTo 0
+End Sub
+
+Public Sub AuditScan(control As IRibbonControl)
+    Dim col As New Collection, shp As Object
+    Dim nf As Long, nc As Long, nr As Long, i As Long
+    Dim it As Variant, resp As VbMsgBoxResult
+    nf = 0: nc = 0: nr = 0
+    For i = 1 To ActivePresentation.Slides.Count
+        For Each shp In ActivePresentation.Slides(i).Shapes
+            ScanShape shp, i, col, nf, nc, nr
+        Next shp
+    Next i
+
+    If col.Count = 0 Then
+        MsgBox "Auditoria: tudo dentro do padrao.", vbInformation, "CBA Studio"
+        Exit Sub
+    End If
+
+    resp = MsgBox("Auditoria encontrou:" & vbCrLf & _
+        "- " & nf & " fonte(s) fora do padrao" & vbCrLf & _
+        "- " & nc & " cor(es) fora da paleta" & vbCrLf & _
+        "- " & nr & " raio(s) fora do padrao" & vbCrLf & vbCrLf & _
+        "Quer percorrer os alertas um a um?", vbYesNo + vbInformation, "CBA Studio")
+    If resp <> vbYes Then Exit Sub
+
+    For i = 1 To col.Count
+        it = col(i)
+        On Error Resume Next
+        ActiveWindow.View.GotoSlide CLng(it(0))
+        it(1).Select
+        On Error GoTo 0
+        resp = MsgBox("Alerta " & i & " de " & col.Count & " - Slide " & it(0) & vbCrLf & _
+            it(2) & vbCrLf & vbCrLf & "OK = proximo / Cancelar = parar", _
+            vbOKCancel + vbExclamation, "CBA Studio - Auditoria")
+        If resp = vbCancel Then Exit For
+    Next i
+End Sub
+
+Public Sub AuditFixFonts(control As IRibbonControl)
+    Dim sld As Object, shp As Object, n As Long
+    n = 0
+    For Each sld In ActivePresentation.Slides
+        For Each shp In sld.Shapes
+            n = n + FixFontShape(shp)
+        Next shp
+    Next sld
+    MsgBox "Fontes padronizadas para " & FONTE & " em " & n & " objeto(s).", vbInformation, "CBA Studio"
+End Sub
+
+Private Function FixFontShape(ByVal shp As Object) As Long
+    Dim cnt As Long, s As Object
+    cnt = 0
+    On Error Resume Next
+    If shp.Type = msoGroup Then
+        For Each s In shp.GroupItems
+            cnt = cnt + FixFontShape(s)
+        Next s
+    ElseIf shp.HasTextFrame Then
+        If shp.TextFrame.HasText Then
+            shp.TextFrame.TextRange.Font.Name = FONTE
+            cnt = 1
+        End If
+    End If
+    On Error GoTo 0
+    FixFontShape = cnt
+End Function
+
+Public Sub AuditFixColors(control As IRibbonControl)
+    Dim sld As Object, shp As Object, n As Long
+    n = 0
+    For Each sld In ActivePresentation.Slides
+        For Each shp In sld.Shapes
+            n = n + FixColorShape(shp)
+        Next shp
+    Next sld
+    MsgBox "Cores aproximadas a' paleta em " & n & " ponto(s).", vbInformation, "CBA Studio"
+End Sub
+
+Private Function FixColorShape(ByVal shp As Object) As Long
+    Dim cnt As Long, s As Object
+    cnt = 0
+    On Error Resume Next
+    If shp.Type = msoGroup Then
+        For Each s In shp.GroupItems
+            cnt = cnt + FixColorShape(s)
+        Next s
+    Else
+        If shp.Fill.Visible = msoTrue And shp.Fill.Type = msoFillSolid Then
+            If Not IsPaletteColor(shp.Fill.ForeColor.RGB) Then
+                shp.Fill.ForeColor.RGB = NearestPaletteColor(shp.Fill.ForeColor.RGB)
+                cnt = cnt + 1
+            End If
+        End If
+        If shp.Line.Visible = msoTrue Then
+            If Not IsPaletteColor(shp.Line.ForeColor.RGB) Then
+                shp.Line.ForeColor.RGB = NearestPaletteColor(shp.Line.ForeColor.RGB)
+                cnt = cnt + 1
+            End If
+        End If
+        If shp.HasTextFrame Then
+            If shp.TextFrame.HasText Then
+                If Not IsPaletteColor(shp.TextFrame.TextRange.Font.Color.RGB) Then
+                    shp.TextFrame.TextRange.Font.Color.RGB = NearestPaletteColor(shp.TextFrame.TextRange.Font.Color.RGB)
+                    cnt = cnt + 1
+                End If
+            End If
+        End If
+    End If
+    On Error GoTo 0
+    FixColorShape = cnt
 End Function
 
 ' ============================================================

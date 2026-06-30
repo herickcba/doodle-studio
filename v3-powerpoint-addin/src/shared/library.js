@@ -10,14 +10,24 @@
 (function (global) {
   'use strict';
   const KEY = 'doodle.library';
+  const CAP = 40;            // máximo de itens guardados (evita estourar a quota)
 
   function list() {
     try { return JSON.parse(localStorage.getItem(KEY) || '[]'); }
     catch (_) { return []; }
   }
+  // Grava limitando a CAP itens. Se a quota estourar, descarta os mais antigos
+  // e tenta de novo — assim salvar nunca falha em silêncio por biblioteca cheia.
   function persist(items) {
-    try { localStorage.setItem(KEY, JSON.stringify(items)); return true; }
-    catch (e) { console.warn('Biblioteca cheia ou indisponível:', e); return false; }
+    let arr = items.slice(0, CAP);
+    for (let tries = 0; tries < 8; tries++) {
+      try { localStorage.setItem(KEY, JSON.stringify(arr)); return true; }
+      catch (e) {
+        if (arr.length <= 1) { console.warn('Biblioteca: quota estourada:', e); return false; }
+        arr = arr.slice(0, Math.max(1, Math.floor(arr.length * 0.7)));   // poda os mais antigos
+      }
+    }
+    return false;
   }
   // extra = optional { kind:'gif', gif:{...} } merged into the item.
   function save(name, payload, thumb, extra) {
@@ -36,9 +46,10 @@
   // animation options (regenerated on insert) — no heavy bytes.
   function saveGifSet(payload, thumb, gifOpts) {
     const o = gifOpts || {};
-    save('GIF', payload, thumb, { kind: 'gif', gif: Object.assign({}, o, { loop: true }) });
-    save('GIF', payload, thumb, { kind: 'gif', gif: Object.assign({}, o, { loop: false }) });
-    save('Desenho', payload, thumb, { kind: 'png' });
+    const a = save('GIF', payload, thumb, { kind: 'gif', gif: Object.assign({}, o, { loop: true }) });
+    const b = save('GIF', payload, thumb, { kind: 'gif', gif: Object.assign({}, o, { loop: false }) });
+    const c = save('Desenho', payload, thumb, { kind: 'png' });
+    return !!(a && b && c);   // true só se as 3 versões salvaram
   }
 
   global.DoodleLibrary = { list, save, saveGifSet, remove, get, clearAll };
