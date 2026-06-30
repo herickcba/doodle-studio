@@ -1,0 +1,36 @@
+CBA Studio — pacote de instalação
+==================================
+
+São DOIS componentes para o PowerPoint:
+
+1) FAIXA "CBA Studio" (add-in .ppam — tipografia, entrelinha, âncora,
+   cantos arredondados e barra de cores). Aparece como uma aba na faixa.
+
+2) EXTENSÃO (painel lateral — Doodle + ImaGen). Abre como um painel à direita.
+
+------------------------------------------------------------
+FAIXA "CBA Studio"  (BG-DoodleStudio.ppam)
+------------------------------------------------------------
+macOS:
+  1. Baixe "BG-DoodleStudio.ppam" para a pasta Downloads.
+  2. Baixe e abra "instalar-faixa-mac.command".
+     (Se o Mac bloquear: clique com o botão direito > Abrir.)
+  3. Reabra o PowerPoint > "Habilitar Macros". A aba "CBA Studio" aparece.
+
+Windows (beta):
+  1. Baixe "BG-DoodleStudio.ppam" para a pasta Downloads.
+  2. Baixe e rode "instalar-faixa-windows.bat".
+  3. Abra o PowerPoint > "Habilitar Macros". A aba "CBA Studio" aparece.
+  Manual: Arquivo > Opções > Suplementos > Gerenciar: Suplementos do
+  PowerPoint > Ir... > Adicionar Novo... > escolha o .ppam.
+
+------------------------------------------------------------
+EXTENSÃO (painel Doodle + ImaGen)  —  manifest.xml
+------------------------------------------------------------
+macOS:
+  Baixe e abra "instalar-extensao-mac.command", depois no PowerPoint:
+  Inserir > Suplementos > Meus Suplementos > CBA Studio.
+
+Windows:
+  PowerPoint > Inserir > Suplementos > Meus Suplementos >
+  Carregar Meu Suplemento (Upload My Add-in) > escolha "manifest.xml".

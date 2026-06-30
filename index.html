@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Vector Studio Pro — Doodle Maker</title>
+<title>CBA Studio — PowerPoint toolkit</title>
 <style>
   :root {
     --bg: #0a0a0b;
@@ -361,12 +361,13 @@
     <div class="brand">
       <div class="logo">🍌</div>
       <div>
-        <h1>VECTOR STUDIO <span class="pill">PRO</span></h1>
-        <small>Harmonized Bezier Curves</small>
+        <h1>CBA <span class="pill">STUDIO</span></h1>
+        <small>PowerPoint toolkit</small>
       </div>
     </div>
     <div class="header-right">
       <div class="res-chip">🖥 <span id="resLabel">1920 x 1080</span></div>
+      <button class="btn-ghost" id="installBtn" title="Instalar no PowerPoint">📥 Instalar no PowerPoint</button>
       <button class="btn-ghost btn-svg" id="svgBtn" title="Exportar SVG Vetorial">⬇ SVG</button>
       <button class="btn-primary" id="exportBtn">⬇ PNG</button>
     </div>
@@ -573,10 +574,123 @@
   <footer>
     <span>Status: <b id="status">Ready</b></span>
     <span>Engine: <b>Vector Harmonizer Pro</b></span>
-    <span>© 2026 Vector Studio Pro</span>
+    <span>© 2026 CBA Studio</span>
   </footer>
 
   <div class="toast" id="toast"></div>
+
+  <!-- ============================================================
+       Instalar no PowerPoint — modal autocontido (CSS/HTML/JS proprios)
+       ============================================================ -->
+  <style>
+    .inst-overlay{position:fixed;inset:0;background:rgba(18,18,26,.62);display:none;align-items:center;justify-content:center;z-index:99999;padding:20px}
+    .inst-overlay.open{display:flex}
+    .inst-modal{background:#fff;color:#1c1c28;max-width:640px;width:100%;max-height:88vh;overflow:auto;border-radius:16px;padding:26px 26px 30px;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.4);font-family:inherit}
+    .inst-modal h3{margin:0 0 4px;font-size:22px;font-weight:700}
+    .inst-sub{margin:0 0 16px;color:#6b6b78;font-size:13px}
+    .inst-close{position:absolute;top:12px;right:16px;border:0;background:none;font-size:28px;line-height:1;cursor:pointer;color:#9a9aa6}
+    .inst-os{display:inline-flex;background:#f0f0f4;border-radius:10px;padding:4px;margin-bottom:18px;gap:4px}
+    .inst-os-btn{border:0;background:none;padding:7px 20px;border-radius:8px;font-weight:600;cursor:pointer;color:#5a5a66;font-size:13px}
+    .inst-os-btn.active{background:#fff;color:#1c1c28;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+    .inst-card{border:1px solid #ececf2;border-radius:12px;padding:15px 18px;margin-bottom:14px}
+    .inst-card-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:6px}
+    .inst-card-h b{font-size:15px}
+    .inst-card-h span{font-size:11px;color:#8a8a96}
+    .inst-beta{background:#FFE9B0;color:#7a5d00;padding:2px 8px;border-radius:6px;font-weight:700;font-size:10px;letter-spacing:.02em}
+    .inst-dl{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+    .inst-b{display:inline-block;background:#436AE1;color:#fff;text-decoration:none;padding:9px 14px;border-radius:9px;font-size:13px;font-weight:600}
+    .inst-b:hover{background:#3559cf}
+    .inst-b.ghost{background:#f2f3f8;color:#33333f}
+    .inst-modal ol{margin:6px 0 2px;padding-left:20px;font-size:13px;line-height:1.7;color:#33333f}
+    .inst-note{font-size:12px;color:#5e5e6a;background:#f7f7fb;border-radius:8px;padding:9px 11px;margin:8px 0 0}
+  </style>
+  <div class="inst-overlay" id="instOverlay">
+    <div class="inst-modal">
+      <button class="inst-close" id="instClose" aria-label="Fechar">×</button>
+      <h3>Instalar no PowerPoint</h3>
+      <p class="inst-sub">São dois componentes — instale os que quiser. Os arquivos vão para a pasta <b>Downloads</b>.</p>
+
+      <div class="inst-os" id="instOs">
+        <button class="inst-os-btn active" data-os="mac">macOS</button>
+        <button class="inst-os-btn" data-os="win">Windows</button>
+      </div>
+
+      <!-- macOS -->
+      <div class="inst-pane" data-os="mac">
+        <div class="inst-card">
+          <div class="inst-card-h"><b>Faixa “CBA Studio”</b><span>tipografia · entrelinha · âncora · cantos arredondados · cores</span></div>
+          <div class="inst-dl">
+            <a class="inst-b" href="/download/BG-DoodleStudio.ppam" download>⬇ Add-in (.ppam)</a>
+            <a class="inst-b" href="/download/instalar-faixa-mac.command" download>⬇ Instalador (Mac)</a>
+          </div>
+          <ol>
+            <li>Baixe os <b>dois</b> arquivos acima (vão para Downloads).</li>
+            <li>Abra o <b>instalador</b>. Se o Mac bloquear, clique com o botão direito → <b>Abrir</b>.</li>
+            <li>Reabra o PowerPoint → <b>Habilitar Macros</b>. A aba <b>CBA Studio</b> aparece.</li>
+          </ol>
+        </div>
+        <div class="inst-card">
+          <div class="inst-card-h"><b>Extensão</b><span>painel Doodle + ImaGen</span></div>
+          <div class="inst-dl">
+            <a class="inst-b" href="/download/instalar-extensao-mac.command" download>⬇ Instalador da extensão (Mac)</a>
+          </div>
+          <ol>
+            <li>Abra o instalador (botão direito → <b>Abrir</b> se for bloqueado).</li>
+            <li>No PowerPoint: <b>Inserir → Suplementos → Meus Suplementos → CBA Studio</b>.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Windows -->
+      <div class="inst-pane" data-os="win" hidden>
+        <div class="inst-card">
+          <div class="inst-card-h"><b>Faixa “CBA Studio”</b><span class="inst-beta">INSTALADOR BETA</span></div>
+          <div class="inst-dl">
+            <a class="inst-b" href="/download/BG-DoodleStudio.ppam" download>⬇ Add-in (.ppam)</a>
+            <a class="inst-b" href="/download/instalar-faixa-windows.bat" download>⬇ Instalador (.bat)</a>
+          </div>
+          <ol>
+            <li>Baixe os <b>dois</b> arquivos para a pasta Downloads.</li>
+            <li>Rode o <b>instalar-faixa-windows.bat</b>.</li>
+            <li>Abra o PowerPoint → <b>Habilitar Macros</b>. A aba <b>CBA Studio</b> aparece.</li>
+          </ol>
+          <p class="inst-note"><b>Manual</b> (se a aba não aparecer): Arquivo → Opções → Suplementos → em “Gerenciar”, escolha <b>Suplementos do PowerPoint</b> → Ir… → <b>Adicionar Novo…</b> → selecione o .ppam.</p>
+        </div>
+        <div class="inst-card">
+          <div class="inst-card-h"><b>Extensão</b><span>painel Doodle + ImaGen</span></div>
+          <div class="inst-dl">
+            <a class="inst-b" href="/download/manifest.xml" download>⬇ manifest.xml</a>
+          </div>
+          <ol>
+            <li>No PowerPoint: <b>Inserir → Suplementos → Meus Suplementos</b>.</li>
+            <li><b>Carregar Meu Suplemento</b> (Upload My Add-in) → escolha o <b>manifest.xml</b>.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ov = document.getElementById('instOverlay');
+      var openBtn = document.getElementById('installBtn');
+      var closeBtn = document.getElementById('instClose');
+      if (openBtn) openBtn.addEventListener('click', function () { ov.classList.add('open'); });
+      if (closeBtn) closeBtn.addEventListener('click', function () { ov.classList.remove('open'); });
+      ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.remove('open'); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') ov.classList.remove('open'); });
+      var btns = document.querySelectorAll('.inst-os-btn');
+      btns.forEach(function (b) {
+        b.addEventListener('click', function () {
+          btns.forEach(function (x) { x.classList.remove('active'); });
+          b.classList.add('active');
+          var os = b.getAttribute('data-os');
+          document.querySelectorAll('.inst-pane').forEach(function (p) {
+            p.hidden = (p.getAttribute('data-os') !== os);
+          });
+        });
+      });
+    })();
+  </script>
 
   <div class="modal-overlay" id="exportModal">
     <div class="modal">
