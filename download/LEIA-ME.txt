@@ -3,10 +3,20 @@ CBA Studio — pacote de instalação
 
 São DOIS componentes para o PowerPoint:
 
-1) FAIXA "CBA Studio" (add-in .ppam — tipografia, entrelinha, âncora,
-   cantos arredondados e barra de cores). Aparece como uma aba na faixa.
+1) FAIXA "CBA Studio" (add-in .ppam) — aba na faixa com: tipografia B+G
+   (11 estilos), entrelinha, negrito/colar texto/caps, cores/preenchimento/
+   contorno, cantos arredondados, alinhar & distribuir + âncora, inserir
+   caixa/rounded box, auditoria do deck e Padrões da marca.
 
-2) EXTENSÃO (painel lateral — Doodle + ImaGen). Abre como um painel à direita.
+2) EXTENSÃO (painel lateral — Doodle + ImaGen): desenhe sobre o slide,
+   tela grande, GIF animado, biblioteca e geração de imagens por IA.
+
+PADRÕES DA MARCA: paleta, tipos, tamanhos, entrelinha e raio são
+configuráveis em https://doodle-studio-sigma.vercel.app/config.html
+(ajuste > "Copiar configuração" > PowerPoint > Padrões > Aplicar config).
+
+Windows (beta): antes de distribuir ao time, rode o checklist
+WINDOWS-TEST.md numa máquina Windows.
 
 ------------------------------------------------------------
 FAIXA "CBA Studio"  (BG-DoodleStudio.ppam)

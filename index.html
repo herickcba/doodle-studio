@@ -82,6 +82,9 @@
   .dl a.soft{background:var(--surface-2);color:var(--ink);border:1px solid var(--line);}
   .dl a.soft:hover{border-color:#d3d0c7;}
 
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:0;list-style:none;}
+  .chips li{font-size:11.5px;font-weight:700;color:#4a4a54;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap;}
+
   ol.steps{margin:0;padding-left:20px;color:#3a3a44;font-size:14px;line-height:1.75;}
   ol.steps b{color:var(--ink);}
   .note{font-size:12.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-top:12px;}
@@ -105,6 +108,7 @@
       <a href="#online">Usar online</a>
       <a href="#faixa">Faixa</a>
       <a href="#extensao">Extensão</a>
+      <a href="#padroes">Padrões</a>
     </nav>
     <a class="nav-cta" href="/v2.html" target="_blank" rel="noopener">Abrir online ↗</a>
   </div>
@@ -115,7 +119,7 @@
     <div class="wrap">
       <span class="eyebrow">Instalar &amp; usar</span>
       <h1>Ferramentas de design B+G<br>direto no seu PowerPoint<span class="dot">.</span></h1>
-      <p>Use online sem instalar nada, ou adicione ao PowerPoint a <b>faixa CBA Studio</b> e a <b>extensão Doodle + ImaGen</b>. Guia para macOS e Windows abaixo.</p>
+      <p>Use online sem instalar nada, ou adicione ao PowerPoint a <b>faixa CBA Studio</b> e a <b>extensão Doodle + ImaGen</b>. Os padrões da marca (paleta, tipos, raio) são configuráveis na página de <a href="#padroes"><b>Padrões</b></a>. Guia para macOS e Windows abaixo.</p>
       <div class="hero-cta">
         <a class="btn btn-primary" href="/v2.html" target="_blank" rel="noopener">🎨 Usar o Doodle Studio online ↗</a>
         <a class="btn btn-ghost" href="#faixa">↓ Instalar no PowerPoint</a>
@@ -158,7 +162,18 @@
             <div class="ic">🅰️</div>
             <h3>Faixa “CBA Studio”</h3>
           </div>
-          <p class="comp-sub">Aba na faixa do PowerPoint: tipografia B+G, entrelinha, alinhar à âncora, cantos arredondados e barra de cores.</p>
+          <p class="comp-sub">Aba na faixa do PowerPoint com as ferramentas do design system B+G, num clique:</p>
+          <ul class="chips">
+            <li>Tipografia (11 estilos)</li>
+            <li>Entrelinha</li>
+            <li>Negrito · Colar texto · Caps</li>
+            <li>Cores · Preenchimento · Contorno</li>
+            <li>Cantos arredondados</li>
+            <li>Alinhar &amp; distribuir + âncora</li>
+            <li>Inserir caixa / rounded box</li>
+            <li>Auditoria do deck</li>
+            <li>Padrões da marca</li>
+          </ul>
 
           <div class="os-mac">
             <div class="dl">
@@ -182,6 +197,7 @@
               <li>Abra o PowerPoint → <b>Habilitar Macros</b>. A aba <b>CBA Studio</b> aparece.</li>
             </ol>
             <p class="note"><b>Manual</b> (se a aba não aparecer): Arquivo → Opções → Suplementos → em “Gerenciar”, escolha <b>Suplementos do PowerPoint</b> → Ir… → <b>Adicionar Novo…</b> → selecione o .ppam.</p>
+            <p class="note"><b>Validação</b>: o instalador Windows é beta. Antes de distribuir ao time, rode o <a href="/download/WINDOWS-TEST.md" target="_blank" rel="noopener"><b>checklist de teste (~10 min)</b></a> numa máquina Windows e reporte o resultado.</p>
           </div>
         </div>
 
@@ -191,7 +207,14 @@
             <div class="ic">🖍️</div>
             <h3>Extensão</h3>
           </div>
-          <p class="comp-sub">Painel lateral: desenhe sobre o slide e gere imagens com o <b>ImaGen</b>. Também abre no navegador.</p>
+          <p class="comp-sub">Painel lateral com dois módulos — também abre no navegador:</p>
+          <ul class="chips">
+            <li>Doodle sobre o slide</li>
+            <li>Tela grande para desenhar</li>
+            <li>GIF animado do traço</li>
+            <li>Biblioteca de desenhos</li>
+            <li>ImaGen (imagens por IA)</li>
+          </ul>
 
           <div class="os-mac">
             <div class="dl">
@@ -217,6 +240,20 @@
       </div>
     </div>
   </section>
+
+  <!-- PADRÕES DA MARCA (Brand Standards) -->
+  <section id="padroes">
+    <div class="wrap">
+      <div class="card online-card">
+        <div class="ic">⚙️</div>
+        <div class="txt">
+          <h3>Padrões da marca <span class="pill">CONFIGURÁVEL</span></h3>
+          <p>Paleta, cores de tipo, escala de tamanhos, entrelinha e raio do rounded — tudo que a faixa aplica vem daqui. Ajuste na página, clique <b>Copiar configuração</b> e cole no PowerPoint em <b>CBA Studio → Padrões → Aplicar config</b>. Vale para todas as apresentações e persiste entre sessões.</p>
+        </div>
+        <a class="btn btn-primary" href="/config.html" target="_blank" rel="noopener">Abrir Brand Standards ↗</a>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -225,7 +262,11 @@
     <span class="sep">·</span>
     <a href="/v2.html" target="_blank" rel="noopener">Usar online (v2)</a>
     <span class="sep">·</span>
+    <a href="/config.html" target="_blank" rel="noopener">Padrões da marca</a>
+    <span class="sep">·</span>
     <a href="/download/LEIA-ME.txt" target="_blank" rel="noopener">Guia de instalação</a>
+    <span class="sep">·</span>
+    <a href="/download/WINDOWS-TEST.md" target="_blank" rel="noopener">Checklist Windows</a>
     <span class="sep">·</span>
     <a href="/v1.html" target="_blank" rel="noopener">v1 (legado)</a>
   </div>
