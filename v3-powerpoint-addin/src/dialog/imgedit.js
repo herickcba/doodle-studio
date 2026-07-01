@@ -66,7 +66,30 @@
     cur = null; redraw();
   }
 
+  // office.js carrega deferred: se o clique vier antes de ele carregar,
+  // esperamos a API ficar pronta (poll até 15s) em vez de falhar em silêncio.
+  let sending = false;
+  function officeReady() {
+    return typeof Office !== 'undefined' && Office.context && Office.context.ui
+      && typeof Office.context.ui.messageParent === 'function';
+  }
+  function sendKind(kind, waited) {
+    if (!officeReady()) {
+      if (waited >= 15000) {
+        $('applyBtn').textContent = 'Sem conexão — feche e tente de novo';
+        sending = false;
+        return;
+      }
+      if (waited >= 600) $('applyBtn').textContent = 'Conectando…';
+      setTimeout(() => sendKind(kind, waited + 150), 150);
+      return;
+    }
+    try { Office.context.ui.messageParent(kind); }
+    catch (_) { $('applyBtn').textContent = 'Falha — tente de novo'; sending = false; }
+  }
+
   function finish(kind) {
+    if (sending) return;                 // dedup: um clique por vez
     if (kind === 'edit') {
       const prompt = $('editPrompt').value.trim();
       // Return ONLY the transparent scribble overlay (small — mostly transparent,
@@ -81,7 +104,10 @@
       }
     }
     if (window.opener) { try { window.close(); } catch (_) {} return; }
-    try { Office.context.ui.messageParent(kind); } catch (e) { try { window.close(); } catch (_) {} }
+    sending = true;
+    $('applyBtn').disabled = true;
+    $('cancelBtn').disabled = true;
+    sendKind(kind, 0);
   }
 
   function syncApply() {

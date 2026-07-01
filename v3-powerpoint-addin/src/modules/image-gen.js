@@ -35,8 +35,9 @@
     const resp = await fetch(path, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
-    const data = await resp.json().catch(() => ({}));
-    if (!resp.ok) throw new Error(data.error || ('Erro ' + resp.status));
+    const data = await resp.json().catch(() => null);   // null = corpo nao-JSON
+    if (!resp.ok) throw new Error((data && data.error) || ('Erro ' + resp.status + (resp.statusText ? ' — ' + resp.statusText : '')));
+    if (!data) throw new Error('Resposta inválida do servidor (não-JSON).');
     return data;
   }
 
@@ -183,12 +184,17 @@
   async function addToGallery(item) {
     gallery.unshift(item);
     renderGallery();
-    try { if (window.DoodleGallery) await DoodleGallery.add(item); } catch (_) {}
+    try { if (window.DoodleGallery) await DoodleGallery.add(item); }
+    catch (e) {
+      console.error('Galeria: falha ao persistir', e);
+      setStatus('Imagem gerada, mas não ficou salva na galeria (armazenamento cheio?).', 'warn');
+    }
   }
   async function removeItem(item) {
     gallery = gallery.filter((g) => g.id !== item.id);
     renderGallery();
-    try { if (window.DoodleGallery) await DoodleGallery.remove(item.id); } catch (_) {}
+    try { if (window.DoodleGallery) await DoodleGallery.remove(item.id); }
+    catch (e) { console.error('Galeria: falha ao remover', e); }
     setStatus('Imagem removida da biblioteca.', '');
   }
 
@@ -303,7 +309,11 @@
     $('imgRefFile').addEventListener('change', (e) => {
       const f = e.target.files && e.target.files[0]; if (!f) return;
       const rd = new FileReader();
-      rd.onload = async () => { await DoodleImgRefs.add(rd.result, f.name); renderRefs(); setStatus('Referência adicionada ✓', 'ok'); };
+      rd.onload = async () => {
+        try { await DoodleImgRefs.add(rd.result, f.name); renderRefs(); setStatus('Referência adicionada ✓', 'ok'); }
+        catch (err) { console.error(err); setStatus('Não consegui guardar a referência.', 'warn'); }
+      };
+      rd.onerror = () => setStatus('Não consegui ler o arquivo de imagem.', 'warn');
       rd.readAsDataURL(f);
       e.target.value = '';
     });

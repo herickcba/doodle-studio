@@ -104,11 +104,27 @@ Private Sub AddEnt(ByVal sz As Long, ByVal mult As Single)
 End Sub
 
 Private Function ConfigPath() As String
-    ' No Mac, Environ("HOME") dentro do Office = a sandbox do PowerPoint
-    ' (~/Library/Containers/com.microsoft.Powerpoint/Data), que e' gravavel
-    ' por VBA sem pedir permissao. Guardamos a config global ali.
-    ConfigPath = Environ$("HOME") & "/cba-config.txt"
+    ' Mac: Environ("HOME") dentro do Office = a sandbox do PowerPoint
+    ' (~/Library/Containers/com.microsoft.Powerpoint/Data), gravavel por VBA
+    ' sem pedir permissao. Windows: HOME e' vazio -> usa %APPDATA%\CBAStudio.
+    Dim home As String
+    home = Environ$("HOME")
+    If Len(home) > 0 Then
+        ConfigPath = home & "/cba-config.txt"
+    Else
+        ConfigPath = Environ$("APPDATA") & "\CBAStudio\cba-config.txt"
+    End If
 End Function
+
+' Garante a pasta da config no Windows (no Mac o path e' a raiz da sandbox).
+Private Sub EnsureConfigDir()
+    Dim p As String
+    If Len(Environ$("HOME")) > 0 Then Exit Sub          ' Mac: nada a criar
+    p = Environ$("APPDATA") & "\CBAStudio"
+    On Error Resume Next
+    If Len(Dir$(p, vbDirectory)) = 0 Then MkDir p
+    On Error GoTo 0
+End Sub
 
 Private Sub LoadConfig()
     Dim p As String, ln As String, s As String, f As Integer
@@ -132,6 +148,7 @@ End Sub
 Private Function WriteConfig(ByVal s As String) As Boolean
     Dim f As Integer
     On Error GoTo fail
+    EnsureConfigDir
     f = FreeFile
     Open ConfigPath() For Output As #f
     Print #f, s
@@ -154,7 +171,7 @@ Private Sub ApplyConfigString(ByVal s As String)
     parts = Split(s, ";")
     For i = LBound(parts) To UBound(parts)
         If InStr(parts(i), "=") > 0 Then
-            kv = Split(parts(i), "=")
+            kv = Split(parts(i), "=", 2)   ' limit 2: valor com "=" nao e' truncado
             ApplyKV Trim$(kv(0)), Trim$(kv(1))
         End If
     Next i
@@ -168,7 +185,11 @@ Private Sub ApplyKV(ByVal k As String, ByVal v As String)
         If Val(v) > 0 Then gRadiusPx = CSng(Val(v))
     ElseIf Left$(k, 3) = "pal" Then
         pi = CLng(Val(Mid$(k, 4)))
-        If pi >= 0 And pi <= 4 Then gPal(pi) = HexToRGB(v)
+        If pi >= 0 And pi <= 4 Then
+            Dim c As Long
+            c = HexToRGB(v)
+            If c >= 0 Then gPal(pi) = c    ' hex invalido (-1) -> ignora, mantem a cor
+        End If
     ElseIf Left$(k, 2) = "s_" Then
         id = Mid$(k, 3)
         a = Split(v, "|")
@@ -179,10 +200,14 @@ Private Sub ApplyKV(ByVal k As String, ByVal v As String)
     End If
 End Sub
 
+' Retorna a cor RGB, ou -1 se o hex for invalido (o caller ignora).
 Private Function HexToRGB(ByVal h As String) As Long
+    Dim i As Long, r As Long, g As Long, b As Long
     h = Replace(h, "#", "")
-    If Len(h) < 6 Then HexToRGB = 0: Exit Function
-    Dim r As Long, g As Long, b As Long
+    If Len(h) < 6 Then HexToRGB = -1: Exit Function
+    For i = 1 To 6                       ' valida: so digitos hex (GGGGGG crashava)
+        If InStr("0123456789ABCDEFabcdef", Mid$(h, i, 1)) = 0 Then HexToRGB = -1: Exit Function
+    Next i
     r = CLng("&H" & Mid$(h, 1, 2))
     g = CLng("&H" & Mid$(h, 3, 2))
     b = CLng("&H" & Mid$(h, 5, 2))
@@ -197,13 +222,21 @@ Public Sub ConfigOpen(control As IRibbonControl)
 End Sub
 
 ' Padroes > Aplicar config: cola a string da pagina (1 linha), grava e recarrega.
+' Qualquer erro de parse -> rollback (defaults + config salva) e aviso amigavel.
 Public Sub ConfigApply(control As IRibbonControl)
     Dim s As String
     s = InputBox("Cole a configuracao copiada da pagina de Brand Standards:", _
                  "CBA Studio — Aplicar padroes")
     If Len(Trim$(s)) = 0 Then Exit Sub
+    If Len(s) > 20000 Then
+        MsgBox "Essa configuracao e' grande demais — copie de novo na pagina de Brand Standards.", _
+               vbExclamation, "CBA Studio"
+        Exit Sub
+    End If
+    On Error GoTo bad
     SetDefaults
     ApplyConfigString s
+    On Error GoTo 0
     If WriteConfig(s) Then
         On Error Resume Next
         gRibbon.Invalidate
@@ -213,6 +246,15 @@ Public Sub ConfigApply(control As IRibbonControl)
         MsgBox "Padroes aplicados nesta sessao, mas nao consegui salvar o arquivo" & vbCrLf & _
                "(permita o acesso a' pasta quando o PowerPoint pedir).", vbExclamation, "CBA Studio"
     End If
+    Exit Sub
+bad:
+    ' rollback: volta pros defaults + config salva anterior (arquivo intacto)
+    On Error Resume Next
+    SetDefaults
+    LoadConfig
+    On Error GoTo 0
+    MsgBox "Configuracao invalida — nada foi alterado." & vbCrLf & _
+           "Copie a string de novo na pagina de Brand Standards.", vbExclamation, "CBA Studio"
 End Sub
 
 ' Aplica o estilo correspondente ao botao clicado.
@@ -256,8 +298,23 @@ Public Sub Entrelinha(control As IRibbonControl)
 End Sub
 
 Public Sub EntrelinhaTudo(control As IRibbonControl)
+    If Not ConfirmBigDeck("aplicar a entrelinha") Then Exit Sub
     DoEntrelinhaTudo
 End Sub
+
+' Operacoes que varrem a apresentacao inteira podem demorar em decks grandes
+' (o PowerPoint nao expoe ScreenUpdating no VBA): confirma antes de rodar.
+Private Function ConfirmBigDeck(ByVal opName As String) As Boolean
+    Dim n As Long
+    ConfirmBigDeck = True
+    On Error Resume Next
+    n = ActivePresentation.Slides.Count
+    On Error GoTo 0
+    If n > 50 Then
+        ConfirmBigDeck = (MsgBox("Isso vai " & opName & " em " & n & " slides e pode levar um tempo." & _
+            vbCrLf & "Continuar?", vbQuestion + vbOKCancel, "CBA Studio") = vbOK)
+    End If
+End Function
 
 ' Entrelinha FIXA por step (botoes 0,8x ... 1,3x) aplicada a' selecao.
 Public Sub SetEntrelinha(control As IRibbonControl)
@@ -306,13 +363,14 @@ Private Sub SetSpacingOnRange(ByVal tr As Object, ByVal mult As Single)
     Next p
 End Sub
 
-Private Function SetSpacingOnShape(ByVal shp As Object, ByVal mult As Single) As Long
+Private Function SetSpacingOnShape(ByVal shp As Object, ByVal mult As Single, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + SetSpacingOnShape(s, mult)
+            cnt = cnt + SetSpacingOnShape(s, mult, depth + 1)
         Next s
     ElseIf shp.HasTextFrame Then
         If shp.TextFrame.HasText Then
@@ -493,12 +551,13 @@ Private Function AlignTextShape(ByVal shp As Object, ByVal x As Single) As Long
     AlignTextShape = cnt
 End Function
 
-Private Function GroupHasText(ByVal grp As Object) As Boolean
+Private Function GroupHasText(ByVal grp As Object, Optional ByVal depth As Long = 0) As Boolean
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim s As Object
     On Error Resume Next
     For Each s In grp.GroupItems
         If s.Type = msoGroup Then
-            If GroupHasText(s) Then GroupHasText = True: Exit Function
+            If GroupHasText(s, depth + 1) Then GroupHasText = True: Exit Function
         ElseIf s.HasTextFrame Then
             If s.TextFrame.HasText Then GroupHasText = True: Exit Function
         End If
@@ -656,13 +715,14 @@ Public Sub ExpandContent(control As IRibbonControl)
     If n = 0 Then MsgBox "Selecione uma ou mais formas.", vbInformation, "CBA Studio"
 End Sub
 
-Private Function ZeroInsets(ByVal shp As Object) As Long
+Private Function ZeroInsets(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + ZeroInsets(s)
+            cnt = cnt + ZeroInsets(s, depth + 1)
         Next s
     ElseIf shp.HasTextFrame Then
         shp.TextFrame.MarginLeft = 0
@@ -701,13 +761,14 @@ Private Sub SetRoundedRadius(ByVal shp As Object)
 End Sub
 
 ' transforma o shape em rounded (imagem/caixa/retangulo) e seta o raio
-Private Function MakeRounded(ByVal shp As Object) As Long
+Private Function MakeRounded(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim done As Long, s As Object, doIt As Boolean
     done = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            done = done + MakeRounded(s)
+            done = done + MakeRounded(s, depth + 1)
         Next s
     Else
         doIt = False
@@ -746,6 +807,7 @@ End Sub
 
 ' normaliza, em toda a apresentacao, SO' as formas que ja' sao rounded
 Public Sub RoundAllShapes(control As IRibbonControl)
+    If Not ConfirmBigDeck("padronizar o raio") Then Exit Sub
     Dim sld As Object, shp As Object, n As Long
     n = 0
     For Each sld In ActivePresentation.Slides
@@ -756,13 +818,14 @@ Public Sub RoundAllShapes(control As IRibbonControl)
     MsgBox "Cantos padronizados em " & n & " formas rounded.", vbInformation, "CBA Studio"
 End Sub
 
-Private Function NormalizeRounded(ByVal shp As Object) As Long
+Private Function NormalizeRounded(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object, t As Long
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + NormalizeRounded(s)
+            cnt = cnt + NormalizeRounded(s, depth + 1)
         Next s
     ElseIf shp.Type = msoAutoShape Then
         t = shp.AutoShapeType
@@ -779,6 +842,7 @@ End Function
 ' caixas de texto e imagens) de toda a apresentacao. Formas nao
 ' retangulares (oval, seta, linha) ficam como estao.
 Public Sub RoundEverything(control As IRibbonControl)
+    If Not ConfirmBigDeck("arredondar as formas") Then Exit Sub
     Dim sld As Object, shp As Object, n As Long
     n = 0
     For Each sld In ActivePresentation.Slides
@@ -820,13 +884,14 @@ Public Sub UnroundAll(control As IRibbonControl)
     MsgBox "Removido o arredondamento de " & n & " forma(s).", vbInformation, "CBA Studio"
 End Sub
 
-Private Function MakeStraight(ByVal shp As Object) As Long
+Private Function MakeStraight(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + MakeStraight(s)
+            cnt = cnt + MakeStraight(s, depth + 1)
         Next s
     ElseIf shp.Type = msoAutoShape Or shp.Type = msoPicture Then
         If IsRoundedType(shp.AutoShapeType) Then
@@ -870,13 +935,14 @@ Public Sub SetShapeFill(control As IRibbonControl)
     If n = 0 Then MsgBox "Selecione uma ou mais formas.", vbInformation, "CBA Studio"
 End Sub
 
-Private Function FillShape(ByVal shp As Object, ByVal i As Long) As Long
+Private Function FillShape(ByVal shp As Object, ByVal i As Long, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + FillShape(s, i)
+            cnt = cnt + FillShape(s, i, depth + 1)
         Next s
     Else
         If i = C_TRANSP Then
@@ -938,13 +1004,14 @@ Private Sub ApplyFontColor2(ByVal tr2 As Object, ByVal i As Long)
     On Error GoTo 0
 End Sub
 
-Private Function FontColorShape(ByVal shp As Object, ByVal i As Long) As Long
+Private Function FontColorShape(ByVal shp As Object, ByVal i As Long, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + FontColorShape(s, i)
+            cnt = cnt + FontColorShape(s, i, depth + 1)
         Next s
     ElseIf shp.HasTextFrame Then
         If shp.TextFrame.HasText Then
@@ -976,13 +1043,14 @@ Public Sub SetShapeOutline(control As IRibbonControl)
     If n = 0 Then MsgBox "Selecione uma ou mais formas.", vbInformation, "CBA Studio"
 End Sub
 
-Private Function OutlineShape(ByVal shp As Object, ByVal i As Long) As Long
+Private Function OutlineShape(ByVal shp As Object, ByVal i As Long, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + OutlineShape(s, i)
+            cnt = cnt + OutlineShape(s, i, depth + 1)
         Next s
     Else
         If i = C_TRANSP Then
@@ -1036,12 +1104,13 @@ End Function
 
 ' Coleta findings recursivamente. col guarda Array(slideIdx, shape, detalhe).
 Private Sub ScanShape(ByVal shp As Object, ByVal slideIdx As Long, ByVal col As Collection, _
-                      ByRef nf As Long, ByRef nc As Long, ByRef nr As Long)
+                      ByRef nf As Long, ByRef nc As Long, ByRef nr As Long, Optional ByVal depth As Long = 0)
+    If depth > 12 Then Exit Sub      ' guarda contra grupos aninhados demais
     Dim s As Object, std As Single, adj As Single, nm As String
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            ScanShape s, slideIdx, col, nf, nc, nr
+            ScanShape s, slideIdx, col, nf, nc, nr, depth + 1
         Next s
         On Error GoTo 0
         Exit Sub
@@ -1095,6 +1164,7 @@ Private Sub ScanShape(ByVal shp As Object, ByVal slideIdx As Long, ByVal col As 
 End Sub
 
 Public Sub AuditScan(control As IRibbonControl)
+    If Not ConfirmBigDeck("auditar") Then Exit Sub
     Dim col As New Collection, shp As Object
     Dim nf As Long, nc As Long, nr As Long, i As Long
     Dim it As Variant, resp As VbMsgBoxResult
@@ -1133,6 +1203,7 @@ End Sub
 ' Padronizar tipografia: por run -> Avenir Next (heavy/black/bold -> Bold) e
 ' tamanho encaixado na escala B+G mais proxima.
 Public Sub AuditFixFonts(control As IRibbonControl)
+    If Not ConfirmBigDeck("padronizar a tipografia") Then Exit Sub
     Dim sld As Object, shp As Object, n As Long
     n = 0
     For Each sld In ActivePresentation.Slides
@@ -1143,13 +1214,14 @@ Public Sub AuditFixFonts(control As IRibbonControl)
     MsgBox "Tipografia padronizada (Avenir Next + peso + tamanho na escala) em " & n & " objeto(s).", vbInformation, "CBA Studio"
 End Sub
 
-Private Function FixTypeShape(ByVal shp As Object) As Long
+Private Function FixTypeShape(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object, tr As Object, k As Long
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + FixTypeShape(s)
+            cnt = cnt + FixTypeShape(s, depth + 1)
         Next s
     ElseIf shp.HasTextFrame Then
         If shp.TextFrame.HasText Then
@@ -1235,13 +1307,14 @@ End Function
 ' ============================================================
 '  Aplicacao de ESTILO (fonte+tamanho+cor+ponto+entrelinha)
 ' ============================================================
-Private Function ApplyStyleToShape(ByVal shp As Object, ByRef spec As StyleSpec) As Long
+Private Function ApplyStyleToShape(ByVal shp As Object, ByRef spec As StyleSpec, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object, isBlue As Boolean
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + ApplyStyleToShape(s, spec)
+            cnt = cnt + ApplyStyleToShape(s, spec, depth + 1)
         Next s
     ElseIf shp.HasTextFrame Then
         If shp.TextFrame.HasText Then
@@ -1343,13 +1416,14 @@ Private Sub ApplySpacingToRange(ByVal tr As Object)
     Next p
 End Sub
 
-Private Function ApplyToShape(ByVal shp As Object) As Long
+Private Function ApplyToShape(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            cnt = cnt + ApplyToShape(s)
+            cnt = cnt + ApplyToShape(s, depth + 1)
         Next s
     ElseIf shp.HasTextFrame Then
         If shp.TextFrame.HasText Then

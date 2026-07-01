@@ -91,7 +91,8 @@
     const id = DoodleLibrary.save(label, Doodle.payloadOf(strokes), thumb);
     if (!id) { setStatus('Não foi possível salvar (armazenamento cheio).', 'warn'); return; }
     renderLibrary();
-    setStatus('Salvo na biblioteca ✓', 'ok');
+    if (DoodleLibrary.wasPruned()) setStatus('Salvo ✓ — biblioteca cheia: itens antigos foram removidos.', 'warn');
+    else setStatus('Salvo na biblioteca ✓', 'ok');
   }
 
   // Save the 3 versions (loop GIF + no-loop GIF + static PNG). The sidebar has
@@ -104,7 +105,8 @@
     renderLibrary();
     if (ok) {
       $('saveGifBtn').textContent = '✓ 3 versões salvas';
-      setStatus('GIF salvo na biblioteca (loop, sem loop e PNG) ✓', 'ok');
+      if (DoodleLibrary.wasPruned()) setStatus('GIF salvo ✓ — biblioteca cheia: itens antigos foram removidos.', 'warn');
+      else setStatus('GIF salvo na biblioteca (loop, sem loop e PNG) ✓', 'ok');
     } else {
       setStatus('Biblioteca cheia — apague alguns itens e tente de novo.', 'warn');
     }
@@ -151,10 +153,13 @@
   async function insertPNGs(pngs, successMsg) {
     if (!pngs || !pngs.length) { setStatus('Nada desenhado ainda.', 'warn'); return; }
     insertBtn.disabled = true;
-    setStatus(pngs.length > 1 ? `Inserindo ${pngs.length} traços…` : 'Inserindo…');
+    setStatus('Inserindo…');
+    let i = 0;
     try {
       let mode = 'inserted';
       for (const png of pngs) {
+        i++;
+        if (pngs.length > 1) setStatus(`Inserindo ${i}/${pngs.length}…`);
         mode = (await OfficeBridge.insertDoodle(png)).mode;
         if (mode !== 'inserted') break;
       }
@@ -162,7 +167,8 @@
         : 'Modo navegador: PNG baixado (no PowerPoint, vai pro slide).', 'ok');
     } catch (e) {
       console.error(e);
-      setStatus('Erro ao inserir: ' + (e && e.message ? e.message : e), 'warn');
+      const where = pngs.length > 1 ? ` (item ${i}/${pngs.length})` : '';
+      setStatus('Erro ao inserir' + where + ': ' + (e && e.message ? e.message : e), 'warn');
     } finally {
       insertBtn.disabled = Doodle.isEmpty();
     }
@@ -175,11 +181,11 @@
   async function openBigCanvas() {
     // Pass whatever backdrop we already have (API or pasted) into the dialog.
     const backdrop = window.DoodleBackdrop || currentSlideImg || '';
-    setStatus('Tela grande aberta — desenhe e clique Inserir lá.', 'ok');
+    setStatus('Abrindo tela grande…');
     OfficeBridge.openDrawDialog(backdrop, async (payload) => {
       renderLibrary();   // the dialog may have saved into the shared library
       if (!payload || !payload.strokes || !payload.strokes.length) {
-        setStatus('Tela grande fechada sem desenho.', 'warn');
+        setStatus('Tela grande fechada sem inserir.', '');
         return;
       }
       if (payload.asGif) {
@@ -193,6 +199,9 @@
         const pngs = Doodle.renderExternalPNGs(payload.strokes, payload.config, payload.insertSeparate);
         await insertPNGs(pngs, 'Inserido no slide (tela grande) ✓');
       }
+    }, {
+      onOpen: () => setStatus('Tela grande aberta — desenhe e clique Inserir lá.', 'ok'),
+      onError: (msg) => setStatus(msg, 'warn'),
     });
   }
 

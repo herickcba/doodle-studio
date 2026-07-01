@@ -66,12 +66,18 @@ function extractText(json) {
 // but be defensive for other setups).
 async function readJson(req) {
   if (req.body && typeof req.body === 'object') return req.body;
-  if (typeof req.body === 'string' && req.body) { try { return JSON.parse(req.body); } catch (_) {} }
+  if (typeof req.body === 'string' && req.body) {
+    try { return JSON.parse(req.body); }
+    catch (e) { console.warn('[api] corpo string não-JSON:', e.message); }
+  }
   return await new Promise((resolve) => {
     let data = '';
     req.on('data', (c) => { data += c; });
-    req.on('end', () => { try { resolve(JSON.parse(data || '{}')); } catch (_) { resolve({}); } });
-    req.on('error', () => resolve({}));
+    req.on('end', () => {
+      try { resolve(JSON.parse(data || '{}')); }
+      catch (e) { console.warn('[api] corpo não-JSON (%d bytes):', data.length, e.message); resolve({}); }
+    });
+    req.on('error', (e) => { console.warn('[api] erro lendo corpo:', e.message); resolve({}); });
   });
 }
 

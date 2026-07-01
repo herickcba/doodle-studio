@@ -20,15 +20,20 @@ if [ -z "$SRC" ]; then
   done
 fi
 [ -n "$SRC" ] && [ -f "$SRC" ] || { echo "❌ Nao achei BG-DoodleStudio.ppam. Passe o caminho como argumento."; exit 1; }
+command -v sqlite3 >/dev/null || { echo "❌ sqlite3 nao encontrado (vem com o macOS; instale as Command Line Tools: xcode-select --install)."; exit 1; }
 
 GC="$HOME/Library/Group Containers/UBF8T346G9.Office"
 DEST_DIR="$GC/User Content.localized/Add-Ins.localized/$ADDIN"
 DB="$GC/MicrosoftRegistrationDB.reg"
 
+[ -d "$GC" ] || { echo "❌ Pasta do Office nao existe ($GC). O PowerPoint (Office 2016+) esta' instalado? Abra-o uma vez e rode de novo."; exit 1; }
+
 echo "→ Instalando CBA Studio…"
 
 # 2) fechar o PowerPoint p/ recarregar o add-in
-osascript -e 'tell application "Microsoft PowerPoint" to quit' >/dev/null 2>&1 || true
+if ! osascript -e 'tell application "Microsoft PowerPoint" to quit' >/dev/null 2>&1; then
+  echo "⚠️  Nao consegui fechar o PowerPoint automaticamente — feche-o manualmente se estiver aberto."
+fi
 sleep 1
 
 # 3) copiar o .ppam

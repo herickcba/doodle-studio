@@ -18,17 +18,22 @@
   }
   // Grava limitando a CAP itens. Se a quota estourar, descarta os mais antigos
   // e tenta de novo — assim salvar nunca falha em silêncio por biblioteca cheia.
+  // `wasPruned()` diz se a ÚLTIMA gravação apagou itens antigos (a UI avisa).
+  let _pruned = false;
   function persist(items) {
     let arr = items.slice(0, CAP);
+    _pruned = items.length > CAP;
     for (let tries = 0; tries < 8; tries++) {
       try { localStorage.setItem(KEY, JSON.stringify(arr)); return true; }
       catch (e) {
         if (arr.length <= 1) { console.warn('Biblioteca: quota estourada:', e); return false; }
         arr = arr.slice(0, Math.max(1, Math.floor(arr.length * 0.7)));   // poda os mais antigos
+        _pruned = true;
       }
     }
     return false;
   }
+  function wasPruned() { return _pruned; }
   // extra = optional { kind:'gif', gif:{...} } merged into the item.
   function save(name, payload, thumb, extra) {
     const items = list();
@@ -52,5 +57,5 @@
     return !!(a && b && c);   // true só se as 3 versões salvaram
   }
 
-  global.DoodleLibrary = { list, save, saveGifSet, remove, get, clearAll };
+  global.DoodleLibrary = { list, save, saveGifSet, remove, get, clearAll, wasPruned };
 })(window);

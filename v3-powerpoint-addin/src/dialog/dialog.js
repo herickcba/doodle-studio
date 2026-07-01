@@ -22,6 +22,7 @@
   function resetLabel(id) { const b = $(id); if (b && b.dataset.label) b.textContent = b.dataset.label; }
 
   function updateButtons() {
+    if (sending) return;               // não reabilita botões no meio de um envio
     const empty = Doodle.isEmpty();
     $('insertBtn').disabled = empty;
     $('gifBtn').disabled = empty;
@@ -71,7 +72,39 @@
     };
   }
 
+  /* --- Envio pro PowerPoint ---------------------------------------
+     office.js carrega deferred; se o usuário desenhar rápido e clicar
+     Inserir antes de ele carregar, Office ainda não existe. Em vez de
+     falhar em silêncio (o bug do "às vezes não insere"), esperamos a
+     API ficar pronta (poll até 15s) com feedback visível, e um clique
+     só dispara um envio (dedup). ------------------------------------ */
+  let sending = false;
+
+  function officeReady() {
+    return typeof Office !== 'undefined' && Office.context && Office.context.ui
+      && typeof Office.context.ui.messageParent === 'function';
+  }
+
+  function showStatus(msg, isError) {
+    const el = $('dlgStatus');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.className = 'dlg-status' + (isError ? ' err' : '');
+  }
+
+  function setBusy(busy) {
+    sending = busy;
+    $('cancelBtn').disabled = busy;
+    if (busy) {
+      $('insertBtn').disabled = true;
+      $('gifBtn').disabled = true;
+    } else {
+      updateButtons();
+    }
+  }
+
   function finish(kind, gif) {
+    if (sending) return;                 // dedup: um clique por vez
     let p = null;
     if (kind === 'inserted') {
       p = Doodle.payload();
@@ -86,15 +119,38 @@
       try { window.close(); } catch (_) {}
       return;
     }
-    // Office Dialog: entrega o payload DENTRO da mensagem (sem localStorage),
-    // eliminando a falha silenciosa quando a gravação no localStorage falhava.
+    setBusy(true);
+    if (kind === 'inserted') showStatus('Inserindo…');
+    sendToHost(kind, p, 0);
+  }
+
+  function sendToHost(kind, p, waited) {
+    if (!officeReady()) {
+      if (waited >= 15000) {
+        // resgate: guarda o desenho e orienta — nunca falha mudo
+        try { localStorage.setItem('doodle.result', JSON.stringify(p)); } catch (_) {}
+        showStatus('Sem conexão com o PowerPoint — feche esta janela e tente de novo.', true);
+        setBusy(false);
+        return;
+      }
+      if (waited >= 600) showStatus('Conectando ao PowerPoint…');
+      setTimeout(() => sendToHost(kind, p, waited + 150), 150);
+      return;
+    }
+    // Entrega o payload DENTRO da mensagem (sem localStorage); o host fecha a janela.
     try {
       Office.context.ui.messageParent(JSON.stringify({ kind: kind, payload: p }));
     } catch (e) {
       // payload grande demais p/ a mensagem: cai no localStorage + sinal curto
-      try { localStorage.setItem('doodle.result', JSON.stringify(p)); } catch (_) {}
+      let saved = false;
+      try { localStorage.setItem('doodle.result', JSON.stringify(p)); saved = true; } catch (_) {}
+      if (!saved && kind === 'inserted') {
+        showStatus('Desenho grande demais para transferir — salve na biblioteca e insira pelo painel.', true);
+        setBusy(false);
+        return;
+      }
       try { Office.context.ui.messageParent(kind); }
-      catch (_) { try { window.close(); } catch (_) {} }
+      catch (_) { showStatus('Falha ao comunicar com o PowerPoint — tente de novo.', true); setBusy(false); }
     }
   }
 

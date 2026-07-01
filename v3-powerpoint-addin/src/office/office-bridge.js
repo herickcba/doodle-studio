@@ -260,8 +260,13 @@
   /* Open the big-canvas drawing dialog.
      The slide backdrop and the returned drawing are passed through
      localStorage (same origin) to avoid Office message size limits.
-     onResult receives the parsed payload { strokes, config }. */
-  function openDrawDialog(slideImageUrl, onResult) {
+     onResult(payload) — payload { strokes, config }, ou null se o usuário
+     cancelou/fechou sem inserir (o painel usa isso pra resetar o status).
+     hooks (opcional): { onOpen(), onError(msg) } — feedback visível de
+     abertura/falha (nunca só console.warn). */
+  function openDrawDialog(slideImageUrl, onResult, hooks) {
+    const onOpen = (hooks && hooks.onOpen) || function () {};
+    const onError = (hooks && hooks.onError) || function (m) { console.warn('[OfficeBridge]', m); };
     try {
       localStorage.setItem('doodle.slideImage', slideImageUrl || '');
       localStorage.removeItem('doodle.result');
@@ -274,16 +279,21 @@
     if (!canOfficeDialog) {
       // Standalone (browser): open a normal window, poll localStorage.
       const w = window.open(url, 'doodleDialog', 'width=1280,height=820');
+      if (!w) { onError('O navegador bloqueou a janela — permita pop-ups para este site.'); return; }
+      onOpen();
       const timer = setInterval(() => {
         let res = null;
         try { res = localStorage.getItem('doodle.result'); } catch (_) {}
         if (res) {
           clearInterval(timer);
           try { localStorage.removeItem('doodle.result'); } catch (_) {}
-          try { w && w.close(); } catch (_) {}
-          onResult(JSON.parse(res));
-        } else if (w && w.closed) {
+          try { w.close(); } catch (_) {}
+          let parsed = null;
+          try { parsed = JSON.parse(res); } catch (_) {}
+          onResult(parsed);
+        } else if (w.closed) {
           clearInterval(timer);
+          onResult(null);          // fechou sem inserir → painel reseta o status
         }
       }, 400);
       return;
@@ -291,17 +301,29 @@
 
     Office.context.ui.displayDialogAsync(url, { height: 82, width: 82, displayInIframe: false }, (asyncResult) => {
       if (asyncResult.status !== Office.AsyncResultStatus.Succeeded) {
-        console.warn('[OfficeBridge] dialog failed:', asyncResult.error);
+        const err = asyncResult.error || {};
+        console.warn('[OfficeBridge] dialog failed:', err);
+        onError(err.code === 12007
+          ? 'Já existe uma janela do CBA Studio aberta — feche-a e tente de novo.'
+          : 'Não consegui abrir a tela grande (' + (err.message || err.code || 'erro') + ').');
         return;
       }
+      onOpen();
       const dialog = asyncResult.value;
+      let done = false;                          // só o 1º resultado conta (dedup)
+      const settle = (payload) => {
+        if (done) return;
+        done = true;
+        try { dialog.close(); } catch (_) {}
+        onResult(payload);
+      };
       dialog.addEventHandler(Office.EventType.DialogMessageReceived, (arg) => {
+        if (done) return;
         // Novo formato: a mensagem É o resultado { kind, payload } — sem localStorage.
         let parsed = null;
         try { parsed = JSON.parse(arg.message); } catch (_) {}
         if (parsed && parsed.kind) {
-          dialog.close();
-          if (parsed.kind === 'inserted') onResult(parsed.payload || null);
+          settle(parsed.kind === 'inserted' ? (parsed.payload || null) : null);
           return;
         }
         // Fallback (compat / payload grande): string 'inserted'/'cancel' + localStorage.
@@ -309,19 +331,27 @@
         if (msg === 'inserted') {
           let res = null;
           try { res = localStorage.getItem('doodle.result'); localStorage.removeItem('doodle.result'); } catch (_) {}
-          dialog.close();
-          if (res) onResult(JSON.parse(res));
+          let parsedRes = null;
+          try { parsedRes = res ? JSON.parse(res) : null; } catch (_) {}
+          settle(parsedRes);
         } else if (msg === 'cancel') {
-          dialog.close();
+          settle(null);
         }
+      });
+      // Usuário fechou no X (12006) ou o dialog caiu: avisa o painel.
+      dialog.addEventHandler(Office.EventType.DialogEventReceived, () => {
+        if (done) return;
+        done = true;
+        onResult(null);
       });
     });
   }
 
   /* Open the image-edit dialog: shows `imageDataUrl`, lets the user mark it up
      with a solid brush and type an edit prompt. onResult receives
-     { prompt, markupDataUrl }. Image + result pass through localStorage. */
-  function openImageEditDialog(imageDataUrl, onResult, initialPrompt) {
+     { prompt, markupDataUrl }. Image + result pass through localStorage.
+     hooks (opcional): { onError(msg) }. */
+  function openImageEditDialog(imageDataUrl, onResult, initialPrompt, hooks) {
     try {
       localStorage.setItem('doodle.editImage', imageDataUrl || '');
       localStorage.setItem('doodle.editPrompt', initialPrompt || '');
@@ -331,37 +361,53 @@
     const canOfficeDialog = inPowerPoint()
       && Office.context.ui && typeof Office.context.ui.displayDialogAsync === 'function';
 
+    const onError = (hooks && hooks.onError) || function (m) { console.warn('[OfficeBridge]', m); };
+
     if (!canOfficeDialog) {
       const w = window.open(url, 'imgEditDialog', 'width=1280,height=820');
+      if (!w) { onError('O navegador bloqueou a janela — permita pop-ups para este site.'); return; }
       const timer = setInterval(() => {
         let res = null;
         try { res = localStorage.getItem('doodle.editResult'); } catch (_) {}
         if (res) {
           clearInterval(timer);
           try { localStorage.removeItem('doodle.editResult'); } catch (_) {}
-          try { w && w.close(); } catch (_) {}
-          onResult(JSON.parse(res));
-        } else if (w && w.closed) { clearInterval(timer); }
+          try { w.close(); } catch (_) {}
+          let parsed = null;
+          try { parsed = JSON.parse(res); } catch (_) {}
+          if (parsed) onResult(parsed);
+        } else if (w.closed) { clearInterval(timer); }
       }, 400);
       return;
     }
 
     Office.context.ui.displayDialogAsync(url, { height: 82, width: 82, displayInIframe: false }, (asyncResult) => {
       if (asyncResult.status !== Office.AsyncResultStatus.Succeeded) {
-        console.warn('[OfficeBridge] imgedit dialog failed:', asyncResult.error);
+        const err = asyncResult.error || {};
+        console.warn('[OfficeBridge] imgedit dialog failed:', err);
+        onError(err.code === 12007
+          ? 'Já existe uma janela do CBA Studio aberta — feche-a e tente de novo.'
+          : 'Não consegui abrir o editor (' + (err.message || err.code || 'erro') + ').');
         return;
       }
       const dialog = asyncResult.value;
+      let done = false;
       dialog.addEventHandler(Office.EventType.DialogMessageReceived, (arg) => {
+        if (done) return;
         if (arg.message === 'edit') {
+          done = true;
           let res = null;
           try { res = localStorage.getItem('doodle.editResult'); localStorage.removeItem('doodle.editResult'); } catch (_) {}
-          dialog.close();
-          if (res) onResult(JSON.parse(res));
+          try { dialog.close(); } catch (_) {}
+          let parsed = null;
+          try { parsed = res ? JSON.parse(res) : null; } catch (_) {}
+          if (parsed) onResult(parsed);
         } else if (arg.message === 'cancel') {
-          dialog.close();
+          done = true;
+          try { dialog.close(); } catch (_) {}
         }
       });
+      dialog.addEventHandler(Office.EventType.DialogEventReceived, () => { done = true; });
     });
   }
 

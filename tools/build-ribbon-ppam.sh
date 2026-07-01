@@ -17,7 +17,10 @@ RIBBON="$REPO/v3-powerpoint-addin/ribbon"
 PPTM="${1:-$HOME/Downloads/BG-DoodleStudio.pptm}"
 OUT="${2:-$HOME/Downloads/BG-DoodleStudio.ppam}"
 
+command -v python3 >/dev/null || { echo "Erro: python3 nao encontrado (necessario para o build)."; exit 1; }
+command -v zip >/dev/null || { echo "Erro: zip nao encontrado."; exit 1; }
 [ -f "$PPTM" ] || { echo "Erro: nao achei o .pptm: $PPTM"; echo "(Cole a VBA num deck, compile e salve como .pptm primeiro.)"; exit 1; }
+unzip -t "$PPTM" >/dev/null 2>&1 || { echo "Erro: $PPTM nao e' um .pptm valido (zip corrompido?)."; exit 1; }
 [ -f "$RIBBON/customUI14.xml" ] || { echo "Erro: $RIBBON/customUI14.xml ausente"; exit 1; }
 
 # saida absoluta

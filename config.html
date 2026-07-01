@@ -54,7 +54,7 @@
   select{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:var(--surface-2);color:var(--ink);}
   .chip{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;border:1px solid rgba(0,0,0,.08);}
 
-  .bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);}
+  .bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);}
   .bar .wrap{display:flex;align-items:center;gap:14px;height:78px;}
   .btn{display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-weight:700;font-size:14px;padding:12px 20px;border-radius:11px;border:1px solid transparent;cursor:pointer;}
   .btn-primary{background:var(--azul);color:#fff;}
@@ -197,9 +197,11 @@
     try{
       var raw=localStorage.getItem("cba.brandcfg");
       if(raw){ var o=JSON.parse(raw);
-        if(o.PAL) PAL=o.PAL; if(o.STYLES) STYLES=o.STYLES;
-        if(o.fonte) document.getElementById("fonte").value=o.fonte;
-        if(o.radius) document.getElementById("radius").value=o.radius;
+        // valida o schema antes de usar — localStorage corrompido não quebra a página
+        if(Array.isArray(o.PAL) && o.PAL.length===5 && o.PAL.every(function(p){return p && typeof p.hex==="string";})) PAL=o.PAL;
+        if(Array.isArray(o.STYLES) && o.STYLES.length && o.STYLES.every(function(s){return s && s.id && isFinite(s.size);})) STYLES=o.STYLES;
+        if(typeof o.fonte==="string" && o.fonte) document.getElementById("fonte").value=o.fonte;
+        if(o.radius && isFinite(parseFloat(o.radius))) document.getElementById("radius").value=o.radius;
       }
     }catch(e){}
   }

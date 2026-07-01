@@ -28,6 +28,10 @@ body { padding: 0; overflow: hidden; display: flex; }
 
 /* Stage-bar zoom + separators */
 .bar-sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+
+/* Status do envio (Conectando… / Inserindo… / erros) */
+.dlg-status { font-size: 12px; font-weight: 700; color: var(--muted-2); max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dlg-status.err { color: var(--danger); white-space: normal; }
 .zoom-label { font-size: 11px; color: var(--muted-2); min-width: 42px; text-align: center; font-variant-numeric: tabular-nums; }
 
 /* Zoom transform on the canvas wrap */
