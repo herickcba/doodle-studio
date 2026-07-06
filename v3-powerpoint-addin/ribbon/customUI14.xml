@@ -11,23 +11,21 @@
             screentip="Inserir caixa arredondada" supertip="Cria um retângulo de cantos arredondados no raio padrão, preenchido (branco, ou bege se o fundo for branco), no centro do slide."/>
         </group>
         <group id="dsGrpTipografia" label="Tipografia">
-          <button id="dsHero"       label="Hero 120"    image="sqHero"       onAction="ApplyStyle" screentip="Hero · 120pt" supertip="Avenir Next Bold · 120pt · 0.8x · rosa, ponto azul."/>
-          <button id="dsMega"       label="Mega 80"     image="sqMega"       onAction="ApplyStyle" screentip="Mega · 80pt"  supertip="Avenir Next Bold · 80pt · 0.9x · azul."/>
-          <button id="dsH1"         label="H1 60"       image="sqH1"         onAction="ApplyStyle" screentip="H1 · 60pt"    supertip="Avenir Next Bold · 60pt · 0.9x · rosa."/>
-          <button id="dsLabelSec"   label="Label 60"    image="sqLabelSec"   onAction="ApplyStyle" screentip="Label · 60pt" supertip="Avenir Next Bold · 60pt · 0.9x · rosa."/>
-          <button id="dsCorpo"      label="Corpo 44"    image="sqCorpo"      onAction="ApplyStyle" screentip="Corpo · 44pt" supertip="Avenir Next Regular · 44pt · 1.15x · azul."/>
-          <button id="dsH3"         label="H3 34"       image="sqH3"         onAction="ApplyStyle" screentip="H3 · 34pt"    supertip="Avenir Next Bold · 34pt · 0.95x · rosa."/>
-          <button id="dsH4"         label="H4 28"       image="sqH4"         onAction="ApplyStyle" screentip="H4 · 28pt"    supertip="Avenir Next Bold · 28pt · azul."/>
-          <button id="dsH5"         label="H5 24"       image="sqH5"         onAction="ApplyStyle" screentip="H5 · 24pt"    supertip="Avenir Next Regular · 24pt · azul."/>
-          <button id="dsCorpoPilar" label="Pilar 20"    image="sqCorpoPilar" onAction="ApplyStyle" screentip="Corpo de Pilar · 20pt" supertip="Avenir Next Regular · 20pt · azul."/>
-          <button id="dsEyebrow"    label="Eyebrow 18"  image="sqEyebrow"    onAction="ApplyStyle" screentip="Eyebrow · 18pt" supertip="Avenir Next Bold · 18pt · rosa."/>
-          <button id="dsCaption"    label="Caption 16"  image="sqCaption"    onAction="ApplyStyle" screentip="Caption · 16pt" supertip="Avenir Next Regular · 16pt · azul."/>
+          <button id="dsHero"       label="Statement 120" image="sqHero"       onAction="ApplyStyle" screentip="Statement · 120pt" supertip="A frase-manifesto da página. Avenir Next Bold · 120pt · 0.8x · magenta, ponto azul."/>
+          <button id="dsMega"       label="Manchete 80"   image="sqMega"       onAction="ApplyStyle" screentip="Manchete · 80pt"  supertip="Título de abertura grande. Avenir Next Bold · 80pt · 0.9x · azul."/>
+          <button id="dsH1"         label="Título 60"     image="sqH1"         onAction="ApplyStyle" screentip="Título · 60pt"    supertip="Título de página. Avenir Next Bold · 60pt · 0.9x · magenta."/>
+          <button id="dsLabelSec"   label="Rótulo 60"     image="sqLabelSec"   onAction="ApplyStyle" screentip="Rótulo · 60pt" supertip="Rótulo de seção. Avenir Next Bold · 60pt · 0.9x · magenta."/>
+          <button id="dsCorpo"      label="Destaque 44"   image="sqCorpo"      onAction="ApplyStyle" screentip="Destaque · 44pt" supertip="Corpo de destaque. Avenir Next Regular · 44pt · 1.15x · azul."/>
+          <button id="dsH3"         label="Subtítulo 34"  image="sqH3"         onAction="ApplyStyle" screentip="Subtítulo · 34pt"    supertip="Subtítulo / descritivo. Avenir Next Bold · 34pt · 0.95x · magenta."/>
+          <button id="dsH4"         label="Tópico 28"     image="sqH4"         onAction="ApplyStyle" screentip="Tópico · 28pt"    supertip="Título de tópico ou card. Avenir Next Bold · 28pt · azul."/>
+          <button id="dsH5"         label="Texto 24"      image="sqH5"         onAction="ApplyStyle" screentip="Texto · 24pt"    supertip="Texto corrido. Avenir Next Regular · 24pt · azul."/>
+          <button id="dsCorpoPilar" label="Apoio 20"      image="sqCorpoPilar" onAction="ApplyStyle" screentip="Apoio · 20pt" supertip="Texto de apoio (pilares, colunas). Avenir Next Regular · 20pt · azul."/>
+          <button id="dsEyebrow"    label="Chapéu 18"     image="sqEyebrow"    onAction="ApplyStyle" screentip="Chapéu · 18pt" supertip="Chapéu / eyebrow acima do título. Avenir Next Bold · 18pt · magenta."/>
+          <button id="dsCaption"    label="Legenda 16"    image="sqCaption"    onAction="ApplyStyle" screentip="Legenda · 16pt" supertip="Legendas e notas. Avenir Next Regular · 16pt · azul."/>
         </group>
         <group id="dsGrpEntrelinha" label="Entrelinha">
-          <button id="entreSel" label="Seleção" image="entreSel" size="large" onAction="Entrelinha"
-            screentip="Entrelinha pelo tamanho (seleção)" supertip="Lê o tamanho de cada parágrafo da seleção e aplica a entrelinha B+G correspondente."/>
-          <button id="entreTudo" label="Todos os slides" image="entreTudo" size="large" onAction="EntrelinhaTudo"
-            screentip="Entrelinha pelo tamanho (todos os slides)" supertip="Aplica a entrelinha B+G em todas as caixas de texto de todos os slides."/>
+          <button id="entreSel" label="Aplicar" image="entreSel" size="large" onAction="Entrelinha"
+            screentip="Entrelinha pelo tamanho (seleção)" supertip="Aplica a entrelinha B+G ao que estiver selecionado: texto, objetos, ou os slides selecionados no painel."/>
           <separator id="dsSepEntre"/>
           <button id="ent08"  label="0,8×"  image="ent08"  onAction="SetEntrelinha" screentip="Entrelinha 0,8×" supertip="Fixa a entrelinha da seleção em 0,8× (múltiplo)."/>
           <button id="ent09"  label="0,9×"  image="ent09"  onAction="SetEntrelinha" screentip="Entrelinha 0,9×" supertip="Fixa a entrelinha da seleção em 0,9× (múltiplo)."/>
@@ -74,9 +72,21 @@
           <button id="roundOne" label="Rounded" image="rounded" size="large" onAction="RoundCorner"
             screentip="Cantos arredondados (seleção)" supertip="Arredonda a forma/imagem selecionada no raio padrão. Imagem = crop arredondado."/>
           <button id="roundAll" label="Padronizar" image="roundedAll" size="large" onAction="RoundAllShapes"
-            screentip="Padronizar os já-arredondados" supertip="Em toda a apresentação, padroniza o raio das formas que JÁ são arredondadas. Formas retas continuam retas."/>
+            screentip="Padronizar os já-arredondados (seleção)" supertip="Padroniza o raio das formas que JÁ são arredondadas — nas formas selecionadas, ou nos SLIDES selecionados no painel; sem seleção, no slide atual. Formas retas continuam retas. Usa o raio escolhido no dropdown ao lado."/>
           <button id="roundOff" label="Tirar rounded" image="roundOff" size="large" onAction="UnroundAll"
-            screentip="Tirar rounded (seleção)" supertip="Remove o arredondamento dos objetos selecionados, ou dos slides selecionados; sem seleção, do slide atual. Nunca da apresentação inteira."/>
+            screentip="Tirar rounded (seleção)" supertip="Remove o arredondamento das formas selecionadas, ou de TODAS as formas dos slides selecionados no painel; sem seleção, do slide atual. Nunca da apresentação inteira."/>
+          <gallery id="radiusPick" getLabel="GetRadiusLabel" image="radiusPick" size="large"
+            columns="1" itemWidth="88" itemHeight="36" showItemImage="true" showItemLabel="false" onAction="SetRadiusPick"
+            screentip="Raio do arredondamento" supertip="Escolha o raio usado por Rounded, Padronizar e Rounded box. 'Padrão' segue os Padrões da marca; os demais são valores fixos em px (num canvas de 1080 de altura).">
+            <item id="radDefault" image="radItemP" label="Padrão (config)"/>
+            <item id="rad10" image="radItem10" label="10 px"/>
+            <item id="rad15" image="radItem15" label="15 px"/>
+            <item id="rad20" image="radItem20" label="20 px"/>
+            <item id="rad25" image="radItem25" label="25 px"/>
+            <item id="rad30" image="radItem30" label="30 px"/>
+            <item id="rad40" image="radItem40" label="40 px"/>
+            <item id="rad50" image="radItem50" label="50 px"/>
+          </gallery>
         </group>
         <group id="dsGrpAlinhar" label="Alinhar">
           <button id="alignLeftBtn" label="Esquerda" image="alignLeft" size="large" onAction="AlignLeftEdges"
@@ -85,16 +95,26 @@
             screentip="Alinhar ao topo" supertip="Alinha a borda superior dos objetos selecionados (relativo à seleção)."/>
           <button id="distHBtn" label="Distribuir" image="distH" size="large" onAction="DistributeH"
             screentip="Distribuir horizontalmente" supertip="Distribui os objetos selecionados com espaçamento horizontal igual."/>
-          <button id="alignAnchor" label="Âncora esq." image="alignAnchor" size="large" onAction="AlignAnchorLeft"
-            screentip="Ancorar à esquerda (seleção)" supertip="Ancora a borda esquerda dos objetos SELECIONADOS à medida ao lado (cm)."/>
-          <editBox id="anchorBox" label="cm" sizeString="00000" getText="GetAnchorText" onChange="SetAnchorText"
-            screentip="Medida da âncora (cm)" supertip="Distância da borda esquerda do slide onde os objetos vão ancorar."/>
+          <box id="anchorRow" boxStyle="horizontal">
+            <button id="alignAnchor" label="Âncora esq." image="alignAnchor" onAction="AlignAnchorLeft"
+              screentip="Ancorar à esquerda (seleção)" supertip="Ancora a borda esquerda dos objetos SELECIONADOS à medida ao lado (cm)."/>
+            <editBox id="anchorBox" label="cm" sizeString="0000" getText="GetAnchorText" onChange="SetAnchorText"
+              screentip="Medida da âncora (cm)" supertip="Distância da borda esquerda do slide onde os objetos vão ancorar."/>
+          </box>
         </group>
         <group id="dsGrpAuditoria" label="Auditoria">
           <button id="auditScan" label="Auditar" image="auditScan" size="large" onAction="AuditScan"
             screentip="Auditar a apresentação" supertip="Procura fontes fora do padrão, cores fora da paleta e raios não-padrão. Mostra um resumo e leva você de alerta em alerta."/>
           <button id="auditFonts" label="Padronizar tipografia" image="auditFonts" size="large" onAction="AuditFixFonts"
             screentip="Padronizar tipografia" supertip="Troca as fontes por Avenir Next (heavy/black → Bold) e encaixa o tamanho de cada texto na escala B+G mais próxima."/>
+          <button id="auditEntre" label="Padronizar entrelinha" image="entreTudo" size="large" onAction="EntrelinhaTudo"
+            screentip="Padronizar entrelinha (todos os slides)" supertip="Aplica a entrelinha B+G em todas as caixas de texto de todos os slides."/>
+          <button id="auditColors" label="Padronizar cores" image="auditColors" size="large" onAction="AuditFixColors"
+            screentip="Padronizar cores na paleta" supertip="Converte as cores existentes (texto, preenchimento e contorno) para as 4 cores da marca — magenta, azul-violeta, bege e branco — aproximando por matiz/saturação e preservando o contraste figura-fundo. Imagens não são alteradas."/>
+          <button id="pageSize" label="Page Size" image="pageSize" size="large" onAction="FixPageSize"
+            screentip="Padronizar o tamanho do slide" supertip="Ajusta a apresentação para o widescreen padrão do template B+G: 1583 × 891 pt (55,85 × 31,43 cm, 16:9)."/>
+          <button id="imgAudit" label="Image Size" image="imgAudit" size="large" onAction="AuditImages"
+            screentip="Analisar as imagens do arquivo" supertip="A lista de imagens (extensão, MB, slide) e a conversão otimizada ficam no painel lateral CBA Studio — este botão mostra o caminho."/>
         </group>
         <group id="dsGrpPadroes" label="Padrões">
           <button id="configOpen" label="Abrir página" image="configOpen" size="large" onAction="ConfigOpen"

@@ -19,6 +19,7 @@ Option Explicit
 
 Private gRibbon As IRibbonUI
 Private gAnchorCm As Single   ' ancora esq. (cm); 0 = nao setado -> usa default
+Private gRadiusOverridePx As Single   ' raio escolhido no dropdown (px @1080); 0 = Padrao (config)
 Private Const C_TRANSP As Long = 5         ' indice da cor = transparente (nao e' cor)
 
 ' ---- Brand Standards (config). SetDefaults preenche os valores de fabrica;
@@ -739,9 +740,37 @@ End Function
 '  ROUNDED CORNERS (raio ~25px num canvas 1920x1080)
 ' ============================================================
 Private Function StdRadiusPts() As Single
+    Dim px As Single
     EnsureCfg
-    StdRadiusPts = (CDbl(gRadiusPx) / 1080#) * ActivePresentation.PageSetup.SlideHeight
+    If gRadiusOverridePx > 0 Then px = gRadiusOverridePx Else px = gRadiusPx
+    StdRadiusPts = (CDbl(px) / 1080#) * ActivePresentation.PageSetup.SlideHeight
 End Function
+
+' ---- Dropdown "Raio" (grupo Formas): Padrao (config) ou um valor fixo ----
+Private Function RadiusLabel() As String
+    If gRadiusOverridePx > 0 Then
+        RadiusLabel = CStr(CLng(gRadiusOverridePx)) & " px"
+    Else
+        RadiusLabel = "Padrao"
+    End If
+End Function
+
+' getLabel do gallery — mostra a escolha atual no proprio botao.
+Public Sub GetRadiusLabel(control As IRibbonControl, ByRef returnedVal)
+    returnedVal = "Raio: " & RadiusLabel()
+End Sub
+
+' onAction do gallery — id do item = "radDefault" ou "rad<px>".
+Public Sub SetRadiusPick(control As IRibbonControl, id As String, index As Integer)
+    If id = "radDefault" Then
+        gRadiusOverridePx = 0
+    Else
+        gRadiusOverridePx = CSng(Val(Mid$(id, 4)))
+    End If
+    On Error Resume Next
+    gRibbon.InvalidateControl "radiusPick"
+    On Error GoTo 0
+End Sub
 
 Private Function IsRoundedType(ByVal t As Long) As Boolean
     IsRoundedType = (t = msoShapeRoundedRectangle)
@@ -805,17 +834,36 @@ Public Sub RoundCorner(control As IRibbonControl)
     If n = 0 Then MsgBox "Selecione uma forma ou imagem.", vbInformation, "CBA Studio"
 End Sub
 
-' normaliza, em toda a apresentacao, SO' as formas que ja' sao rounded
+' Padroniza o raio SO' das formas que ja' sao rounded, pela SELECAO:
+' formas selecionadas, ou os slides selecionados no painel; sem selecao,
+' o slide atual. Nunca a apresentacao inteira (mais controle).
 Public Sub RoundAllShapes(control As IRibbonControl)
-    If Not ConfirmBigDeck("padronizar o raio") Then Exit Sub
-    Dim sld As Object, shp As Object, n As Long
+    Dim sel As Object, shp As Object, sld As Object, n As Long
+    Set sel = ActiveWindow.Selection
     n = 0
-    For Each sld In ActivePresentation.Slides
-        For Each shp In sld.Shapes
+    If sel.Type = ppSelectionShapes Then
+        On Error Resume Next
+        For Each shp In sel.ShapeRange
             n = n + NormalizeRounded(shp)
         Next shp
-    Next sld
-    MsgBox "Cantos padronizados em " & n & " formas rounded.", vbInformation, "CBA Studio"
+        On Error GoTo 0
+    ElseIf sel.Type = ppSelectionSlides Then
+        On Error Resume Next
+        For Each sld In sel.SlideRange
+            For Each shp In sld.Shapes
+                n = n + NormalizeRounded(shp)
+            Next shp
+        Next sld
+        On Error GoTo 0
+    Else
+        Set sld = CurrentSlide()
+        If Not sld Is Nothing Then
+            For Each shp In sld.Shapes
+                n = n + NormalizeRounded(shp)
+            Next shp
+        End If
+    End If
+    MsgBox "Cantos padronizados em " & n & " forma(s) rounded (raio: " & RadiusLabel() & ").", vbInformation, "CBA Studio"
 End Sub
 
 Private Function NormalizeRounded(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
@@ -1058,7 +1106,7 @@ Private Function OutlineShape(ByVal shp As Object, ByVal i As Long, Optional ByV
         Else
             shp.Line.Visible = msoTrue
             shp.Line.ForeColor.RGB = PaletteColor(i)
-            shp.Line.Weight = 2                         ' contorno padrao 2pt
+            shp.Line.Weight = 3.5                       ' contorno padrao 3,5pt
         End If
         cnt = 1
     End If
@@ -1212,6 +1260,193 @@ Public Sub AuditFixFonts(control As IRibbonControl)
         Next shp
     Next sld
     MsgBox "Tipografia padronizada (Avenir Next + peso + tamanho na escala) em " & n & " objeto(s).", vbInformation, "CBA Studio"
+End Sub
+
+' ============================================================
+'  AUDITORIA: padronizar CORES na paleta (4 alvos), PAGE SIZE
+'  e ponte para a analise de IMAGENS (na extensao)
+' ============================================================
+Private Sub RGBParts(ByVal c As Long, ByRef r As Long, ByRef g As Long, ByRef b As Long)
+    r = c And &HFF
+    g = (c \ &H100) And &HFF
+    b = (c \ &H10000) And &HFF
+End Sub
+
+' Luminancia perceptual aproximada, 0..1.
+Private Function LumOf(ByVal c As Long) As Double
+    Dim r As Long, g As Long, b As Long
+    RGBParts c, r, g, b
+    LumOf = (0.299 * r + 0.587 * g + 0.114 * b) / 255#
+End Function
+
+Private Sub RGBtoHSL(ByVal c As Long, ByRef h As Double, ByRef s As Double, ByRef l As Double)
+    Dim r As Double, g As Double, b As Double, mx As Double, mn As Double, d As Double
+    Dim ri As Long, gi As Long, bi As Long
+    RGBParts c, ri, gi, bi
+    r = ri / 255#: g = gi / 255#: b = bi / 255#
+    mx = r: If g > mx Then mx = g
+    If b > mx Then mx = b
+    mn = r: If g < mn Then mn = g
+    If b < mn Then mn = b
+    l = (mx + mn) / 2#
+    d = mx - mn
+    If d < 0.0001 Then
+        h = 0#: s = 0#
+    Else
+        If l > 0.5 Then s = d / (2# - mx - mn) Else s = d / (mx + mn)
+        If mx = r Then
+            h = 60# * ((g - b) / d)
+            If h < 0 Then h = h + 360#
+        ElseIf mx = g Then
+            h = 60# * ((b - r) / d) + 120#
+        Else
+            h = 60# * ((r - g) / d) + 240#
+        End If
+    End If
+End Sub
+
+' Fundo do slide como luminancia (sem leitura -> assume claro/branco).
+Private Function SlideBgLum(ByVal sld As Object) As Double
+    Dim c As Long
+    c = -1
+    On Error Resume Next
+    c = sld.Background.Fill.ForeColor.RGB
+    On Error GoTo 0
+    If c < 0 Then SlideBgLum = 1# Else SlideBgLum = LumOf(c)
+End Function
+
+' Mapeia uma cor qualquer para as 4 da marca (magenta, azul-violeta, bege,
+' branco), aproximando por saturacao/matiz e preservando contraste com o fundo.
+Private Function MapBrandColor(ByVal c As Long, ByVal bgLum As Double, ByVal isText As Boolean) As Long
+    Dim h As Double, s As Double, l As Double, tgt As Long
+    EnsureCfg
+    If c = gPal(0) Or c = gPal(1) Or c = gPal(2) Or c = gPal(3) Then
+        MapBrandColor = c
+        Exit Function
+    End If
+    RGBtoHSL c, h, s, l
+    If s < 0.12 Then                          ' neutros (cinzas, preto, off-white)
+        If l >= 0.85 Then
+            tgt = gPal(3)                     ' branco
+        ElseIf l >= 0.55 Then
+            tgt = gPal(2)                     ' bege
+        Else                                  ' escuros: tudo nas 4 -> por contraste
+            If bgLum < 0.5 Then tgt = gPal(3) Else tgt = gPal(1)
+        End If
+    Else                                      ' saturados: quente -> magenta, frio -> azul-violeta
+        If h < 75# Or h >= 300# Then tgt = gPal(0) Else tgt = gPal(1)
+    End If
+    If isText Then                            ' trava de contraste figura-fundo
+        If Abs(LumOf(tgt) - bgLum) < 0.25 Then
+            If bgLum < 0.5 Then tgt = gPal(3) Else tgt = gPal(1)
+        End If
+    End If
+    MapBrandColor = tgt
+End Function
+
+Private Function FixColorsShape(ByVal shp As Object, ByVal slideLum As Double, Optional ByVal depth As Long = 0) As Long
+    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    Dim n As Long, s As Object, c As Long, t As Long, textBg As Double, run As Object
+    n = 0
+    On Error Resume Next
+    If shp.Type = msoGroup Then
+        For Each s In shp.GroupItems
+            n = n + FixColorsShape(s, slideLum, depth + 1)
+        Next s
+        FixColorsShape = n
+        Exit Function
+    End If
+    If shp.Type = msoPicture Then FixColorsShape = 0: Exit Function
+    ' leituras defensivas: se a propriedade falhar no Mac, o If com erro
+    ' "cairia" dentro do bloco (Resume Next) e pintaria fill inexistente.
+    Dim fVis As Long, fTyp As Long, fTr As Double, lVis As Long
+    fVis = 0: Err.Clear
+    fVis = shp.Fill.Visible
+    If Err.Number <> 0 Then fVis = 0: Err.Clear
+    fTyp = -1
+    If fVis = msoTrue Then fTyp = shp.Fill.Type
+    If Err.Number <> 0 Then fTyp = -1: Err.Clear
+    fTr = 1#
+    If fTyp = msoFillSolid Then fTr = shp.Fill.Transparency
+    If Err.Number <> 0 Then fTr = 1#: Err.Clear
+    ' preenchimento solido (e visivel de fato)
+    If fVis = msoTrue And fTyp = msoFillSolid And fTr < 0.95 Then
+        c = -1: c = shp.Fill.ForeColor.RGB
+        If Err.Number = 0 And c >= 0 Then
+            t = MapBrandColor(c, slideLum, False)
+            If t <> c Then shp.Fill.ForeColor.RGB = t: n = n + 1
+        End If
+        Err.Clear
+    End If
+    ' contorno
+    lVis = 0: lVis = shp.Line.Visible
+    If Err.Number <> 0 Then lVis = 0: Err.Clear
+    If lVis = msoTrue Then
+        c = -1: c = shp.Line.ForeColor.RGB
+        If Err.Number = 0 And c >= 0 Then
+            t = MapBrandColor(c, slideLum, False)
+            If t <> c Then shp.Line.ForeColor.RGB = t: n = n + 1
+        End If
+        Err.Clear
+    End If
+    ' texto, run a run (fundo do texto = fill NOVO do shape, ou o slide)
+    If shp.HasTextFrame Then
+        If shp.TextFrame.HasText Then
+            textBg = slideLum
+            If fVis = msoTrue And fTyp = msoFillSolid And fTr < 0.95 Then textBg = LumOf(shp.Fill.ForeColor.RGB)
+            For Each run In shp.TextFrame.TextRange.Runs
+                c = -1: c = run.Font.Color.RGB
+                If Err.Number = 0 And c >= 0 Then
+                    t = MapBrandColor(c, textBg, True)
+                    If t <> c Then run.Font.Color.RGB = t: n = n + 1
+                End If
+                Err.Clear
+            Next run
+        End If
+    End If
+    On Error GoTo 0
+    FixColorsShape = n
+End Function
+
+Public Sub AuditFixColors(control As IRibbonControl)
+    If Not ConfirmBigDeck("padronizar as cores") Then Exit Sub
+    Dim sld As Object, shp As Object, n As Long, bg As Double
+    n = 0
+    For Each sld In ActivePresentation.Slides
+        bg = SlideBgLum(sld)
+        For Each shp In sld.Shapes
+            n = n + FixColorsShape(shp, bg)
+        Next shp
+    Next sld
+    MsgBox "Cores padronizadas na paleta (magenta, azul-violeta, bege, branco) em " & n & " elemento(s).", vbInformation, "CBA Studio"
+End Sub
+
+' Forca o tamanho padrao do template B+G: 1583 x 891 pt (55,85 x 31,43 cm, 16:9).
+Public Sub FixPageSize(control As IRibbonControl)
+    Dim w As Single, hgt As Single
+    On Error Resume Next
+    w = ActivePresentation.PageSetup.SlideWidth
+    hgt = ActivePresentation.PageSetup.SlideHeight
+    On Error GoTo 0
+    If Abs(w - 1583) < 1 And Abs(hgt - 891) < 1 Then
+        MsgBox "A apresentacao ja esta no formato padrao B+G (1583 x 891 pt).", vbInformation, "CBA Studio"
+        Exit Sub
+    End If
+    If MsgBox("Mudar o tamanho de " & CLng(w) & " x " & CLng(hgt) & " pt para o padrao B+G 1583 x 891 pt (55,85 x 31,43 cm)?" & vbCrLf & _
+              "Objetos existentes podem precisar de ajuste depois.", vbQuestion + vbOKCancel, "CBA Studio") <> vbOK Then Exit Sub
+    On Error Resume Next
+    ActivePresentation.PageSetup.SlideWidth = 1583
+    ActivePresentation.PageSetup.SlideHeight = 891
+    On Error GoTo 0
+    MsgBox "Formato ajustado para 1583 x 891 pt (55,85 x 31,43 cm).", vbInformation, "CBA Studio"
+End Sub
+
+' A analise de imagens (MB por arquivo, conversao) exige ler o .pptx —
+' so' a extensao consegue; este botao aponta o caminho.
+Public Sub AuditImages(control As IRibbonControl)
+    MsgBox "A analise de imagens fica no painel lateral:" & vbCrLf & vbCrLf & _
+           "Inserir > Suplementos > Meus Suplementos > CBA Studio" & vbCrLf & _
+           "-> secao 'Imagens do arquivo' -> Analisar.", vbInformation, "CBA Studio"
 End Sub
 
 Private Function FixTypeShape(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
@@ -1378,8 +1613,10 @@ End Sub
 '  Entrelinha avulsa (le' o tamanho de CADA paragrafo)
 '  Para textos ja' formatados onde os tamanhos variam.
 ' ============================================================
+' Aplica a entrelinha B+G ao que estiver selecionado: texto, objetos, ou
+' SLIDES selecionados no painel (todas as caixas de texto desses slides).
 Private Sub DoEntrelinhaSelecao()
-    Dim sel As Object, shp As Object, n As Long
+    Dim sel As Object, shp As Object, sld As Object, n As Long
     Set sel = ActiveWindow.Selection
     n = 0
     If sel.Type = ppSelectionText Then
@@ -1389,8 +1626,16 @@ Private Sub DoEntrelinhaSelecao()
         For Each shp In sel.ShapeRange
             n = n + ApplyToShape(shp)
         Next shp
+    ElseIf sel.Type = ppSelectionSlides Then
+        On Error Resume Next
+        For Each sld In sel.SlideRange
+            For Each shp In sld.Shapes
+                n = n + ApplyToShape(shp)
+            Next shp
+        Next sld
+        On Error GoTo 0
     End If
-    If n = 0 Then MsgBox "Selecione um texto ou um objeto com texto.", vbInformation, "CBA Studio"
+    If n = 0 Then MsgBox "Selecione um texto, objetos ou slides no painel.", vbInformation, "CBA Studio"
 End Sub
 
 Private Sub DoEntrelinhaTudo()

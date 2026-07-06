@@ -493,6 +493,76 @@ draw_config_open().save(os.path.join(OUT, "configOpen.png"))
 draw_config_apply().save(os.path.join(OUT, "configApply.png"))
 
 
+# --- Leva 3: raio (dropdown), page size, auditoria de imagens ---
+def draw_radius_pick():
+    """Canto arredondado em destaque + cotinha do raio."""
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    try:
+        d.rounded_rectangle((10, 14, 54, 52), radius=14, outline=AZUL, width=4)
+    except AttributeError:
+        d.rectangle((10, 14, 54, 52), outline=AZUL, width=4)
+    # seta apontando pro canto arredondado (o "raio")
+    d.line((36, 38, 17, 20), fill=ROSA, width=3)
+    d.line((17, 20, 24, 21), fill=ROSA, width=3)
+    d.line((17, 20, 18, 27), fill=ROSA, width=3)
+    return img
+
+
+def draw_page_size():
+    """Retangulo 16:9 com setas de expansao nos cantos."""
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle((14, 20, 50, 44), outline=AZUL, width=4)
+    for ax, ay, bx, by in ((8, 14, 16, 22), (56, 50, 48, 42)):
+        d.line((ax, ay, bx, by), fill=ROSA, width=3)
+        d.line((ax, ay, ax + (4 if ax < 32 else -4), ay), fill=ROSA, width=3)
+        d.line((ax, ay, ax, ay + (4 if ay < 32 else -4)), fill=ROSA, width=3)
+    return img
+
+
+def draw_img_audit():
+    """Moldura de foto (montanha + sol) + lupa."""
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle((8, 12, 44, 42), outline=AZUL, width=3)
+    d.ellipse((14, 17, 21, 24), fill=ROSA)                     # sol
+    d.polygon([(11, 39), (24, 25), (33, 34), (38, 29), (41, 39)], fill=AZUL)  # montanhas
+    d.ellipse((36, 34, 52, 50), outline=ROSA, width=4)          # lupa
+    d.line((50, 48, 58, 56), fill=ROSA, width=5)
+    return img
+
+
+draw_radius_pick().save(os.path.join(OUT, "radiusPick.png"))
+draw_page_size().save(os.path.join(OUT, "pageSize.png"))
+draw_img_audit().save(os.path.join(OUT, "imgAudit.png"))
+
+
+def draw_rad_item(label, rpx):
+    """Item do dropdown de raio: quadradinho com o canto no raio + rotulo baked-in
+    (no Mac, itens de gallery so renderizam com imagem)."""
+    W, H = 88, 36
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    r = 8 if rpx == 0 else max(2, min(14, int(rpx * 28 / 50)))
+    try:
+        d.rounded_rectangle((6, 4, 34, 32), radius=r, outline=AZUL, width=3)
+    except AttributeError:
+        d.rectangle((6, 4, 34, 32), outline=AZUL, width=3)
+    f = font(15, bold=True)
+    bb = d.textbbox((0, 0), label, font=f)
+    d.text((42, (H - (bb[3] - bb[1])) / 2 - bb[1]), label, font=f,
+           fill=ROSA if rpx == 0 else (30, 30, 30, 255))
+    return img
+
+
+for _rid, _lab, _rv in (("radItemP", "Padrão", 0), ("radItem10", "10 px", 10),
+                        ("radItem15", "15 px", 15), ("radItem20", "20 px", 20),
+                        ("radItem25", "25 px", 25), ("radItem30", "30 px", 30),
+                        ("radItem40", "40 px", 40), ("radItem50", "50 px", 50)):
+    draw_rad_item(_lab, _rv).save(os.path.join(OUT, _rid + ".png"))
+
+
 print("Icones gerados em", os.path.normpath(OUT))
 for fn in sorted(os.listdir(OUT)):
     print("  ", fn)

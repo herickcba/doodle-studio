@@ -124,17 +124,17 @@
   ];
   // role: 0 = rosa(pal0), 1 = azul(pal1)
   var STYLES = [
-    {id:"dsHero",       name:"Hero",            size:120, bold:1, role:0, ent:0.8},
-    {id:"dsMega",       name:"Mega",            size:80,  bold:1, role:1, ent:0.9},
-    {id:"dsH1",         name:"H1 · Título",     size:60,  bold:1, role:0, ent:0.9},
-    {id:"dsLabelSec",   name:"Label de Seção",  size:60,  bold:1, role:0, ent:0.9},
-    {id:"dsCorpo",      name:"Corpo",           size:44,  bold:0, role:1, ent:1.15},
-    {id:"dsH3",         name:"H3",              size:34,  bold:1, role:0, ent:0.95},
-    {id:"dsH4",         name:"H4",              size:28,  bold:1, role:1, ent:1.0},
-    {id:"dsH5",         name:"H5",              size:24,  bold:0, role:1, ent:1.0},
-    {id:"dsCorpoPilar", name:"Corpo de Pilar",  size:20,  bold:0, role:1, ent:1.3},
-    {id:"dsEyebrow",    name:"Eyebrow",         size:18,  bold:1, role:0, ent:1.0},
-    {id:"dsCaption",    name:"Caption",         size:16,  bold:0, role:1, ent:1.3}
+    {id:"dsHero",       name:"Statement",  size:120, bold:1, role:0, ent:0.8},
+    {id:"dsMega",       name:"Manchete",   size:80,  bold:1, role:1, ent:0.9},
+    {id:"dsH1",         name:"Título",     size:60,  bold:1, role:0, ent:0.9},
+    {id:"dsLabelSec",   name:"Rótulo",     size:60,  bold:1, role:0, ent:0.9},
+    {id:"dsCorpo",      name:"Destaque",   size:44,  bold:0, role:1, ent:1.15},
+    {id:"dsH3",         name:"Subtítulo",  size:34,  bold:1, role:0, ent:0.95},
+    {id:"dsH4",         name:"Tópico",     size:28,  bold:1, role:1, ent:1.0},
+    {id:"dsH5",         name:"Texto",      size:24,  bold:0, role:1, ent:1.0},
+    {id:"dsCorpoPilar", name:"Apoio",      size:20,  bold:0, role:1, ent:1.3},
+    {id:"dsEyebrow",    name:"Chapéu",     size:18,  bold:1, role:0, ent:1.0},
+    {id:"dsCaption",    name:"Legenda",    size:16,  bold:0, role:1, ent:1.3}
   ];
   var DEFAULTS = JSON.parse(JSON.stringify({PAL:PAL, STYLES:STYLES, fonte:"Avenir Next", radius:25}));
 
@@ -199,7 +199,11 @@
       if(raw){ var o=JSON.parse(raw);
         // valida o schema antes de usar — localStorage corrompido não quebra a página
         if(Array.isArray(o.PAL) && o.PAL.length===5 && o.PAL.every(function(p){return p && typeof p.hex==="string";})) PAL=o.PAL;
-        if(Array.isArray(o.STYLES) && o.STYLES.length && o.STYLES.every(function(s){return s && s.id && isFinite(s.size);})) STYLES=o.STYLES;
+        if(Array.isArray(o.STYLES) && o.STYLES.length && o.STYLES.every(function(s){return s && s.id && isFinite(s.size);})){
+          var byId={}; STYLES.forEach(function(s){byId[s.id]=s.name;});
+          o.STYLES.forEach(function(s){ if(byId[s.id]) s.name=byId[s.id]; });  // nomes sempre atuais
+          STYLES=o.STYLES;
+        }
         if(typeof o.fonte==="string" && o.fonte) document.getElementById("fonte").value=o.fonte;
         if(o.radius && isFinite(parseFloat(o.radius))) document.getElementById("radius").value=o.radius;
       }

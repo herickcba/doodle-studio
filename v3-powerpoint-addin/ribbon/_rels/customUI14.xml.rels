@@ -78,4 +78,15 @@
   <Relationship Id="distH" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/distH.png"/>
   <Relationship Id="configOpen" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/configOpen.png"/>
   <Relationship Id="configApply" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/configApply.png"/>
+  <Relationship Id="radiusPick" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radiusPick.png"/>
+  <Relationship Id="pageSize" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/pageSize.png"/>
+  <Relationship Id="imgAudit" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/imgAudit.png"/>
+  <Relationship Id="radItemP" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItemP.png"/>
+  <Relationship Id="radItem10" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItem10.png"/>
+  <Relationship Id="radItem15" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItem15.png"/>
+  <Relationship Id="radItem20" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItem20.png"/>
+  <Relationship Id="radItem25" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItem25.png"/>
+  <Relationship Id="radItem30" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItem30.png"/>
+  <Relationship Id="radItem40" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItem40.png"/>
+  <Relationship Id="radItem50" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItem50.png"/>
 </Relationships>
