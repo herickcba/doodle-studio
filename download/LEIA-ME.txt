@@ -11,7 +11,10 @@ São DOIS componentes para o PowerPoint:
 2) EXTENSÃO (painel lateral — abas Doodle / Imagem / Otimização):
    desenhe sobre o slide (tela grande, GIF animado, biblioteca), gere
    imagens por IA e otimize as imagens do arquivo (lista por peso, clique
-   pra ver/ir ao slide, 3 níveis de compressão do mais fiel ao mais leve).
+   pra ver/ir ao slide, 3 níveis do mais fiel ao mais leve). A versão
+   otimizada SUBSTITUI a original no mesmo lugar (preserva recorte,
+   posição e proporção); "Otimizar todas" faz o deck inteiro de uma vez.
+   Salve o arquivo depois para concluir a redução de tamanho.
 
 PADRÕES DA MARCA: paleta, tipos, tamanhos, entrelinha e raio são
 configuráveis em https://doodle-studio-sigma.vercel.app/config.html
