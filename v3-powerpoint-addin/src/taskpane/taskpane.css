@@ -116,6 +116,7 @@ input[type=range]:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); bord
 .modtab:hover { color: var(--text); }
 .modtab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .view.hidden { display: none; }
+.hidden { display: none !important; }
 
 /* Tipografia agora vive na faixa "CBA Studio" do ribbon (VBA .ppam) —
    o módulo de tipografia foi removido do add-in. */

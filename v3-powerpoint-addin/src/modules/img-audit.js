@@ -12,6 +12,8 @@
 
   const runBtn = document.getElementById('imgaRun');
   const summary = document.getElementById('imgaSummary');
+  const optAllBtn = document.getElementById('imgaOptAll');
+  const allStatus = document.getElementById('imgaAllStatus');
   const list = document.getElementById('imgaList');
   const detail = document.getElementById('imgaDetail');
   const preview = document.getElementById('imgaPreview');
@@ -102,10 +104,13 @@
       if (!r.smaller) {
         optStatus.textContent = 'Nesse nível a imagem não fica menor que ' + fmt(selected.bytes) + '. Tente um nível mais forte.';
       } else {
-        const kept = r.cropped || r.rotated
-          ? ' Recorte, posição e proporção mantidos.' : '';
-        optStatus.textContent = 'Versão ' + r.format + ' de ' + fmt(r.bytes) + ' inserida por cima (economia de ' +
-          fmt(r.saved) + ').' + kept + ' Apague a original: ela fica logo atrás da nova.';
+        const kept = r.cropped || r.rotated ? ' Recorte, posição e proporção mantidos.' : '';
+        const many = r.usages > 1 ? ' em ' + r.usages + ' slides' : '';
+        const note = r.replaced < r.usages
+          ? ' (não localizei ' + (r.usages - r.replaced) + ' original(is) pra remover — ficaram atrás; apague à mão.)'
+          : '';
+        optStatus.textContent = 'Substituída' + many + ' por versão ' + r.format + ' de ' + fmt(r.bytes) +
+          ' (economia de ' + fmt(r.saved) + ').' + kept + note + ' Salve o arquivo para concluir.';
       }
     } catch (e) {
       optStatus.textContent = 'Não deu: ' + (e && e.message ? e.message : e);
@@ -119,6 +124,8 @@
     runBtn.disabled = true;
     list.innerHTML = '';
     detail.classList.add('hidden');
+    optAllBtn.classList.add('hidden');
+    allStatus.classList.add('hidden');
     selected = null;
     summary.textContent = 'Analisando…';
     try {
@@ -127,9 +134,54 @@
       if (!items.length) { summary.textContent = 'Nenhuma imagem no arquivo.'; return; }
       summary.textContent = items.length + ' imagem(ns) · total ' + fmt(audit.total) + '. Clique numa imagem para vê-la e otimizá-la.';
       renderList();
+      const rasterN = items.filter((it) => !isVector(it)).length;
+      if (rasterN > 0) {
+        allLabel = 'Otimizar todas (' + rasterN + ')';
+        disarmAll();
+        optAllBtn.classList.remove('hidden');
+      }
     } catch (e) {
       summary.textContent = 'Falha na análise: ' + (e && e.message ? e.message : e);
     } finally {
+      runBtn.disabled = false;
+    }
+  });
+
+  // confirmação em 2 cliques (window.confirm não roda no webview do add-in)
+  let allArmed = false, allTimer = null, allLabel = 'Otimizar todas';
+  function disarmAll() {
+    allArmed = false;
+    if (allTimer) { clearTimeout(allTimer); allTimer = null; }
+    optAllBtn.classList.remove('primary');
+    optAllBtn.textContent = allLabel;
+  }
+  optAllBtn.addEventListener('click', async () => {
+    if (!items.length) return;
+    if (!allArmed) {
+      allArmed = true;
+      optAllBtn.classList.add('primary');
+      optAllBtn.textContent = 'Confirmar: substituir todas? (Cmd+Z desfaz)';
+      allTimer = setTimeout(disarmAll, 4500);
+      return;
+    }
+    disarmAll();
+    optAllBtn.disabled = true;
+    runBtn.disabled = true;
+    allStatus.classList.remove('hidden');
+    allStatus.textContent = 'Otimizando…';
+    try {
+      const r = await window.OfficeBridge.optimizeAll(items, level, (m) => { allStatus.textContent = m; });
+      const parts = [r.done + ' de ' + r.total + ' otimizada(s)'];
+      if (r.saved) parts.push('economia de ' + fmt(r.saved));
+      if (r.skipped) parts.push(r.skipped + ' já no menor tamanho');
+      if (r.failed) parts.push(r.failed + ' com erro');
+      let msg = parts.join(' · ') + '. Salve o arquivo para concluir a redução.';
+      if (r.failed && r.lastError) msg += ' (erro: ' + r.lastError + ')';
+      allStatus.textContent = msg;
+    } catch (e) {
+      allStatus.textContent = 'Falha: ' + (e && e.message ? e.message : e);
+    } finally {
+      optAllBtn.disabled = false;
       runBtn.disabled = false;
     }
   });

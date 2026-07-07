@@ -287,51 +287,70 @@
   /* ---- shared: carrega os bytes de UMA imagem + sua posição no 1º slide ----
      Cache de 1 item (o último clicado) — evita rebaixar os mesmos MB quando o
      usuário clica pra pré-visualizar e depois Otimiza a MESMA imagem. */
-  let _imgCache = null; // { name, bytes, mime, place }
+  let _imgCache = null; // { name, bytes, mime, pics:[{use,place,crop,rot,flip,name}], pic }
 
   function _mimeOf(ext) {
     return { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
       bmp: 'image/bmp', webp: 'image/webp', tif: 'image/tiff', tiff: 'image/tiff' }[ext] || '';
   }
 
-  /* Lê como a imagem é USADA no 1º slide: frame (off/ext), recorte (srcRect),
-     rotação e espelho. Assim a otimização reproduz EXATAMENTE o que aparece —
-     sem esticar a imagem inteira dentro do frame de um crop. */
-  async function _picInfoFor(file, byName, item, cache) {
-    const use = item.slides && item.slides[0];
-    if (!(use && byName['ppt/slides/' + use.slideFile])) return { place: null };
-    try {
-      const rels = await _entryText(file, byName['ppt/slides/_rels/' + use.slideFile + '.rels'], cache);
-      let rid = null;
-      rels.replace(new RegExp('<Relationship [^>]*Id="([^"]+)"[^>]*Target="\\.\\./media/' +
-        item.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"', 'g'), (_, r) => { rid = r; return _; });
-      if (!rid) return { place: null };
-      const sx = await _entryText(file, byName['ppt/slides/' + use.slideFile], cache);
-      const seg = sx.split('<p:pic>').find((s) => s.indexOf('r:embed="' + rid + '"') >= 0);
-      if (!seg) return { place: null };
-      const mOff = seg.match(/<a:off x="(-?\d+)" y="(-?\d+)"/);
-      const mExt = seg.match(/<a:ext cx="(\d+)" cy="(\d+)"/);
-      const place = mExt ? { left: mOff ? +mOff[1] / 12700 : 0, top: mOff ? +mOff[2] / 12700 : 0,
-        w: +mExt[1] / 12700, h: +mExt[2] / 12700 } : null;
-      // recorte: srcRect l/t/r/b em 1/1000 de % (fração = /100000)
-      let crop = null;
-      const mSr = seg.match(/<a:srcRect\b([^>]*)>/);
-      if (mSr) {
-        const g = (k) => { const m = mSr[1].match(new RegExp('\\b' + k + '="(-?\\d+)"')); return m ? +m[1] / 100000 : 0; };
-        const l = g('l'), t = g('t'), r = g('r'), b = g('b');
-        if (l || t || r || b) crop = { l: l, t: t, r: r, b: b };
-      }
-      // rotação (1/60000 de grau) + espelho
-      let rot = 0, flipH = false, flipV = false;
-      const mX = seg.match(/<a:xfrm\b([^>]*)>/);
-      if (mX) {
-        const mr = mX[1].match(/\brot="(-?\d+)"/);
-        if (mr) rot = ((+mr[1] / 60000) % 360 + 360) % 360;
-        flipH = /\bflipH="1"/.test(mX[1]);
-        flipV = /\bflipV="1"/.test(mX[1]);
-      }
-      return { place: place, crop: crop, rot: rot, flipH: flipH, flipV: flipV };
-    } catch (_) { return { place: null }; }
+  /* Extrai de um bloco <p:pic> como a imagem aparece: frame (off/ext),
+     recorte (srcRect), rotação, espelho e o NOME da shape (pra localizá-la e
+     substituí-la depois). */
+  function _parsePicSeg(seg) {
+    const mOff = seg.match(/<a:off x="(-?\d+)" y="(-?\d+)"/);
+    const mExt = seg.match(/<a:ext cx="(\d+)" cy="(\d+)"/);
+    const place = mExt ? { left: mOff ? +mOff[1] / 12700 : 0, top: mOff ? +mOff[2] / 12700 : 0,
+      w: +mExt[1] / 12700, h: +mExt[2] / 12700 } : null;
+    // recorte: srcRect l/t/r/b em 1/1000 de % (fração = /100000)
+    let crop = null;
+    const mSr = seg.match(/<a:srcRect\b([^>]*)>/);
+    if (mSr) {
+      const g = (k) => { const m = mSr[1].match(new RegExp('\\b' + k + '="(-?\\d+)"')); return m ? +m[1] / 100000 : 0; };
+      const l = g('l'), t = g('t'), r = g('r'), b = g('b');
+      if (l || t || r || b) crop = { l: l, t: t, r: r, b: b };
+    }
+    // rotação (1/60000 de grau) + espelho
+    let rot = 0, flipH = false, flipV = false;
+    const mX = seg.match(/<a:xfrm\b([^>]*)>/);
+    if (mX) {
+      const mr = mX[1].match(/\brot="(-?\d+)"/);
+      if (mr) rot = ((+mr[1] / 60000) % 360 + 360) % 360;
+      flipH = /\bflipH="1"/.test(mX[1]);
+      flipV = /\bflipV="1"/.test(mX[1]);
+    }
+    let name = '';
+    const mN = seg.match(/<p:cNvPr\b[^>]*\bname="([^"]*)"/);
+    if (mN) name = mN[1];
+    return { place: place, crop: crop, rot: rot, flipH: flipH, flipV: flipV, name: name };
+  }
+
+  /* Localiza o bloco <p:pic> de item numa aparição (use = {slideFile,...}). */
+  async function _picSegFor(file, byName, item, use, cache) {
+    if (!(use && byName['ppt/slides/' + use.slideFile])) return null;
+    const rels = await _entryText(file, byName['ppt/slides/_rels/' + use.slideFile + '.rels'], cache);
+    let rid = null;
+    rels.replace(new RegExp('<Relationship [^>]*Id="([^"]+)"[^>]*Target="\\.\\./media/' +
+      item.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"', 'g'), (_, r) => { rid = r; return _; });
+    if (!rid) return null;
+    const sx = await _entryText(file, byName['ppt/slides/' + use.slideFile], cache);
+    const seg = sx.split('<p:pic>').find((s) => s.indexOf('r:embed="' + rid + '"') >= 0);
+    return seg || null;
+  }
+
+  /* TODAS as aparições da imagem (uma por slide que a usa), cada uma com o
+     frame/recorte/rotação/espelho/nome próprios — pra substituir cada cópia
+     no lugar certo. Vazio se não achar nenhuma. */
+  async function _picInfosFor(file, byName, item, cache) {
+    const out = [];
+    const uses = item.slides || [];
+    for (let i = 0; i < uses.length; i++) {
+      try {
+        const seg = await _picSegFor(file, byName, item, uses[i], cache);
+        if (seg) out.push(Object.assign({ use: uses[i] }, _parsePicSeg(seg)));
+      } catch (_) { /* ignora aparição ilegível */ }
+    }
+    return out;
   }
 
   async function _loadImageForItem(item, progress) {
@@ -347,8 +366,9 @@
       const ent = byName[item.name];
       if (!ent) throw new Error('Imagem não encontrada (o arquivo mudou? Analise de novo).');
       const bytes = await _entryBytes(file, ent, cache);
-      const pic = await _picInfoFor(file, byName, item, cache);
-      _imgCache = { name: item.name, bytes: bytes, mime: _mimeOf(item.ext), pic: pic };
+      const pics = await _picInfosFor(file, byName, item, cache);
+      _imgCache = { name: item.name, bytes: bytes, mime: _mimeOf(item.ext),
+        pics: pics, pic: pics[0] || { place: null } };
       return _imgCache;
     } finally {
       if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
@@ -405,85 +425,176 @@
     compacto: { q: 0.82, factor: 1.5, cap: 1600 },
   };
 
+  /* Pega o slide alvo: por índice (0-based, do mapa da auditoria) quando dá —
+     evita getActiveSlide, que nem todo build do Mac suporta. */
+  function _slideAt(context, slideIndex) {
+    if (typeof slideIndex === 'number' && slideIndex >= 0) {
+      try { return context.presentation.slides.getItemAt(slideIndex); } catch (_) {}
+    }
+    return context.presentation.getActiveSlide();
+  }
+
+  /* Apaga a shape com esse nome (cNvPr@name → Shape.name) no slide dado.
+     Usa o padrão comprovado: load('items') → sync → load('name') em cada →
+     sync (o atalho 'items/name' não popula name em builds antigos do Mac).
+     Best-effort: retorna true se apagou. */
+  async function _deleteShapeByName(name, slideIndex) {
+    if (!name) return false;
+    try {
+      return await PowerPoint.run(async (context) => {
+        const shapes = _slideAt(context, slideIndex).shapes;
+        shapes.load('items');
+        await context.sync();
+        const arr = shapes.items || [];
+        for (let i = 0; i < arr.length; i++) arr[i].load('name');
+        await context.sync();
+        for (let i = 0; i < arr.length; i++) {
+          if (arr[i].name === name) { arr[i].delete(); await context.sync(); return true; }
+        }
+        return false;
+      });
+    } catch (_) { return false; }
+  }
+
+  /* Insere a versão otimizada NO LUGAR da original. Caso comum (sem rotação):
+     apaga a original PRIMEIRO — sem ambiguidade, já que a nova ainda não existe
+     — e insere pela via comprovada (setSelectedDataAsync). Girada: precisa de
+     addImage (setSelectedData não rotaciona); se addImage falhar, avisa.
+     Retorna { replaced:bool }. */
+  async function _insertOptimized(base64, pos, rotDeg, originalName, slideIndex) {
+    if (rotDeg) {
+      try {
+        return await PowerPoint.run(async (context) => {
+          const shapes = _slideAt(context, slideIndex).shapes;
+          let target = null;
+          if (originalName) {
+            shapes.load('items');
+            await context.sync();
+            const arr = shapes.items || [];
+            for (let i = 0; i < arr.length; i++) arr[i].load('name');
+            await context.sync();
+            for (let i = 0; i < arr.length; i++) {
+              if (arr[i].name === originalName) { target = arr[i]; break; }
+            }
+          }
+          const shape = shapes.addImage(base64); // fora do snapshot acima — nunca é o alvo
+          shape.left = pos.left; shape.top = pos.top; shape.width = pos.w; shape.height = pos.h;
+          try { shape.rotation = rotDeg; } catch (_) {}
+          let replaced = false;
+          if (target) { try { target.delete(); replaced = true; } catch (_) {} }
+          await context.sync();
+          return { replaced: replaced };
+        });
+      } catch (_) {
+        throw new Error('Imagem girada — esta versão do PowerPoint não deixa reinserir com rotação. Otimize-a manualmente.');
+      }
+    }
+    // não girada (comum): apaga a original antes de inserir a nova
+    const replaced = await _deleteShapeByName(originalName, slideIndex);
+    const ok = await new Promise((resolve) => {
+      try {
+        Office.context.document.setSelectedDataAsync(base64, {
+          coercionType: Office.CoercionType.Image,
+          imageLeft: pos.left, imageTop: pos.top, imageWidth: pos.w, imageHeight: pos.h,
+        }, (res) => resolve(res.status === Office.AsyncResultStatus.Succeeded ? true : res));
+      } catch (er) { resolve(er); }
+    });
+    if (ok !== true) throw new Error((ok && ok.error && ok.error.message) || 'Falha ao inserir.');
+    return { replaced: replaced };
+  }
+
   /* Reencoda a imagem preservando o que aparece no slide (recorte, espelho,
-     rotação, posição e tamanho) e insere por cima da original (a API não
-     substitui os bytes — a original é apagada à mão). 'fiel' não reduz
-     resolução: só recomprime. Retorna {smaller:false} se não ficar menor. */
+     rotação, posição e tamanho) e SUBSTITUI a original no lugar — em TODAS as
+     aparições (uma imagem reusada em vários slides vira uma cópia otimizada em
+     cada). 'fiel' não reduz resolução: só recomprime. Só age se o total das
+     cópias ficar menor que a original; senão retorna {smaller:false}. */
   async function optimizeImage(item, level, progress) {
     if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
     const say = progress || function () {};
     const cfg = OPT_LEVELS[level] || OPT_LEVELS.fiel;
     const info = await _loadImageForItem(item, say);
     if (!info.mime) throw new Error('Formato .' + item.ext + ' (vetor) não converte no navegador.');
-    const pic = info.pic || {};
-    const place = pic.place;
+    const pics = (info.pics && info.pics.length) ? info.pics
+      : [{ place: null, crop: null, rot: 0, flipH: false, flipV: false, name: '', use: null }];
 
     say('Reprocessando…');
     let bmp;
     try { bmp = await createImageBitmap(new Blob([info.bytes], { type: info.mime })); }
     catch (_) { throw new Error('Não consegui decodificar a imagem.'); }
 
-    // resolução nativa da parte VISÍVEL (já aplicando o crop)
-    const cr = pic.crop || { l: 0, t: 0, r: 0, b: 0 };
-    const cw = Math.max(1, Math.round((1 - cr.l - cr.r) * bmp.width));
-    const ch = Math.max(1, Math.round((1 - cr.t - cr.b) * bmp.height));
-
-    // 'fiel' mantém cw×ch; os demais reduzem relativo ao tamanho exibido. Nunca upscale.
-    let tw = cw, th = ch;
-    if (place && place.w > 0 && isFinite(cfg.factor)) {
-      const disp = Math.round(place.w / 72 * 96 * cfg.factor);
-      if (disp < tw) { th = Math.max(1, Math.round(th * disp / tw)); tw = disp; }
-    }
-    const capf = cfg.cap / Math.max(tw, th);
-    if (capf < 1) { tw = Math.max(1, Math.round(tw * capf)); th = Math.max(1, Math.round(th * capf)); }
-
-    const drawn = _drawVisible(bmp, pic, tw, th);
-    const ctx = drawn.cv.getContext('2d');
-
-    // PNG só se a parte visível tiver alfa de verdade; senão JPG.
-    let hasAlpha = false;
-    if (item.ext === 'png' || item.ext === 'webp' || item.ext === 'gif') {
-      const d = ctx.getImageData(0, 0, tw, th).data;
-      for (let i = 3; i < d.length; i += 64) { if (d[i] < 250) { hasAlpha = true; break; } }
-    }
-    const outUrl = drawn.cv.toDataURL(hasAlpha ? 'image/png' : 'image/jpeg', cfg.q);
-    const outBytes = Math.floor((outUrl.length - outUrl.indexOf(',') - 1) * 3 / 4);
-    try { bmp.close && bmp.close(); } catch (_) {}
-    if (outBytes >= item.bytes) return { smaller: false, bytes: outBytes };
-
-    say('Inserindo a versão otimizada…');
-    const use = item.slides && item.slides[0];
-    if (use && use.sldId) { await goToSlide(use.sldId); await new Promise((r) => setTimeout(r, 350)); }
-    const base64 = outUrl.split(',')[1];
-    const pos = place || { left: 40, top: 40, w: 300, h: 300 * th / tw };
-    const rotDeg = pic.rot || 0;
-
-    if (rotDeg) {
-      // imagem girada: só o PowerPoint.run reproduz a rotação (setSelectedData não).
-      try {
-        await PowerPoint.run(async (context) => {
-          const slide = context.presentation.getActiveSlide();
-          const shape = slide.shapes.addImage(base64);
-          shape.left = pos.left; shape.top = pos.top; shape.width = pos.w; shape.height = pos.h;
-          try { shape.rotation = rotDeg; } catch (_) {}
-          await context.sync();
-        });
-      } catch (_) {
-        throw new Error('Imagem girada — esta versão do PowerPoint não deixa reinserir com rotação. Otimize-a manualmente.');
+    // 1) Reencoda cada aparição (sem inserir ainda) — o crop/tamanho variam por slide.
+    const enc = [];
+    let anyCrop = false, anyRot = false, anyAlpha = false;
+    for (let p = 0; p < pics.length; p++) {
+      const pic = pics[p];
+      const cr = pic.crop || { l: 0, t: 0, r: 0, b: 0 };
+      const cw = Math.max(1, Math.round((1 - cr.l - cr.r) * bmp.width));
+      const ch = Math.max(1, Math.round((1 - cr.t - cr.b) * bmp.height));
+      let tw = cw, th = ch;
+      if (pic.place && pic.place.w > 0 && isFinite(cfg.factor)) {
+        const disp = Math.round(pic.place.w / 72 * 96 * cfg.factor);
+        if (disp < tw) { th = Math.max(1, Math.round(th * disp / tw)); tw = disp; }
       }
-    } else {
-      const ok = await new Promise((resolve) => {
-        try {
-          Office.context.document.setSelectedDataAsync(base64, {
-            coercionType: Office.CoercionType.Image,
-            imageLeft: pos.left, imageTop: pos.top, imageWidth: pos.w, imageHeight: pos.h,
-          }, (res) => resolve(res.status === Office.AsyncResultStatus.Succeeded ? true : res));
-        } catch (e) { resolve(e); }
-      });
-      if (ok !== true) throw new Error((ok && ok.error && ok.error.message) || 'Falha ao inserir.');
+      const capf = cfg.cap / Math.max(tw, th);
+      if (capf < 1) { tw = Math.max(1, Math.round(tw * capf)); th = Math.max(1, Math.round(th * capf)); }
+
+      const drawn = _drawVisible(bmp, pic, tw, th);
+      const ctx = drawn.cv.getContext('2d');
+      let hasAlpha = false;
+      if (item.ext === 'png' || item.ext === 'webp' || item.ext === 'gif') {
+        const d = ctx.getImageData(0, 0, tw, th).data;
+        for (let i = 3; i < d.length; i += 64) { if (d[i] < 250) { hasAlpha = true; break; } }
+      }
+      const url = drawn.cv.toDataURL(hasAlpha ? 'image/png' : 'image/jpeg', cfg.q);
+      const bytes = Math.floor((url.length - url.indexOf(',') - 1) * 3 / 4);
+      enc.push({ pic: pic, url: url, bytes: bytes, tw: tw, th: th });
+      if (pic.crop) anyCrop = true;
+      if (pic.rot) anyRot = true;
+      if (hasAlpha) anyAlpha = true;
     }
-    return { smaller: true, bytes: outBytes, saved: item.bytes - outBytes, format: hasAlpha ? 'PNG' : 'JPG',
-      w: tw, h: th, cropped: !!pic.crop, rotated: !!rotDeg };
+    try { bmp.close && bmp.close(); } catch (_) {}
+
+    // A mídia original conta uma vez; só compensa se a soma das cópias for menor.
+    const sum = enc.reduce((s, e) => s + e.bytes, 0);
+    if (sum >= item.bytes) return { smaller: false, bytes: sum };
+
+    // 2) Insere cada aparição no seu slide, substituindo a original.
+    let replaced = 0;
+    for (let i = 0; i < enc.length; i++) {
+      const e = enc[i];
+      say(enc.length > 1 ? ('Substituindo ' + (i + 1) + '/' + enc.length + '…') : 'Substituindo a original…');
+      const use = e.pic.use;
+      if (use && use.sldId) { await goToSlide(use.sldId); await new Promise((r) => setTimeout(r, 450)); }
+      const pos = e.pic.place || { left: 40, top: 40, w: 300, h: 300 * e.th / e.tw };
+      const slideIndex = (use && use.pos) ? use.pos - 1 : -1;
+      const res = await _insertOptimized(e.url.split(',')[1], pos, e.pic.rot || 0, e.pic.name || '', slideIndex);
+      if (res.replaced) replaced += 1;
+    }
+    _imgCache = null; // o arquivo mudou; força releitura na próxima
+    return { smaller: true, bytes: sum, saved: item.bytes - sum, format: anyAlpha ? 'PNG' : 'JPG',
+      usages: enc.length, replaced: replaced, cropped: anyCrop, rotated: anyRot };
+  }
+
+  /* Otimiza TODAS as imagens raster do deck em sequência (substituindo cada
+     original no lugar). progress(msg) reporta o andamento. Pula vetores e as
+     que não ficariam menores. Retorna um resumo. */
+  async function optimizeAll(items, level, progress) {
+    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+    const say = progress || function () {};
+    const raster = (items || []).filter((it) => ['svg', 'emf', 'wmf'].indexOf(it.ext) < 0);
+    let done = 0, saved = 0, skipped = 0, failed = 0, replaced = 0, lastError = '';
+    for (let i = 0; i < raster.length; i++) {
+      const it = raster[i];
+      const head = (i + 1) + '/' + raster.length;
+      say('Otimizando ' + head + '…');
+      try {
+        const r = await optimizeImage(it, level, (m) => say(head + ' — ' + m));
+        if (!r.smaller) { skipped += 1; }
+        else { done += 1; saved += r.saved; replaced += (r.replaced || 0); }
+      } catch (e) { failed += 1; lastError = (e && e.message) ? e.message : String(e); }
+      await new Promise((r) => setTimeout(r, 250)); // deixa os handles/leituras assentarem
+    }
+    return { total: raster.length, done: done, saved: saved, skipped: skipped, failed: failed, replaced: replaced, lastError: lastError };
   }
 
   /* Insert the doodle PNG onto the active slide, positioned so it lands
@@ -845,6 +956,6 @@
     inPowerPoint, getActiveSlideImage, insertDoodle, insertImage, openDrawDialog,
     openImageEditDialog, getSlideSizeSync, detectSlideSize, SLIDE_W_PT, SLIDE_H_PT,
     apiSupported, applyTextStyle, insertStylesReference,
-    getImageAudit, goToSlide, optimizeImage, getImageThumbnail,
+    getImageAudit, goToSlide, optimizeImage, optimizeAll, getImageThumbnail,
   };
 })(window);
