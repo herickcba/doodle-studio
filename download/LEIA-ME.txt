@@ -8,9 +8,10 @@ São DOIS componentes para o PowerPoint:
    contorno, cantos arredondados, alinhar & distribuir + âncora, inserir
    caixa/rounded box, auditoria do deck e Padrões da marca.
 
-2) EXTENSÃO (painel lateral — Doodle + ImaGen): desenhe sobre o slide,
-   tela grande, GIF animado, biblioteca, geração de imagens por IA e
-   auditoria "Imagens do arquivo" (peso por imagem + otimização).
+2) EXTENSÃO (painel lateral — abas Doodle / Imagem / Otimização):
+   desenhe sobre o slide (tela grande, GIF animado, biblioteca), gere
+   imagens por IA e otimize as imagens do arquivo (lista por peso, clique
+   pra ver/ir ao slide, 3 níveis de compressão do mais fiel ao mais leve).
 
 PADRÕES DA MARCA: paleta, tipos, tamanhos, entrelinha e raio são
 configuráveis em https://doodle-studio-sigma.vercel.app/config.html
