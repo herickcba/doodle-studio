@@ -353,6 +353,16 @@
     return out;
   }
 
+  /* Lê UMA imagem de um arquivo já aberto (bytes + todas as aparições). */
+  async function _readItem(file, byName, item, cache) {
+    const ent = byName[item.name];
+    if (!ent) throw new Error('Imagem não encontrada (o arquivo mudou? Analise de novo).');
+    const bytes = await _entryBytes(file, ent, cache);
+    const pics = await _picInfosFor(file, byName, item, cache);
+    return { name: item.name, bytes: bytes, mime: _mimeOf(item.ext),
+      pics: pics, pic: pics[0] || { place: null } };
+  }
+
   async function _loadImageForItem(item, progress) {
     if (_imgCache && _imgCache.name === item.name) return _imgCache;
     const say = progress || function () {};
@@ -363,12 +373,7 @@
       const cache = new Map();
       const entries = await _readCentralDir(file, cache);
       const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
-      const ent = byName[item.name];
-      if (!ent) throw new Error('Imagem não encontrada (o arquivo mudou? Analise de novo).');
-      const bytes = await _entryBytes(file, ent, cache);
-      const pics = await _picInfosFor(file, byName, item, cache);
-      _imgCache = { name: item.name, bytes: bytes, mime: _mimeOf(item.ext),
-        pics: pics, pic: pics[0] || { place: null } };
+      _imgCache = await _readItem(file, byName, item, cache);
       return _imgCache;
     } finally {
       if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
@@ -434,63 +439,23 @@
     return context.presentation.getActiveSlide();
   }
 
-  /* Apaga a shape com esse nome (cNvPr@name → Shape.name) no slide dado.
-     Usa o padrão comprovado: load('items') → sync → load('name') em cada →
-     sync (o atalho 'items/name' não popula name em builds antigos do Mac).
-     Best-effort: retorna true se apagou. */
-  async function _deleteShapeByName(name, slideIndex) {
-    if (!name) return false;
-    try {
-      return await PowerPoint.run(async (context) => {
-        const shapes = _slideAt(context, slideIndex).shapes;
-        shapes.load('items');
-        await context.sync();
-        const arr = shapes.items || [];
-        for (let i = 0; i < arr.length; i++) arr[i].load('name');
-        await context.sync();
-        for (let i = 0; i < arr.length; i++) {
-          if (arr[i].name === name) { arr[i].delete(); await context.sync(); return true; }
-        }
-        return false;
-      });
-    } catch (_) { return false; }
-  }
-
-  /* Insere a versão otimizada NO LUGAR da original. Caso comum (sem rotação):
-     apaga a original PRIMEIRO — sem ambiguidade, já que a nova ainda não existe
-     — e insere pela via comprovada (setSelectedDataAsync). Girada: precisa de
-     addImage (setSelectedData não rotaciona); se addImage falhar, avisa.
-     Retorna { replaced:bool }. */
-  async function _insertOptimized(base64, pos, rotDeg, originalName, slideIndex) {
+  /* Cola a imagem POR CIMA (não apaga a original — a nova cobre o lugar exato).
+     Sem rotação: via setSelectedDataAsync (comprovado no Mac). Com rotação:
+     precisa de addImage (setSelectedData não rotaciona); se falhar, avisa. */
+  async function _insertOnTop(base64, pos, rotDeg, slideIndex) {
     if (rotDeg) {
       try {
-        return await PowerPoint.run(async (context) => {
-          const shapes = _slideAt(context, slideIndex).shapes;
-          let target = null;
-          if (originalName) {
-            shapes.load('items');
-            await context.sync();
-            const arr = shapes.items || [];
-            for (let i = 0; i < arr.length; i++) arr[i].load('name');
-            await context.sync();
-            for (let i = 0; i < arr.length; i++) {
-              if (arr[i].name === originalName) { target = arr[i]; break; }
-            }
-          }
-          const shape = shapes.addImage(base64); // fora do snapshot acima — nunca é o alvo
+        await PowerPoint.run(async (context) => {
+          const shape = _slideAt(context, slideIndex).shapes.addImage(base64);
           shape.left = pos.left; shape.top = pos.top; shape.width = pos.w; shape.height = pos.h;
           try { shape.rotation = rotDeg; } catch (_) {}
-          let replaced = false;
-          if (target) { try { target.delete(); replaced = true; } catch (_) {} }
           await context.sync();
-          return { replaced: replaced };
         });
+        return;
       } catch (_) {
         throw new Error('Imagem girada — esta versão do PowerPoint não deixa reinserir com rotação. Otimize-a manualmente.');
       }
     }
-    // não girada (comum): apaga a original antes de inserir a nova
-    const replaced = await _deleteShapeByName(originalName, slideIndex);
     const ok = await new Promise((resolve) => {
       try {
         Office.context.document.setSelectedDataAsync(base64, {
@@ -500,29 +465,17 @@
       } catch (er) { resolve(er); }
     });
     if (ok !== true) throw new Error((ok && ok.error && ok.error.message) || 'Falha ao inserir.');
-    return { replaced: replaced };
   }
 
-  /* Reencoda a imagem preservando o que aparece no slide (recorte, espelho,
-     rotação, posição e tamanho) e SUBSTITUI a original no lugar — em TODAS as
-     aparições (uma imagem reusada em vários slides vira uma cópia otimizada em
-     cada). 'fiel' não reduz resolução: só recomprime. Só age se o total das
-     cópias ficar menor que a original; senão retorna {smaller:false}. */
-  async function optimizeImage(item, level, progress) {
-    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
-    const say = progress || function () {};
-    const cfg = OPT_LEVELS[level] || OPT_LEVELS.fiel;
-    const info = await _loadImageForItem(item, say);
-    if (!info.mime) throw new Error('Formato .' + item.ext + ' (vetor) não converte no navegador.');
+  /* Reencoda a REGIÃO VISÍVEL (crop/espelho aplicados) de cada aparição da
+     imagem, no nível cfg. Retorna { enc:[{pic,url,bytes,tw,th}], anyCrop,
+     anyRot, anyAlpha }. Não insere nada — só produz os data URLs. */
+  async function _encodeAppearances(item, info, cfg) {
     const pics = (info.pics && info.pics.length) ? info.pics
       : [{ place: null, crop: null, rot: 0, flipH: false, flipV: false, name: '', use: null }];
-
-    say('Reprocessando…');
     let bmp;
     try { bmp = await createImageBitmap(new Blob([info.bytes], { type: info.mime })); }
     catch (_) { throw new Error('Não consegui decodificar a imagem.'); }
-
-    // 1) Reencoda cada aparição (sem inserir ainda) — o crop/tamanho variam por slide.
     const enc = [];
     let anyCrop = false, anyRot = false, anyAlpha = false;
     for (let p = 0; p < pics.length; p++) {
@@ -553,48 +506,208 @@
       if (hasAlpha) anyAlpha = true;
     }
     try { bmp.close && bmp.close(); } catch (_) {}
-
-    // A mídia original conta uma vez; só compensa se a soma das cópias for menor.
-    const sum = enc.reduce((s, e) => s + e.bytes, 0);
-    if (sum >= item.bytes) return { smaller: false, bytes: sum };
-
-    // 2) Insere cada aparição no seu slide, substituindo a original.
-    let replaced = 0;
-    for (let i = 0; i < enc.length; i++) {
-      const e = enc[i];
-      say(enc.length > 1 ? ('Substituindo ' + (i + 1) + '/' + enc.length + '…') : 'Substituindo a original…');
-      const use = e.pic.use;
-      if (use && use.sldId) { await goToSlide(use.sldId); await new Promise((r) => setTimeout(r, 450)); }
-      const pos = e.pic.place || { left: 40, top: 40, w: 300, h: 300 * e.th / e.tw };
-      const slideIndex = (use && use.pos) ? use.pos - 1 : -1;
-      const res = await _insertOptimized(e.url.split(',')[1], pos, e.pic.rot || 0, e.pic.name || '', slideIndex);
-      if (res.replaced) replaced += 1;
-    }
-    _imgCache = null; // o arquivo mudou; força releitura na próxima
-    return { smaller: true, bytes: sum, saved: item.bytes - sum, format: anyAlpha ? 'PNG' : 'JPG',
-      usages: enc.length, replaced: replaced, cropped: anyCrop, rotated: anyRot };
+    return { enc: enc, anyCrop: anyCrop, anyRot: anyRot, anyAlpha: anyAlpha };
   }
 
-  /* Otimiza TODAS as imagens raster do deck em sequência (substituindo cada
-     original no lugar). progress(msg) reporta o andamento. Pula vetores e as
-     que não ficariam menores. Retorna um resumo. */
+  /* Cola cada aparição codificada por cima, no seu slide (navega + insere). */
+  async function _placeEncodings(enc, say) {
+    for (let i = 0; i < enc.length; i++) {
+      const e = enc[i];
+      say(enc.length > 1 ? ('Colando ' + (i + 1) + '/' + enc.length + '…') : 'Colando por cima…');
+      const use = e.pic.use;
+      if (use && use.sldId) { await goToSlide(use.sldId); await new Promise((r) => setTimeout(r, 350)); }
+      const pos = e.pic.place || { left: 40, top: 40, w: 300, h: 300 * e.th / e.tw };
+      const slideIndex = (use && use.pos) ? use.pos - 1 : -1;
+      await _insertOnTop(e.url.split(',')[1], pos, e.pic.rot || 0, slideIndex);
+    }
+  }
+
+  /* Otimiza UMA imagem: reencoda a parte visível (mantém recorte/proporção) e
+     COLA POR CIMA da original em cada aparição (não apaga — a original fica
+     atrás). Só age se ficar menor; senão {smaller:false}. */
+  async function optimizeImage(item, level, progress) {
+    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+    const say = progress || function () {};
+    const cfg = OPT_LEVELS[level] || OPT_LEVELS.fiel;
+    const info = await _loadImageForItem(item, say);
+    if (!info.mime) throw new Error('Formato .' + item.ext + ' (vetor) não converte no navegador.');
+    say('Reprocessando…');
+    const out = await _encodeAppearances(item, info, cfg);
+    const sum = out.enc.reduce((s, e) => s + e.bytes, 0);
+    if (sum >= item.bytes) return { smaller: false, bytes: sum };
+    await _placeEncodings(out.enc, say);
+    return { smaller: true, bytes: sum, saved: item.bytes - sum, format: out.anyAlpha ? 'PNG' : 'JPG',
+      usages: out.enc.length, cropped: out.anyCrop, rotated: out.anyRot };
+  }
+
+  /* Otimiza TODAS as raster de uma vez. RÁPIDO: lê o arquivo do deck UMA vez só
+     (antes relia a cada imagem), reencoda tudo, e só então cola por cima (com o
+     arquivo já fechado). progress(msg) reporta. Pula vetores e as que não
+     ficariam menores. */
   async function optimizeAll(items, level, progress) {
     if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
     const say = progress || function () {};
+    const cfg = OPT_LEVELS[level] || OPT_LEVELS.fiel;
     const raster = (items || []).filter((it) => ['svg', 'emf', 'wmf'].indexOf(it.ext) < 0);
-    let done = 0, saved = 0, skipped = 0, failed = 0, replaced = 0, lastError = '';
-    for (let i = 0; i < raster.length; i++) {
-      const it = raster[i];
-      const head = (i + 1) + '/' + raster.length;
-      say('Otimizando ' + head + '…');
-      try {
-        const r = await optimizeImage(it, level, (m) => say(head + ' — ' + m));
-        if (!r.smaller) { skipped += 1; }
-        else { done += 1; saved += r.saved; replaced += (r.replaced || 0); }
-      } catch (e) { failed += 1; lastError = (e && e.message) ? e.message : String(e); }
-      await new Promise((r) => setTimeout(r, 250)); // deixa os handles/leituras assentarem
+    let skipped = 0, failed = 0, lastError = '';
+    const jobs = []; // { it, enc, saved }
+
+    // Fase 1 — lê o arquivo UMA vez e reencoda tudo (mantém só os data URLs, menores).
+    let file = null;
+    try {
+      say('Lendo o arquivo…');
+      file = await _getFile();
+      const cache = new Map();
+      const entries = await _readCentralDir(file, cache);
+      const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
+      for (let i = 0; i < raster.length; i++) {
+        const it = raster[i];
+        say('Analisando ' + (i + 1) + '/' + raster.length + '…');
+        try {
+          const info = await _readItem(file, byName, it, cache);
+          if (!info.mime) { skipped += 1; continue; }
+          const out = await _encodeAppearances(it, info, cfg);
+          const sum = out.enc.reduce((s, e) => s + e.bytes, 0);
+          if (sum >= it.bytes) { skipped += 1; continue; }
+          jobs.push({ it: it, enc: out.enc, saved: it.bytes - sum });
+        } catch (e) { failed += 1; lastError = (e && e.message) ? e.message : String(e); }
+      }
+    } finally {
+      if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
     }
-    return { total: raster.length, done: done, saved: saved, skipped: skipped, failed: failed, replaced: replaced, lastError: lastError };
+
+    // Fase 2 — cola por cima (arquivo já fechado).
+    let done = 0, saved = 0;
+    for (let i = 0; i < jobs.length; i++) {
+      const j = jobs[i];
+      say('Colando ' + (i + 1) + '/' + jobs.length + '…');
+      try { await _placeEncodings(j.enc, function () {}); done += 1; saved += j.saved; }
+      catch (e) { failed += 1; lastError = (e && e.message) ? e.message : String(e); }
+    }
+    return { total: raster.length, done: done, saved: saved, skipped: skipped, failed: failed, lastError: lastError };
+  }
+
+  /* Substitui uma imagem por um ARQUIVO escolhido pelo usuário: cola o arquivo
+     por cima, na mesma posição/tamanho de cada aparição (mantém o lugar/recorte
+     visual da original, que fica atrás). dataUrl = "data:image/...;base64,...". */
+  async function replaceImage(item, dataUrl, progress) {
+    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+    const say = progress || function () {};
+    const base64 = (dataUrl || '').split(',')[1];
+    if (!base64) throw new Error('Arquivo inválido.');
+    const info = await _loadImageForItem(item, say);
+    const pics = (info.pics && info.pics.length) ? info.pics
+      : [{ place: null, use: null, rot: 0 }];
+    // tamanho natural do arquivo escolhido — pra proporção quando não há frame
+    let nat = null;
+    try {
+      const b = await (await fetch(dataUrl)).blob();
+      const bmp = await createImageBitmap(b);
+      nat = { w: bmp.width, h: bmp.height };
+      try { bmp.close && bmp.close(); } catch (_) {}
+    } catch (_) {}
+    let count = 0;
+    for (let i = 0; i < pics.length; i++) {
+      const pic = pics[i];
+      say(pics.length > 1 ? ('Substituindo ' + (i + 1) + '/' + pics.length + '…') : 'Substituindo…');
+      const use = pic.use;
+      if (use && use.sldId) { await goToSlide(use.sldId); await new Promise((r) => setTimeout(r, 350)); }
+      const dw = nat ? Math.min(400, nat.w) : 300;
+      const pos = pic.place || { left: 40, top: 40, w: dw, h: nat ? dw * nat.h / nat.w : 300 };
+      const slideIndex = (use && use.pos) ? use.pos - 1 : -1;
+      await _insertOnTop(base64, pos, pic.rot || 0, slideIndex);
+      count += 1;
+    }
+    return { count: count, usages: pics.length };
+  }
+
+  /* ---- ZIP (stored, sem compressão — imagens já vêm comprimidas) ---- */
+  const _crcTable = (function () {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function _crc32(bytes) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = _crcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function _u16(n) { return new Uint8Array([n & 0xFF, (n >>> 8) & 0xFF]); }
+  function _u32(n) { return new Uint8Array([n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF]); }
+  function _concat(arrs) {
+    let len = 0; for (let i = 0; i < arrs.length; i++) len += arrs[i].length;
+    const out = new Uint8Array(len); let o = 0;
+    for (let i = 0; i < arrs.length; i++) { out.set(arrs[i], o); o += arrs[i].length; }
+    return out;
+  }
+  function _buildZip(files) {
+    const encName = new TextEncoder();
+    const parts = [], central = [];
+    let offset = 0;
+    for (let i = 0; i < files.length; i++) {
+      const nameB = encName.encode(files[i].name), data = files[i].bytes;
+      const crc = _crc32(data), size = data.length;
+      const lh = _concat([_u32(0x04034b50), _u16(20), _u16(0x0800), _u16(0), _u16(0), _u16(0),
+        _u32(crc), _u32(size), _u32(size), _u16(nameB.length), _u16(0), nameB]);
+      parts.push(lh, data);
+      central.push(_concat([_u32(0x02014b50), _u16(20), _u16(20), _u16(0x0800), _u16(0), _u16(0), _u16(0),
+        _u32(crc), _u32(size), _u32(size), _u16(nameB.length), _u16(0), _u16(0), _u16(0), _u16(0),
+        _u32(0), _u32(offset), nameB]));
+      offset += lh.length + size;
+    }
+    const cd = _concat(central);
+    const eocd = _concat([_u32(0x06054b50), _u16(0), _u16(0), _u16(files.length), _u16(files.length),
+      _u32(cd.length), _u32(offset), _u16(0)]);
+    return new Blob(parts.concat([cd, eocd]), { type: 'application/zip' });
+  }
+  function _triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { try { document.body.removeChild(a); URL.revokeObjectURL(url); } catch (_) {} }, 8000);
+  }
+
+  /* Baixa TODAS as imagens do deck num único ZIP (bytes originais, sem perda),
+     nomeadas por ordem de tamanho. Lê o arquivo uma vez só. */
+  async function exportAllImages(items, progress) {
+    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+    const say = progress || function () {};
+    const list = (items || []).filter((it) => it && it.name);
+    if (!list.length) throw new Error('Nenhuma imagem para baixar.');
+    let file = null;
+    try {
+      say('Lendo o arquivo…');
+      file = await _getFile();
+      const cache = new Map();
+      const entries = await _readCentralDir(file, cache);
+      const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
+      const out = [], used = {};
+      for (let i = 0; i < list.length; i++) {
+        const it = list[i];
+        say('Coletando ' + (i + 1) + '/' + list.length + '…');
+        const ent = byName[it.name];
+        if (!ent) continue;
+        let bytes;
+        try { bytes = await _entryBytes(file, ent, cache); } catch (_) { continue; }
+        let name = String(i + 1).padStart(2, '0') + '-' + it.base;
+        while (used[name]) name = '_' + name;
+        used[name] = 1;
+        out.push({ name: name, bytes: bytes });
+      }
+      if (!out.length) throw new Error('Não consegui ler as imagens.');
+      say('Montando o ZIP…');
+      const blob = _buildZip(out);
+      _triggerDownload(blob, 'imagens-do-deck.zip');
+      return { count: out.length, bytes: blob.size };
+    } finally {
+      if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
+    }
   }
 
   /* Insert the doodle PNG onto the active slide, positioned so it lands
@@ -957,5 +1070,6 @@
     openImageEditDialog, getSlideSizeSync, detectSlideSize, SLIDE_W_PT, SLIDE_H_PT,
     apiSupported, applyTextStyle, insertStylesReference,
     getImageAudit, goToSlide, optimizeImage, optimizeAll, getImageThumbnail,
+    exportAllImages, replaceImage,
   };
 })(window);

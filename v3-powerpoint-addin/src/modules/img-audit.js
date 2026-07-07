@@ -12,6 +12,8 @@
 
   const runBtn = document.getElementById('imgaRun');
   const summary = document.getElementById('imgaSummary');
+  const bulk = document.getElementById('imgaBulk');
+  const downloadAllBtn = document.getElementById('imgaDownloadAll');
   const optAllBtn = document.getElementById('imgaOptAll');
   const allStatus = document.getElementById('imgaAllStatus');
   const list = document.getElementById('imgaList');
@@ -20,6 +22,8 @@
   const meta = document.getElementById('imgaMeta');
   const levelSeg = document.getElementById('imgaLevel');
   const optBtn = document.getElementById('imgaOpt');
+  const replaceBtn = document.getElementById('imgaReplace');
+  const replaceFile = document.getElementById('imgaReplaceFile');
   const optStatus = document.getElementById('imgaOptStatus');
 
   const fmt = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
@@ -98,24 +102,48 @@
 
   optBtn.addEventListener('click', async () => {
     if (!selected) return;
-    optBtn.disabled = true;
+    optBtn.disabled = true; replaceBtn.disabled = true;
     try {
       const r = await window.OfficeBridge.optimizeImage(selected, level, (m) => { optStatus.textContent = m; });
       if (!r.smaller) {
         optStatus.textContent = 'Nesse nível a imagem não fica menor que ' + fmt(selected.bytes) + '. Tente um nível mais forte.';
       } else {
-        const kept = r.cropped || r.rotated ? ' Recorte, posição e proporção mantidos.' : '';
+        const kept = r.cropped || r.rotated ? ' Recorte/proporção mantidos.' : '';
         const many = r.usages > 1 ? ' em ' + r.usages + ' slides' : '';
-        const note = r.replaced < r.usages
-          ? ' (não localizei ' + (r.usages - r.replaced) + ' original(is) pra remover — ficaram atrás; apague à mão.)'
-          : '';
-        optStatus.textContent = 'Substituída' + many + ' por versão ' + r.format + ' de ' + fmt(r.bytes) +
-          ' (economia de ' + fmt(r.saved) + ').' + kept + note + ' Salve o arquivo para concluir.';
+        optStatus.textContent = 'Colada por cima' + many + ' — versão ' + r.format + ' de ' + fmt(r.bytes) + '.' +
+          kept + ' A original (' + fmt(selected.bytes) + ') fica atrás; apague-a para reduzir o arquivo.';
       }
     } catch (e) {
       optStatus.textContent = 'Não deu: ' + (e && e.message ? e.message : e);
     } finally {
-      optBtn.disabled = isVector(selected);
+      optBtn.disabled = isVector(selected); replaceBtn.disabled = false;
+    }
+  });
+
+  // Substituir por um arquivo do PC (cola por cima, mesmo lugar/tamanho)
+  replaceBtn.addEventListener('click', () => { if (selected) replaceFile.click(); });
+  replaceFile.addEventListener('change', async () => {
+    const f = replaceFile.files && replaceFile.files[0];
+    replaceFile.value = ''; // permite reescolher o mesmo arquivo
+    if (!f || !selected) return;
+    const dataUrl = await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = () => rej(fr.error);
+      fr.readAsDataURL(f);
+    }).catch(() => null);
+    if (!dataUrl) { optStatus.textContent = 'Não consegui ler o arquivo.'; return; }
+    optBtn.disabled = true; replaceBtn.disabled = true;
+    optStatus.textContent = 'Substituindo…';
+    try {
+      const r = await window.OfficeBridge.replaceImage(selected, dataUrl, (m) => { optStatus.textContent = m; });
+      const many = r.usages > 1 ? ' em ' + r.usages + ' slides' : '';
+      optStatus.textContent = '"' + f.name + '" colada por cima' + many +
+        '. A original fica atrás; apague-a se não precisar mais.';
+    } catch (e) {
+      optStatus.textContent = 'Não deu: ' + (e && e.message ? e.message : e);
+    } finally {
+      optBtn.disabled = isVector(selected); replaceBtn.disabled = false;
     }
   });
 
@@ -124,7 +152,7 @@
     runBtn.disabled = true;
     list.innerHTML = '';
     detail.classList.add('hidden');
-    optAllBtn.classList.add('hidden');
+    bulk.classList.add('hidden');
     allStatus.classList.add('hidden');
     selected = null;
     summary.textContent = 'Analisando…';
@@ -132,14 +160,13 @@
       const audit = await window.OfficeBridge.getImageAudit((m) => { summary.textContent = m; });
       items = audit.items;
       if (!items.length) { summary.textContent = 'Nenhuma imagem no arquivo.'; return; }
-      summary.textContent = items.length + ' imagem(ns) · total ' + fmt(audit.total) + '. Clique numa imagem para vê-la e otimizá-la.';
+      summary.textContent = items.length + ' imagem(ns) · total ' + fmt(audit.total) + '. Clique numa imagem para vê-la, ou baixe/otimize todas.';
       renderList();
       const rasterN = items.filter((it) => !isVector(it)).length;
-      if (rasterN > 0) {
-        allLabel = 'Otimizar todas (' + rasterN + ')';
-        disarmAll();
-        optAllBtn.classList.remove('hidden');
-      }
+      allLabel = 'Otimizar todas' + (rasterN ? ' (' + rasterN + ')' : '');
+      disarmAll();
+      optAllBtn.disabled = rasterN === 0;
+      bulk.classList.remove('hidden');
     } catch (e) {
       summary.textContent = 'Falha na análise: ' + (e && e.message ? e.message : e);
     } finally {
@@ -165,24 +192,42 @@
       return;
     }
     disarmAll();
-    optAllBtn.disabled = true;
+    optAllBtn.disabled = true; downloadAllBtn.disabled = true;
     runBtn.disabled = true;
     allStatus.classList.remove('hidden');
     allStatus.textContent = 'Otimizando…';
     try {
       const r = await window.OfficeBridge.optimizeAll(items, level, (m) => { allStatus.textContent = m; });
-      const parts = [r.done + ' de ' + r.total + ' otimizada(s)'];
-      if (r.saved) parts.push('economia de ' + fmt(r.saved));
+      const parts = [r.done + ' de ' + r.total + ' colada(s) por cima'];
       if (r.skipped) parts.push(r.skipped + ' já no menor tamanho');
       if (r.failed) parts.push(r.failed + ' com erro');
-      let msg = parts.join(' · ') + '. Salve o arquivo para concluir a redução.';
+      let msg = parts.join(' · ') + '. As originais ficam atrás' +
+        (r.saved ? ' (~' + fmt(r.saved) + ')' : '') + ' — apague-as para reduzir o arquivo.';
       if (r.failed && r.lastError) msg += ' (erro: ' + r.lastError + ')';
       allStatus.textContent = msg;
     } catch (e) {
       allStatus.textContent = 'Falha: ' + (e && e.message ? e.message : e);
     } finally {
-      optAllBtn.disabled = false;
+      optAllBtn.disabled = false; downloadAllBtn.disabled = false;
       runBtn.disabled = false;
+    }
+  });
+
+  // Baixar todas as imagens num ZIP
+  downloadAllBtn.addEventListener('click', async () => {
+    if (!items.length) return;
+    downloadAllBtn.disabled = true; optAllBtn.disabled = true;
+    allStatus.classList.remove('hidden');
+    allStatus.textContent = 'Preparando o ZIP…';
+    try {
+      const r = await window.OfficeBridge.exportAllImages(items, (m) => { allStatus.textContent = m; });
+      allStatus.textContent = 'Baixado: ' + r.count + ' imagem(ns) (' + fmt(r.bytes) +
+        ') em imagens-do-deck.zip. Reduza fora e recoloque com "Substituir".';
+    } catch (e) {
+      allStatus.textContent = 'Falha ao baixar: ' + (e && e.message ? e.message : e);
+    } finally {
+      downloadAllBtn.disabled = false;
+      optAllBtn.disabled = items.filter((it) => !isVector(it)).length === 0;
     }
   });
 })();

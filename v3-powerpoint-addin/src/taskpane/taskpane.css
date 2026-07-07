@@ -167,6 +167,10 @@ input[type=range]:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); bord
 .gen-actions .btn { flex: 1; font-size: 11.5px; padding: 6px 4px; }
 
 /* Otimização — lista de imagens do arquivo */
+.imga-bulk { display: flex; gap: 8px; margin: 8px 0 0; }
+.imga-bulk .btn { flex: 1; }
+.imga-actions { display: flex; gap: 8px; }
+.imga-actions .btn { flex: 1; }
 .imga-list { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 4px; }
 .imga-list:empty { display: none; }
 .imga-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 8px; font-family: inherit; cursor: pointer; }

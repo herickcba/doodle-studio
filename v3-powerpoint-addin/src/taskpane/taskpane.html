@@ -134,7 +134,10 @@
   <div class="view hidden" id="view-optimize" role="tabpanel">
     <button class="btn primary block" id="imgaRun" title="Lista as imagens do arquivo por peso (baixa o arquivo em fatias — pode demorar em decks grandes)">Analisar imagens do arquivo</button>
     <div class="status" id="imgaSummary">Clique em Analisar para listar as imagens por peso. Depois clique numa imagem para vê-la e otimizá-la.</div>
-    <button class="btn block hidden" id="imgaOptAll" title="Otimiza e substitui todas as imagens do arquivo, cada uma no lugar da original">Otimizar todas</button>
+    <div class="imga-bulk hidden" id="imgaBulk">
+      <button class="btn primary" id="imgaDownloadAll" title="Baixa todas as imagens do arquivo num único ZIP, para você reduzir fora e recolocar com Substituir">Baixar todas (ZIP)</button>
+      <button class="btn" id="imgaOptAll" title="Otimiza todas as imagens do arquivo de uma vez e cola cada uma por cima da original">Otimizar todas</button>
+    </div>
     <div class="status hidden" id="imgaAllStatus"></div>
 
     <!-- Detalhe da imagem selecionada -->
@@ -147,12 +150,16 @@
         <button class="seg-btn" data-level="equilibrado" title="Até 2× o tamanho exibido — bom para tela">Equilibrado</button>
         <button class="seg-btn" data-level="compacto" title="Peso mínimo (mais compressão)">Compacto</button>
       </div>
-      <button class="btn primary block" id="imgaOpt" title="Substitui a original por uma versão menor, no mesmo lugar/tamanho.">Otimizar imagem</button>
+      <div class="imga-actions">
+        <button class="btn primary" id="imgaOpt" title="Reduz no navegador e cola por cima da original, no mesmo lugar/tamanho.">Otimizar</button>
+        <button class="btn" id="imgaReplace" title="Escolhe um arquivo do seu PC e cola por cima da original, no mesmo lugar.">Substituir…</button>
+      </div>
+      <input type="file" id="imgaReplaceFile" accept="image/*" hidden />
       <div class="status" id="imgaOptStatus"></div>
     </section>
 
     <div class="imga-list" id="imgaList"></div>
-    <div class="hint">A versão otimizada <b>substitui</b> a original, no mesmo lugar. Imagens usadas em vários slides são trocadas em todos. <b>Salve o arquivo</b> para concluir a redução de tamanho. Vetores (SVG/EMF) não são convertidos.</div>
+    <div class="hint">Otimizar/Substituir <b>colam por cima</b> da original (mesmo lugar, mantendo o recorte) — a original fica atrás; apague-a para reduzir o arquivo. <b>Baixar todas</b> salva as imagens num ZIP pra você reduzir fora e recolocar com <b>Substituir</b>. Vetores (SVG/EMF) não são convertidos.</div>
   </div><!-- /view-optimize -->
 
   <!-- UI + drawing run immediately; office.js loads deferred so it never blocks first paint -->
