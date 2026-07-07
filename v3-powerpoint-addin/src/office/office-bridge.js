@@ -82,12 +82,17 @@
     return d instanceof Uint8Array ? d : Uint8Array.from(d);
   }
   /* Read an absolute byte range [start, start+len) by fetching only the slices
-     that overlap it — not the whole file. */
-  async function _readRange(file, start, len) {
+     that overlap it — not the whole file. `cache` (Map opcional) evita rebaixar
+     a mesma fatia em leituras repetidas (auditoria lê ~90 rels vizinhos). */
+  async function _readRange(file, start, len, cache) {
     const end = start + len, first = Math.floor(start / SLICE), last = Math.floor((end - 1) / SLICE);
     const out = new Uint8Array(len); let w = 0;
     for (let i = first; i <= last; i++) {
-      const bytes = _toBytes(await _getSlice(file, i));
+      let bytes = cache && cache.get(i);
+      if (!bytes) {
+        bytes = _toBytes(await _getSlice(file, i));
+        if (cache) { if (cache.size >= 24) cache.clear(); cache.set(i, bytes); }
+      }
       const sStart = i * SLICE;
       const from = Math.max(start, sStart) - sStart;
       const to = Math.min(end, sStart + bytes.length) - sStart;
@@ -169,6 +174,203 @@
       return _slideSize;
     })();
     return _detecting;
+  }
+
+  /* ---------- Auditoria de imagens (leitura do zip por slices) ---------- */
+
+  const _zu32 = (b, o) => b[o] | (b[o+1]<<8) | (b[o+2]<<16) | (b[o+3]*0x1000000);
+  const _zu16 = (b, o) => b[o] | (b[o+1]<<8);
+
+  /* Read the whole central directory once -> list of entries. */
+  async function _readCentralDir(file, cache) {
+    const size = file.size, lastStart = (file.sliceCount - 1) * SLICE;
+    const tail = await _readRange(file, lastStart, size - lastStart, cache);
+    let e = -1;
+    for (let i = tail.length - 22; i >= 0; i--) { if (_zu32(tail, i) === 0x06054b50) { e = i; break; } }
+    if (e < 0) throw new Error('no EOCD');
+    const cdOff = _zu32(tail, e + 16), cdSize = _zu32(tail, e + 12);
+    const cd = await _readRange(file, cdOff, cdSize, cache);
+    const entries = []; let off = 0;
+    while (off + 46 <= cd.length) {
+      if (_zu32(cd, off) !== 0x02014b50) break;
+      const method = _zu16(cd, off + 10), csize = _zu32(cd, off + 20), usize = _zu32(cd, off + 24);
+      const nlen = _zu16(cd, off + 28), elen = _zu16(cd, off + 30), clen = _zu16(cd, off + 32), lho = _zu32(cd, off + 42);
+      entries.push({ name: new TextDecoder().decode(cd.subarray(off + 46, off + 46 + nlen)), method, csize, usize, lho });
+      off += 46 + nlen + elen + clen;
+    }
+    return entries;
+  }
+
+  async function _entryBytes(file, ent, cache) {
+    const head = await _readRange(file, ent.lho, 30, cache);
+    const dataStart = ent.lho + 30 + _zu16(head, 26) + _zu16(head, 28);
+    const cdata = await _readRange(file, dataStart, ent.csize, cache);
+    return ent.method === 0 ? cdata : await inflateRaw(cdata);
+  }
+  const _entryText = async (file, ent, cache) => new TextDecoder().decode(await _entryBytes(file, ent, cache));
+
+  /* List pictures in the deck: name, extension, compressed bytes and the
+     slides that use each one (position + sldId for navigation).
+     progress(msg) is optional. Heavy on big decks — only on demand. */
+  async function getImageAudit(progress) {
+    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+    const say = progress || function () {};
+    let file = null;
+    try {
+      say('Lendo o arquivo…');
+      file = await _getFile();
+      const cache = new Map();
+      const entries = await _readCentralDir(file, cache);
+      const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
+
+      const media = entries.filter((en) => /^ppt\/media\//.test(en.name) &&
+        /\.(png|jpe?g|gif|bmp|tiff?|emf|wmf|svg|webp)$/i.test(en.name));
+      if (!media.length) return { total: 0, items: [] };
+
+      // ordem real dos slides: presentation.xml (sldIdLst) + seus rels
+      say('Mapeando slides…');
+      let fileToPos = {}; // 'slide3.xml' -> {pos, sldId}
+      try {
+        const pXml = await _entryText(file, byName['ppt/presentation.xml'], cache);
+        const pRels = await _entryText(file, byName['ppt/_rels/presentation.xml.rels'], cache);
+        const ridToFile = {};
+        pRels.replace(/<Relationship [^>]*Id="([^"]+)"[^>]*Target="slides\/([^"]+)"[^>]*>/g,
+          (_, rid, f) => { ridToFile[rid] = f; return _; });
+        let pos = 0;
+        pXml.replace(/<p:sldId [^>]*id="(\d+)"[^>]*r:id="([^"]+)"/g, (_, sldId, rid) => {
+          pos += 1;
+          if (ridToFile[rid]) fileToPos[ridToFile[rid]] = { pos, sldId: +sldId };
+          return _;
+        });
+      } catch (_) { fileToPos = {}; }
+
+      // rels de cada slide: media -> slides que usam
+      const usedBy = {}; // 'image3.png' -> [{pos, sldId, slideFile}]
+      const relEntries = entries.filter((en) => /^ppt\/slides\/_rels\/slide\d+\.xml\.rels$/.test(en.name));
+      for (let i = 0; i < relEntries.length; i++) {
+        say('Cruzando imagens ' + (i + 1) + '/' + relEntries.length + '…');
+        const slideFile = relEntries[i].name.replace(/^ppt\/slides\/_rels\//, '').replace(/\.rels$/, '');
+        let xml = '';
+        try { xml = await _entryText(file, relEntries[i], cache); } catch (_) { continue; }
+        xml.replace(/Target="\.\.\/media\/([^"]+)"/g, (_, m) => {
+          (usedBy[m] = usedBy[m] || []).push(Object.assign({ slideFile }, fileToPos[slideFile] || {}));
+          return _;
+        });
+      }
+
+      const items = media.map((en) => {
+        const base = en.name.replace(/^ppt\/media\//, '');
+        return {
+          name: en.name, base,
+          ext: (base.match(/\.([a-z0-9]+)$/i) || [,''])[1].toLowerCase(),
+          bytes: en.csize, usize: en.usize,
+          slides: (usedBy[base] || []).filter((s, i2, a) => a.findIndex((x) => x.slideFile === s.slideFile) === i2),
+        };
+      }).sort((a, b) => b.bytes - a.bytes);
+      return { total: items.reduce((s, it) => s + it.bytes, 0), items };
+    } finally {
+      if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
+    }
+  }
+
+  /* Navigate to a slide by its OOXML sldId (goToByIdAsync). Resolves false
+     when the API is unavailable (list keeps working without navigation). */
+  function goToSlide(sldId) {
+    return new Promise((resolve) => {
+      try {
+        Office.context.document.goToByIdAsync(sldId, Office.GoToType.Slide,
+          (res) => resolve(res.status === Office.AsyncResultStatus.Succeeded));
+      } catch (_) { resolve(false); }
+    });
+  }
+
+  /* Re-encode one audited image at its DISPLAYED size and insert it on the
+     same slide, same position (the original must be deleted by hand — the
+     API can't replace it). Returns {smaller:false, bytes} when re-encoding
+     wouldn't save space. */
+  async function optimizeImage(item, progress) {
+    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+    const say = progress || function () {};
+    let file = null;
+    let src, place = null;
+    try {
+      say('Lendo a imagem…');
+      file = await _getFile();
+      const cache = new Map();
+      const entries = await _readCentralDir(file, cache);
+      const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
+      const ent = byName[item.name];
+      if (!ent) throw new Error('Imagem não encontrada (o arquivo mudou? Analise de novo).');
+      src = await _entryBytes(file, ent, cache);
+
+      // tamanho/posição exibidos: acha o <p:pic> que usa esse media no 1º slide
+      const use = item.slides && item.slides[0];
+      if (use && byName['ppt/slides/' + use.slideFile]) {
+        try {
+          const rels = await _entryText(file, byName['ppt/slides/_rels/' + use.slideFile + '.rels'], cache);
+          let rid = null;
+          rels.replace(new RegExp('<Relationship [^>]*Id="([^"]+)"[^>]*Target="\\.\\./media/' +
+            item.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"', 'g'), (_, r) => { rid = r; return _; });
+          if (rid) {
+            const sx = await _entryText(file, byName['ppt/slides/' + use.slideFile], cache);
+            const pic = sx.split('<p:pic>').find((seg) => seg.indexOf('r:embed="' + rid + '"') >= 0);
+            if (pic) {
+              const mOff = pic.match(/<a:off x="(-?\d+)" y="(-?\d+)"/);
+              const mExt = pic.match(/<a:ext cx="(\d+)" cy="(\d+)"/);
+              if (mExt) place = {
+                left: mOff ? +mOff[1] / 12700 : 0, top: mOff ? +mOff[2] / 12700 : 0,
+                w: +mExt[1] / 12700, h: +mExt[2] / 12700,
+              };
+            }
+          }
+        } catch (_) {}
+      }
+    } finally {
+      if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
+    }
+
+    say('Reprocessando…');
+    const mime = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', bmp: 'image/bmp', webp: 'image/webp' }[item.ext];
+    if (!mime) throw new Error('Formato .' + item.ext + ' não dá para converter no navegador.');
+    const bmp = await createImageBitmap(new Blob([src], { type: mime }));
+
+    // alvo = tamanho exibido em px @2x (nitidez em retina), cap 1920, nunca upscale
+    let tw = bmp.width, th = bmp.height;
+    if (place && place.w > 0) {
+      tw = Math.round(place.w / 72 * 96 * 2); th = Math.round(tw * bmp.height / bmp.width);
+    }
+    const cap = 1920 / Math.max(tw, th);
+    if (cap < 1) { tw = Math.round(tw * cap); th = Math.round(th * cap); }
+    if (tw >= bmp.width) { tw = bmp.width; th = bmp.height; }
+
+    const cv = document.createElement('canvas'); cv.width = tw; cv.height = th;
+    cv.getContext('2d').drawImage(bmp, 0, 0, tw, th);
+
+    // PNG só se tiver alfa de verdade; senão JPG 0.85
+    let hasAlpha = false;
+    if (item.ext === 'png' || item.ext === 'webp' || item.ext === 'gif') {
+      const d = cv.getContext('2d').getImageData(0, 0, tw, th).data;
+      for (let i = 3; i < d.length; i += 64) { if (d[i] < 250) { hasAlpha = true; break; } }
+    }
+    const outUrl = cv.toDataURL(hasAlpha ? 'image/png' : 'image/jpeg', 0.85);
+    const outBytes = Math.floor((outUrl.length - outUrl.indexOf(',') - 1) * 3 / 4);
+    if (outBytes >= item.bytes) return { smaller: false, bytes: outBytes };
+
+    say('Inserindo a versão otimizada…');
+    const use = item.slides && item.slides[0];
+    if (use && use.sldId) { await goToSlide(use.sldId); await new Promise((r) => setTimeout(r, 350)); }
+    const base64 = outUrl.split(',')[1];
+    const pos = place || { left: 40, top: 40, w: 300, h: 300 * th / tw };
+    const ok = await new Promise((resolve) => {
+      try {
+        Office.context.document.setSelectedDataAsync(base64, {
+          coercionType: Office.CoercionType.Image,
+          imageLeft: pos.left, imageTop: pos.top, imageWidth: pos.w, imageHeight: pos.h,
+        }, (res) => resolve(res.status === Office.AsyncResultStatus.Succeeded ? true : res));
+      } catch (e) { resolve(e); }
+    });
+    if (ok !== true) throw new Error((ok && ok.error && ok.error.message) || 'Falha ao inserir.');
+    return { smaller: true, bytes: outBytes, saved: item.bytes - outBytes, format: hasAlpha ? 'PNG' : 'JPG' };
   }
 
   /* Insert the doodle PNG onto the active slide, positioned so it lands
@@ -530,5 +732,6 @@
     inPowerPoint, getActiveSlideImage, insertDoodle, insertImage, openDrawDialog,
     openImageEditDialog, getSlideSizeSync, detectSlideSize, SLIDE_W_PT, SLIDE_H_PT,
     apiSupported, applyTextStyle, insertStylesReference,
+    getImageAudit, goToSlide, optimizeImage,
   };
 })(window);
