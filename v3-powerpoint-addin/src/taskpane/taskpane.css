@@ -165,16 +165,27 @@ input[type=range]:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); bord
 .gen-actions { display: flex; gap: 6px; padding: 8px; }
 .gen-actions .btn { flex: 1; font-size: 11.5px; padding: 6px 4px; }
 
-/* Imagens do arquivo (auditoria de mídia) */
-.imga-list { display: flex; flex-direction: column; gap: 6px; margin: 10px 0 4px; }
+/* Otimização — lista de imagens do arquivo */
+.imga-list { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 4px; }
 .imga-list:empty { display: none; }
-.imga-item { display: flex; align-items: center; gap: 8px; }
-.imga-badge { flex: 0 0 auto; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; color: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px 5px; min-width: 30px; text-align: center; background: var(--surface); }
-.imga-info { flex: 1 1 auto; text-align: left; background: none; border: 0; padding: 4px 2px; font-family: inherit; font-size: 11.5px; color: var(--text); cursor: pointer; border-radius: var(--radius-sm); }
-.imga-info:hover:not(:disabled) { background: var(--surface); }
-.imga-info:disabled { color: var(--muted); cursor: default; }
+.imga-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 8px; font-family: inherit; cursor: pointer; }
+.imga-item:hover { border-color: var(--accent-2); }
+.imga-item.on { border-color: var(--accent); background: var(--accent-soft); }
+.imga-badge { flex: 0 0 auto; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; color: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px 5px; min-width: 34px; text-align: center; background: var(--bg); }
+.imga-info { flex: 1 1 auto; font-size: 11.5px; color: var(--text); }
 .imga-info b { font-weight: 700; }
-.imga-opt { flex: 0 0 auto; font-size: 11px; padding: 5px 8px; }
+
+/* Otimização — card de detalhe da imagem selecionada */
+.imga-detail { margin: 12px 0 14px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.imga-detail.hidden { display: none; }
+.imga-preview { display: grid; place-items: center; width: 100%; min-height: 120px; max-height: 220px; overflow: hidden; border-radius: var(--radius-sm); background: repeating-conic-gradient(var(--surface-3) 0% 25%, var(--surface) 0% 50%) 50% / 18px 18px; margin-bottom: 10px; }
+.imga-preview img { max-width: 100%; max-height: 220px; display: block; object-fit: contain; }
+.imga-preview-ph { font-size: 11px; color: var(--muted); padding: 24px 8px; }
+.imga-detail-meta { font-size: 11.5px; color: var(--muted-2); margin-bottom: 12px; }
+.imga-detail-meta b { color: var(--text); font-weight: 700; }
+.imga-level-label { font-size: 12px; color: var(--muted-2); margin-bottom: 6px; }
+.imga-level-label span { color: var(--muted); }
+.imga-detail .seg { margin: 0 0 12px; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }

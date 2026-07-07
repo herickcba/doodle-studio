@@ -12,6 +12,7 @@
   <nav class="modnav" id="modnav" role="tablist" aria-label="Módulos">
     <button class="modtab active" data-view="doodle" role="tab" aria-selected="true">Doodle</button>
     <button class="modtab" data-view="image" role="tab" aria-selected="false">Imagem</button>
+    <button class="modtab" data-view="optimize" role="tab" aria-selected="false">Otimização</button>
   </nav>
 
   <!-- ===================== Module: Doodle ===================== -->
@@ -76,19 +77,6 @@
     </div>
   </section>
 
-  <!-- Config: Imagens do arquivo (collapsible; análise sob demanda) -->
-  <section class="sec lib collapsed" id="imgaSec">
-    <button class="lib-head" id="imgaHead" aria-expanded="false">
-      <span class="sec-head" style="border:0;padding:0;margin:0;">Imagens do arquivo</span>
-      <span class="lib-arrow" aria-hidden="true">▸</span>
-    </button>
-    <div class="lib-body" id="imgaBody">
-      <button class="btn block" id="imgaRun" title="Lista as imagens do arquivo por peso (baixa o arquivo em fatias — pode demorar em decks grandes)">Analisar</button>
-      <div class="imga-list" id="imgaList"></div>
-      <div class="status" id="imgaStatus">Lista as imagens por peso; clique numa para ir ao slide. "Otimizar" insere uma versão menor no tamanho exibido.</div>
-    </div>
-  </section>
-
   <div class="hint">Dica: segure <kbd>Shift</kbd> para linha reta · <kbd>Cmd+V</kbd> cola uma imagem de fundo · clique num traço para selecioná-lo.</div>
   </div><!-- /view-doodle -->
 
@@ -141,6 +129,29 @@
     <div class="img-gallery" id="imgGallery"></div>
     <div class="hint">O prompt é melhorado pelo Gemini e enviado direto. A chave fica no servidor — o painel chama os nossos endpoints, nunca o Google direto.</div>
   </div><!-- /view-image -->
+
+  <!-- ===================== Module: Otimização ===================== -->
+  <div class="view hidden" id="view-optimize" role="tabpanel">
+    <button class="btn primary block" id="imgaRun" title="Lista as imagens do arquivo por peso (baixa o arquivo em fatias — pode demorar em decks grandes)">Analisar imagens do arquivo</button>
+    <div class="status" id="imgaSummary">Clique em Analisar para listar as imagens por peso. Depois clique numa imagem para vê-la e otimizá-la.</div>
+
+    <!-- Detalhe da imagem selecionada -->
+    <section class="imga-detail hidden" id="imgaDetail">
+      <div class="imga-preview" id="imgaPreview"><span class="imga-preview-ph">Pré-visualização</span></div>
+      <div class="imga-detail-meta" id="imgaMeta"></div>
+      <div class="imga-level-label">Otimização <span>(quanto menos, mais fiel ao original)</span></div>
+      <div class="seg" id="imgaLevel" role="group" aria-label="Nível de otimização">
+        <button class="seg-btn active" data-level="suave" title="Menos destrutivo: mantém mais resolução e qualidade">Suave</button>
+        <button class="seg-btn" data-level="media" title="Equilíbrio entre peso e qualidade">Média</button>
+        <button class="seg-btn" data-level="forte" title="Peso mínimo (mais perda)">Forte</button>
+      </div>
+      <button class="btn primary block" id="imgaOpt" title="Insere uma versão menor no tamanho exibido, sobre a original — depois apague a original.">Otimizar imagem</button>
+      <div class="status" id="imgaOptStatus"></div>
+    </section>
+
+    <div class="imga-list" id="imgaList"></div>
+    <div class="hint">A versão otimizada é inserida <b>por cima</b> da original, no mesmo lugar — a API não substitui, então apague a original depois. Vetores (SVG/EMF) não são convertidos.</div>
+  </div><!-- /view-optimize -->
 
   <!-- UI + drawing run immediately; office.js loads deferred so it never blocks first paint -->
   <script src="../engine/doodle-engine.js"></script>

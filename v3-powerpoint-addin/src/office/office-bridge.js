@@ -284,15 +284,40 @@
     });
   }
 
-  /* Re-encode one audited image at its DISPLAYED size and insert it on the
-     same slide, same position (the original must be deleted by hand — the
-     API can't replace it). Returns {smaller:false, bytes} when re-encoding
-     wouldn't save space. */
-  async function optimizeImage(item, progress) {
-    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+  /* ---- shared: carrega os bytes de UMA imagem + sua posição no 1º slide ----
+     Cache de 1 item (o último clicado) — evita rebaixar os mesmos MB quando o
+     usuário clica pra pré-visualizar e depois Otimiza a MESMA imagem. */
+  let _imgCache = null; // { name, bytes, mime, place }
+
+  function _mimeOf(ext) {
+    return { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+      bmp: 'image/bmp', webp: 'image/webp', tif: 'image/tiff', tiff: 'image/tiff' }[ext] || '';
+  }
+
+  async function _placeFor(file, byName, item, cache) {
+    const use = item.slides && item.slides[0];
+    if (!(use && byName['ppt/slides/' + use.slideFile])) return null;
+    try {
+      const rels = await _entryText(file, byName['ppt/slides/_rels/' + use.slideFile + '.rels'], cache);
+      let rid = null;
+      rels.replace(new RegExp('<Relationship [^>]*Id="([^"]+)"[^>]*Target="\\.\\./media/' +
+        item.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"', 'g'), (_, r) => { rid = r; return _; });
+      if (!rid) return null;
+      const sx = await _entryText(file, byName['ppt/slides/' + use.slideFile], cache);
+      const pic = sx.split('<p:pic>').find((seg) => seg.indexOf('r:embed="' + rid + '"') >= 0);
+      if (!pic) return null;
+      const mOff = pic.match(/<a:off x="(-?\d+)" y="(-?\d+)"/);
+      const mExt = pic.match(/<a:ext cx="(\d+)" cy="(\d+)"/);
+      if (!mExt) return null;
+      return { left: mOff ? +mOff[1] / 12700 : 0, top: mOff ? +mOff[2] / 12700 : 0,
+        w: +mExt[1] / 12700, h: +mExt[2] / 12700 };
+    } catch (_) { return null; }
+  }
+
+  async function _loadImageForItem(item, progress) {
+    if (_imgCache && _imgCache.name === item.name) return _imgCache;
     const say = progress || function () {};
     let file = null;
-    let src, place = null;
     try {
       say('Lendo a imagem…');
       file = await _getFile();
@@ -301,59 +326,81 @@
       const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
       const ent = byName[item.name];
       if (!ent) throw new Error('Imagem não encontrada (o arquivo mudou? Analise de novo).');
-      src = await _entryBytes(file, ent, cache);
-
-      // tamanho/posição exibidos: acha o <p:pic> que usa esse media no 1º slide
-      const use = item.slides && item.slides[0];
-      if (use && byName['ppt/slides/' + use.slideFile]) {
-        try {
-          const rels = await _entryText(file, byName['ppt/slides/_rels/' + use.slideFile + '.rels'], cache);
-          let rid = null;
-          rels.replace(new RegExp('<Relationship [^>]*Id="([^"]+)"[^>]*Target="\\.\\./media/' +
-            item.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"', 'g'), (_, r) => { rid = r; return _; });
-          if (rid) {
-            const sx = await _entryText(file, byName['ppt/slides/' + use.slideFile], cache);
-            const pic = sx.split('<p:pic>').find((seg) => seg.indexOf('r:embed="' + rid + '"') >= 0);
-            if (pic) {
-              const mOff = pic.match(/<a:off x="(-?\d+)" y="(-?\d+)"/);
-              const mExt = pic.match(/<a:ext cx="(\d+)" cy="(\d+)"/);
-              if (mExt) place = {
-                left: mOff ? +mOff[1] / 12700 : 0, top: mOff ? +mOff[2] / 12700 : 0,
-                w: +mExt[1] / 12700, h: +mExt[2] / 12700,
-              };
-            }
-          }
-        } catch (_) {}
-      }
+      const bytes = await _entryBytes(file, ent, cache);
+      const place = await _placeFor(file, byName, item, cache);
+      _imgCache = { name: item.name, bytes, mime: _mimeOf(item.ext), place };
+      return _imgCache;
     } finally {
       if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
     }
+  }
+
+  /* Preview (thumbnail data URL) da imagem clicada, pra o usuário ver QUAL é.
+     Retorna { url|null, w, h, place } — url null para vetor (svg/emf/wmf). */
+  async function getImageThumbnail(item, progress) {
+    const info = await _loadImageForItem(item, progress);
+    const out = { url: null, w: 0, h: 0, place: info.place };
+    if (!info.mime) return out;
+    let bmp;
+    try { bmp = await createImageBitmap(new Blob([info.bytes], { type: info.mime })); }
+    catch (_) { return out; }
+    const max = 320, s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const tw = Math.max(1, Math.round(bmp.width * s)), th = Math.max(1, Math.round(bmp.height * s));
+    const cv = document.createElement('canvas'); cv.width = tw; cv.height = th;
+    cv.getContext('2d').drawImage(bmp, 0, 0, tw, th);
+    out.url = cv.toDataURL('image/png'); out.w = bmp.width; out.h = bmp.height;
+    try { bmp.close && bmp.close(); } catch (_) {}
+    return out;
+  }
+
+  /* Níveis de otimização — 'suave' é o padrão (menos destrutivo): mantém mais
+     resolução e qualidade; ainda economiza porque reencoda no tamanho exibido. */
+  const OPT_LEVELS = {
+    suave: { q: 0.92, factor: 3, cap: 2600 },
+    media: { q: 0.85, factor: 2, cap: 1920 },
+    forte: { q: 0.80, factor: 1.5, cap: 1400 },
+  };
+
+  /* Re-encode one audited image at its DISPLAYED size and insert it on the
+     same slide, same position (the original must be deleted by hand — the
+     API can't replace it). Returns {smaller:false, bytes} when re-encoding
+     wouldn't save space. `level` ∈ {suave,media,forte}. */
+  async function optimizeImage(item, level, progress) {
+    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+    const say = progress || function () {};
+    const cfg = OPT_LEVELS[level] || OPT_LEVELS.suave;
+    const info = await _loadImageForItem(item, say);
+    if (!info.mime) throw new Error('Formato .' + item.ext + ' (vetor) não converte no navegador.');
+    const place = info.place;
 
     say('Reprocessando…');
-    const mime = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', bmp: 'image/bmp', webp: 'image/webp' }[item.ext];
-    if (!mime) throw new Error('Formato .' + item.ext + ' não dá para converter no navegador.');
-    const bmp = await createImageBitmap(new Blob([src], { type: mime }));
+    let bmp;
+    try { bmp = await createImageBitmap(new Blob([info.bytes], { type: info.mime })); }
+    catch (_) { throw new Error('Não consegui decodificar a imagem.'); }
 
-    // alvo = tamanho exibido em px @2x (nitidez em retina), cap 1920, nunca upscale
+    // alvo = tamanho exibido × fator do nível; cap por nível; NUNCA upscale.
     let tw = bmp.width, th = bmp.height;
     if (place && place.w > 0) {
-      tw = Math.round(place.w / 72 * 96 * 2); th = Math.round(tw * bmp.height / bmp.width);
+      const disp = Math.round(place.w / 72 * 96 * cfg.factor);
+      if (disp < tw) { th = Math.round(th * disp / tw); tw = disp; }
     }
-    const cap = 1920 / Math.max(tw, th);
-    if (cap < 1) { tw = Math.round(tw * cap); th = Math.round(th * cap); }
+    const capf = cfg.cap / Math.max(tw, th);
+    if (capf < 1) { tw = Math.round(tw * capf); th = Math.round(th * capf); }
     if (tw >= bmp.width) { tw = bmp.width; th = bmp.height; }
 
     const cv = document.createElement('canvas'); cv.width = tw; cv.height = th;
-    cv.getContext('2d').drawImage(bmp, 0, 0, tw, th);
+    const ctx = cv.getContext('2d');
+    ctx.drawImage(bmp, 0, 0, tw, th);
 
-    // PNG só se tiver alfa de verdade; senão JPG 0.85
+    // PNG só se tiver alfa de verdade; senão JPG na qualidade do nível.
     let hasAlpha = false;
     if (item.ext === 'png' || item.ext === 'webp' || item.ext === 'gif') {
-      const d = cv.getContext('2d').getImageData(0, 0, tw, th).data;
+      const d = ctx.getImageData(0, 0, tw, th).data;
       for (let i = 3; i < d.length; i += 64) { if (d[i] < 250) { hasAlpha = true; break; } }
     }
-    const outUrl = cv.toDataURL(hasAlpha ? 'image/png' : 'image/jpeg', 0.85);
+    const outUrl = cv.toDataURL(hasAlpha ? 'image/png' : 'image/jpeg', cfg.q);
     const outBytes = Math.floor((outUrl.length - outUrl.indexOf(',') - 1) * 3 / 4);
+    try { bmp.close && bmp.close(); } catch (_) {}
     if (outBytes >= item.bytes) return { smaller: false, bytes: outBytes };
 
     say('Inserindo a versão otimizada…');
@@ -370,7 +417,7 @@
       } catch (e) { resolve(e); }
     });
     if (ok !== true) throw new Error((ok && ok.error && ok.error.message) || 'Falha ao inserir.');
-    return { smaller: true, bytes: outBytes, saved: item.bytes - outBytes, format: hasAlpha ? 'PNG' : 'JPG' };
+    return { smaller: true, bytes: outBytes, saved: item.bytes - outBytes, format: hasAlpha ? 'PNG' : 'JPG', w: tw, h: th };
   }
 
   /* Insert the doodle PNG onto the active slide, positioned so it lands
@@ -732,6 +779,6 @@
     inPowerPoint, getActiveSlideImage, insertDoodle, insertImage, openDrawDialog,
     openImageEditDialog, getSlideSizeSync, detectSlideSize, SLIDE_W_PT, SLIDE_H_PT,
     apiSupported, applyTextStyle, insertStylesReference,
-    getImageAudit, goToSlide, optimizeImage,
+    getImageAudit, goToSlide, optimizeImage, getImageThumbnail,
   };
 })(window);
