@@ -89,4 +89,14 @@
   <Relationship Id="radItem30" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItem30.png"/>
   <Relationship Id="radItem40" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItem40.png"/>
   <Relationship Id="radItem50" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/radItem50.png"/>
+  <Relationship Id="anchorPick" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/anchorPick.png"/>
+  <Relationship Id="ancItemD" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ancItemD.png"/>
+  <Relationship Id="ancItem50" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ancItem50.png"/>
+  <Relationship Id="ancItem100" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ancItem100.png"/>
+  <Relationship Id="ancItem150" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ancItem150.png"/>
+  <Relationship Id="ancItem200" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ancItem200.png"/>
+  <Relationship Id="ancItem250" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ancItem250.png"/>
+  <Relationship Id="ancItem300" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ancItem300.png"/>
+  <Relationship Id="ancItem400" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ancItem400.png"/>
+  <Relationship Id="ancItem500" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ancItem500.png"/>
 </Relationships>

@@ -563,6 +563,41 @@ for _rid, _lab, _rv in (("radItemP", "Padrão", 0), ("radItem10", "10 px", 10),
     draw_rad_item(_lab, _rv).save(os.path.join(OUT, _rid + ".png"))
 
 
+def draw_anchor_pick():
+    """Icone do dropdown de medida da ancora: barra esquerda + caixa encostada."""
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.line((14, 12, 14, 52), fill=AZUL, width=5)          # barra de ancoragem
+    d.rectangle((20, 24, 48, 44), outline=ROSA, width=4)  # caixa encostada
+    d.line((40, 34, 25, 34), fill=ROSA, width=3)          # seta empurrando <-
+    d.polygon([(23, 34), (29, 30), (29, 38)], fill=ROSA)
+    return img
+
+
+def draw_anc_item(label, is_default=False):
+    """Item do dropdown de medida: barra + caixinha + rotulo baked-in
+    (no Mac, itens de gallery so renderizam com imagem)."""
+    W, H = 88, 36
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.line((9, 5, 9, 31), fill=AZUL, width=3)
+    d.rectangle((13, 12, 30, 24), outline=ROSA if is_default else AZUL, width=2)
+    f = font(15, bold=True)
+    bb = d.textbbox((0, 0), label, font=f)
+    d.text((38, (H - (bb[3] - bb[1])) / 2 - bb[1]), label, font=f,
+           fill=ROSA if is_default else (30, 30, 30, 255))
+    return img
+
+
+draw_anchor_pick().save(os.path.join(OUT, "anchorPick.png"))
+for _aid, _alab, _adef in (("ancItemD", "Padrão", True), ("ancItem50", "0,5 cm", False),
+                           ("ancItem100", "1 cm", False), ("ancItem150", "1,5 cm", False),
+                           ("ancItem200", "2 cm", False), ("ancItem250", "2,5 cm", False),
+                           ("ancItem300", "3 cm", False), ("ancItem400", "4 cm", False),
+                           ("ancItem500", "5 cm", False)):
+    draw_anc_item(_alab, _adef).save(os.path.join(OUT, _aid + ".png"))
+
+
 print("Icones gerados em", os.path.normpath(OUT))
 for fn in sorted(os.listdir(OUT)):
     print("  ", fn)

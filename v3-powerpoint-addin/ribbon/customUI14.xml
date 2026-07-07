@@ -95,12 +95,21 @@
             screentip="Alinhar ao topo" supertip="Alinha a borda superior dos objetos selecionados (relativo à seleção)."/>
           <button id="distHBtn" label="Distribuir" image="distH" size="large" onAction="DistributeH"
             screentip="Distribuir horizontalmente" supertip="Distribui os objetos selecionados com espaçamento horizontal igual."/>
-          <box id="anchorRow" boxStyle="horizontal">
-            <button id="alignAnchor" label="Âncora esq." image="alignAnchor" onAction="AlignAnchorLeft"
-              screentip="Ancorar à esquerda (seleção)" supertip="Ancora a borda esquerda dos objetos SELECIONADOS à medida ao lado (cm)."/>
-            <editBox id="anchorBox" label="cm" sizeString="0000" getText="GetAnchorText" onChange="SetAnchorText"
-              screentip="Medida da âncora (cm)" supertip="Distância da borda esquerda do slide onde os objetos vão ancorar."/>
-          </box>
+          <button id="alignAnchor" label="Âncora esq." image="alignAnchor" size="large" onAction="AlignAnchorLeft"
+            screentip="Ancorar à esquerda (seleção)" supertip="Ancora a borda esquerda dos objetos SELECIONADOS à medida escolhida no dropdown ao lado (cm)."/>
+          <gallery id="anchorPick" getLabel="GetAnchorLabel" image="anchorPick" size="large"
+            columns="1" itemWidth="88" itemHeight="36" showItemImage="true" showItemLabel="false" onAction="SetAnchorPick"
+            screentip="Medida da âncora" supertip="Distância (cm) da borda esquerda do slide onde os objetos vão ancorar. 'Padrão' = 1,27 cm.">
+            <item id="ancD" image="ancItemD" label="Padrão (1,27 cm)"/>
+            <item id="anc50" image="ancItem50" label="0,5 cm"/>
+            <item id="anc100" image="ancItem100" label="1 cm"/>
+            <item id="anc150" image="ancItem150" label="1,5 cm"/>
+            <item id="anc200" image="ancItem200" label="2 cm"/>
+            <item id="anc250" image="ancItem250" label="2,5 cm"/>
+            <item id="anc300" image="ancItem300" label="3 cm"/>
+            <item id="anc400" image="ancItem400" label="4 cm"/>
+            <item id="anc500" image="ancItem500" label="5 cm"/>
+          </gallery>
         </group>
         <group id="dsGrpAuditoria" label="Auditoria">
           <button id="auditScan" label="Auditar" image="auditScan" size="large" onAction="AuditScan"

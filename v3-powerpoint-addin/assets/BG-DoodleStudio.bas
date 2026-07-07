@@ -409,6 +409,30 @@ Public Sub SetAnchorText(control As IRibbonControl, text As String)
     If v > 0 Then gAnchorCm = v
 End Sub
 
+' Dropdown de medida da ancora (gallery). Label mostra o valor atual;
+' cada item seta gAnchorCm (id "ancD" = padrao 1,27; "anc50" = 0,5 cm...).
+Public Sub GetAnchorLabel(control As IRibbonControl, ByRef returnedVal)
+    ' Format "0.##" no locale pt-BR pode deixar um separador solto ("3," em vez
+    ' de "3") — normaliza pra vírgula e tira separador decimal pendurado.
+    Dim t As String
+    t = Replace(Format(AnchorCm, "0.##"), ".", ",")
+    Do While Len(t) > 0 And Right$(t, 1) = ","
+        t = Left$(t, Len(t) - 1)
+    Loop
+    returnedVal = "Medida: " & t & " cm"
+End Sub
+
+Public Sub SetAnchorPick(control As IRibbonControl, id As String, index As Integer)
+    If id = "ancD" Then
+        gAnchorCm = 0                       ' 0 -> AnchorCm() devolve 1,27 (padrao)
+    Else
+        gAnchorCm = CSng(Val(Mid$(id, 4))) / 100#   ' "anc150" -> 1,5 cm
+    End If
+    On Error Resume Next
+    gRibbon.InvalidateControl "anchorPick"
+    On Error GoTo 0
+End Sub
+
 ' Alinha a borda esquerda a' ancora.
 '  - Se houver OBJETOS selecionados: alinha esses (qualquer tipo).
 '  - Se NADA estiver selecionado: alinha automaticamente todas as
