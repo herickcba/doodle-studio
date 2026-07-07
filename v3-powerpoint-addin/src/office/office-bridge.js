@@ -710,6 +710,113 @@
     }
   }
 
+  /* Nome/dimensões da (única) shape selecionada. count=0/2+ quando não é uma só. */
+  async function _selectedShape() {
+    try {
+      return await PowerPoint.run(async (context) => {
+        const shapes = context.presentation.getSelectedShapes();
+        shapes.load('items');
+        await context.sync();
+        const arr = shapes.items || [];
+        if (arr.length !== 1) return { count: arr.length };
+        arr[0].load('name,width,height');
+        await context.sync();
+        return { count: 1, name: arr[0].name, w: arr[0].width, h: arr[0].height };
+      });
+    } catch (_) { return { count: -1 }; }
+  }
+
+  /* slideFile -> {pos, sldId} na ordem real (sldIdLst do presentation.xml). */
+  async function _buildFileToPos(file, byName, cache) {
+    const map = {};
+    try {
+      const pXml = await _entryText(file, byName['ppt/presentation.xml'], cache);
+      const pRels = await _entryText(file, byName['ppt/_rels/presentation.xml.rels'], cache);
+      const ridToFile = {};
+      pRels.replace(/<Relationship [^>]*Id="([^"]+)"[^>]*Target="slides\/([^"]+)"[^>]*>/g,
+        (_, rid, f) => { ridToFile[rid] = f; return _; });
+      let pos = 0;
+      pXml.replace(/<p:sldId [^>]*id="(\d+)"[^>]*r:id="([^"]+)"/g, (_, sldId, rid) => {
+        pos += 1; if (ridToFile[rid]) map[ridToFile[rid]] = { pos: pos, sldId: +sldId }; return _;
+      });
+    } catch (_) {}
+    return map;
+  }
+
+  /* Resolve a imagem SELECIONADA no slide -> item (mídia + aparição) e prime o
+     cache (bytes+pics). Casa a shape pelo nome (cNvPr@name) no XML dos slides;
+     desempata por tamanho exibido. Se `items` (auditoria) vier, restringe a
+     varredura aos slides que têm imagem. Retorna {none|multi|unmatched|item}. */
+  async function getSelectedImage(items) {
+    if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
+    const sel = await _selectedShape();
+    if (!sel || sel.count === 0) return { none: true };
+    if (sel.count !== 1) return { multi: true };
+    let file = null;
+    try {
+      file = await _getFile();
+      const cache = new Map();
+      const entries = await _readCentralDir(file, cache);
+      const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
+      const fileToPos = await _buildFileToPos(file, byName, cache);
+
+      let slideFiles = null;
+      if (items && items.length) {
+        const s = {};
+        items.forEach((it) => (it.slides || []).forEach((u) => { if (u.slideFile) s[u.slideFile] = 1; }));
+        slideFiles = Object.keys(s);
+      }
+      if (!slideFiles || !slideFiles.length) {
+        slideFiles = entries.filter((en) => /^ppt\/slides\/slide\d+\.xml$/.test(en.name))
+          .map((en) => en.name.replace('ppt/slides/', ''));
+      }
+
+      const cands = []; // {base, slideFile, dw, dh}
+      for (let k = 0; k < slideFiles.length; k++) {
+        const slideFile = slideFiles[k];
+        const sEnt = byName['ppt/slides/' + slideFile];
+        if (!sEnt) continue;
+        let xml; try { xml = await _entryText(file, sEnt, cache); } catch (_) { continue; }
+        const segs = xml.split('<p:pic>');
+        let relsText = null;
+        for (let i = 1; i < segs.length; i++) {
+          const seg = segs[i];
+          const mN = seg.match(/<p:cNvPr\b[^>]*\bname="([^"]*)"/);
+          if (!mN || mN[1] !== sel.name) continue;
+          const mR = seg.match(/r:embed="([^"]+)"/);
+          if (!mR) continue;
+          if (relsText == null) {
+            try { relsText = await _entryText(file, byName['ppt/slides/_rels/' + slideFile + '.rels'], cache); }
+            catch (_) { relsText = ''; }
+          }
+          const reM = relsText.match(new RegExp('Id="' + mR[1] + '"[^>]*Target="\\.\\./media/([^"]+)"'))
+            || relsText.match(new RegExp('Target="\\.\\./media/([^"]+)"[^>]*Id="' + mR[1] + '"'));
+          if (!reM) continue;
+          const mExt = seg.match(/<a:ext cx="(\d+)" cy="(\d+)"/);
+          cands.push({ base: reM[1], slideFile: slideFile,
+            dw: mExt ? +mExt[1] / 12700 : 0, dh: mExt ? +mExt[2] / 12700 : 0 });
+        }
+      }
+      if (!cands.length) return { unmatched: true, name: sel.name };
+      let best = cands[0];
+      if (cands.length > 1 && sel.w) {
+        let bestD = Infinity;
+        cands.forEach((c) => { const d = Math.abs(c.dw - sel.w) + Math.abs(c.dh - sel.h); if (d < bestD) { bestD = d; best = c; } });
+      }
+      const ent = byName['ppt/media/' + best.base];
+      if (!ent) return { unmatched: true, name: sel.name };
+      const ext = (best.base.match(/\.([a-z0-9]+)$/i) || [, ''])[1].toLowerCase();
+      const fp = fileToPos[best.slideFile] || {};
+      const item = { name: 'ppt/media/' + best.base, base: best.base, ext: ext,
+        bytes: ent.csize, usize: ent.usize,
+        slides: [{ slideFile: best.slideFile, pos: fp.pos, sldId: fp.sldId }] };
+      try { _imgCache = await _readItem(file, byName, item, cache); } catch (_) {}
+      return { item: item };
+    } finally {
+      if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
+    }
+  }
+
   /* Insert the doodle PNG onto the active slide, positioned so it lands
      where it was drawn over the slide backdrop.
      png = { dataUrl, bbox:{x,y,w,h}, frame:{w,h} } from Doodle.exportTransparentPNG(). */
@@ -1070,6 +1177,6 @@
     openImageEditDialog, getSlideSizeSync, detectSlideSize, SLIDE_W_PT, SLIDE_H_PT,
     apiSupported, applyTextStyle, insertStylesReference,
     getImageAudit, goToSlide, optimizeImage, optimizeAll, getImageThumbnail,
-    exportAllImages, replaceImage,
+    exportAllImages, replaceImage, getSelectedImage,
   };
 })(window);

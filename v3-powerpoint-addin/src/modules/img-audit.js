@@ -12,6 +12,7 @@
 
   const runBtn = document.getElementById('imgaRun');
   const summary = document.getElementById('imgaSummary');
+  const selectedBtn = document.getElementById('imgaSelected');
   const bulk = document.getElementById('imgaBulk');
   const downloadAllBtn = document.getElementById('imgaDownloadAll');
   const optAllBtn = document.getElementById('imgaOptAll');
@@ -144,6 +145,27 @@
       optStatus.textContent = 'Não deu: ' + (e && e.message ? e.message : e);
     } finally {
       optBtn.disabled = isVector(selected); replaceBtn.disabled = false;
+    }
+  });
+
+  // Inspecionar a imagem SELECIONADA no slide (resolve → abre o card de detalhe)
+  selectedBtn.addEventListener('click', async () => {
+    if (!inPP()) { summary.textContent = 'Disponível apenas dentro do PowerPoint.'; return; }
+    selectedBtn.disabled = true;
+    const prev = selectedBtn.textContent;
+    selectedBtn.textContent = 'Procurando a seleção…';
+    try {
+      const res = await window.OfficeBridge.getSelectedImage(items);
+      if (res.none) { summary.textContent = 'Selecione uma imagem no slide e clique de novo.'; return; }
+      if (res.multi) { summary.textContent = 'Selecione só UMA imagem no slide.'; return; }
+      if (res.unmatched) { summary.textContent = 'Não identifiquei a seleção como imagem do arquivo (se colou agora, salve e tente).'; return; }
+      const existing = items.find((it) => it.base === res.item.base) || res.item;
+      await select(existing);
+    } catch (e) {
+      summary.textContent = 'Não deu: ' + (e && e.message ? e.message : e);
+    } finally {
+      selectedBtn.disabled = false;
+      selectedBtn.textContent = prev;
     }
   });
 
