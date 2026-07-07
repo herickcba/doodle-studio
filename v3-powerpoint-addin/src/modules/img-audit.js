@@ -26,7 +26,7 @@
 
   let items = [];
   let selected = null;   // item atualmente selecionado
-  let level = 'suave';
+  let level = 'fiel';
 
   // segmented control de nível
   levelSeg.querySelectorAll('.seg-btn').forEach((b) => {
@@ -85,7 +85,7 @@
         const img = document.createElement('img');
         img.src = thumb.url; img.alt = it.base;
         preview.appendChild(img);
-        if (thumb.w) meta.innerHTML += ' · ' + thumb.w + '×' + thumb.h + ' px';
+        if (thumb.w) meta.innerHTML += ' · ' + thumb.w + '×' + thumb.h + ' px' + (thumb.cropped ? ' (recortada)' : '');
       } else {
         preview.innerHTML = '<span class="imga-preview-ph">Sem pré-visualização</span>';
       }
@@ -102,8 +102,10 @@
       if (!r.smaller) {
         optStatus.textContent = 'Nesse nível a imagem não fica menor que ' + fmt(selected.bytes) + '. Tente um nível mais forte.';
       } else {
+        const kept = r.cropped || r.rotated
+          ? ' Recorte, posição e proporção mantidos.' : '';
         optStatus.textContent = 'Versão ' + r.format + ' de ' + fmt(r.bytes) + ' inserida por cima (economia de ' +
-          fmt(r.saved) + '). Apague a original: ela fica logo atrás da nova.';
+          fmt(r.saved) + ').' + kept + ' Apague a original: ela fica logo atrás da nova.';
       }
     } catch (e) {
       optStatus.textContent = 'Não deu: ' + (e && e.message ? e.message : e);

@@ -139,11 +139,11 @@
     <section class="imga-detail hidden" id="imgaDetail">
       <div class="imga-preview" id="imgaPreview"><span class="imga-preview-ph">Pré-visualização</span></div>
       <div class="imga-detail-meta" id="imgaMeta"></div>
-      <div class="imga-level-label">Otimização <span>(quanto menos, mais fiel ao original)</span></div>
+      <div class="imga-level-label">Otimização <span>(preserva recorte, posição e proporção)</span></div>
       <div class="seg" id="imgaLevel" role="group" aria-label="Nível de otimização">
-        <button class="seg-btn active" data-level="suave" title="Menos destrutivo: mantém mais resolução e qualidade">Suave</button>
-        <button class="seg-btn" data-level="media" title="Equilíbrio entre peso e qualidade">Média</button>
-        <button class="seg-btn" data-level="forte" title="Peso mínimo (mais perda)">Forte</button>
+        <button class="seg-btn active" data-level="fiel" title="Mantém a resolução original da parte visível — só recomprime. Perda mínima.">Fiel</button>
+        <button class="seg-btn" data-level="equilibrado" title="Até 2× o tamanho exibido — bom para tela">Equilibrado</button>
+        <button class="seg-btn" data-level="compacto" title="Peso mínimo (mais compressão)">Compacto</button>
       </div>
       <button class="btn primary block" id="imgaOpt" title="Insere uma versão menor no tamanho exibido, sobre a original — depois apague a original.">Otimizar imagem</button>
       <div class="status" id="imgaOptStatus"></div>

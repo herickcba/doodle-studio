@@ -294,24 +294,44 @@
       bmp: 'image/bmp', webp: 'image/webp', tif: 'image/tiff', tiff: 'image/tiff' }[ext] || '';
   }
 
-  async function _placeFor(file, byName, item, cache) {
+  /* Lê como a imagem é USADA no 1º slide: frame (off/ext), recorte (srcRect),
+     rotação e espelho. Assim a otimização reproduz EXATAMENTE o que aparece —
+     sem esticar a imagem inteira dentro do frame de um crop. */
+  async function _picInfoFor(file, byName, item, cache) {
     const use = item.slides && item.slides[0];
-    if (!(use && byName['ppt/slides/' + use.slideFile])) return null;
+    if (!(use && byName['ppt/slides/' + use.slideFile])) return { place: null };
     try {
       const rels = await _entryText(file, byName['ppt/slides/_rels/' + use.slideFile + '.rels'], cache);
       let rid = null;
       rels.replace(new RegExp('<Relationship [^>]*Id="([^"]+)"[^>]*Target="\\.\\./media/' +
         item.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"', 'g'), (_, r) => { rid = r; return _; });
-      if (!rid) return null;
+      if (!rid) return { place: null };
       const sx = await _entryText(file, byName['ppt/slides/' + use.slideFile], cache);
-      const pic = sx.split('<p:pic>').find((seg) => seg.indexOf('r:embed="' + rid + '"') >= 0);
-      if (!pic) return null;
-      const mOff = pic.match(/<a:off x="(-?\d+)" y="(-?\d+)"/);
-      const mExt = pic.match(/<a:ext cx="(\d+)" cy="(\d+)"/);
-      if (!mExt) return null;
-      return { left: mOff ? +mOff[1] / 12700 : 0, top: mOff ? +mOff[2] / 12700 : 0,
-        w: +mExt[1] / 12700, h: +mExt[2] / 12700 };
-    } catch (_) { return null; }
+      const seg = sx.split('<p:pic>').find((s) => s.indexOf('r:embed="' + rid + '"') >= 0);
+      if (!seg) return { place: null };
+      const mOff = seg.match(/<a:off x="(-?\d+)" y="(-?\d+)"/);
+      const mExt = seg.match(/<a:ext cx="(\d+)" cy="(\d+)"/);
+      const place = mExt ? { left: mOff ? +mOff[1] / 12700 : 0, top: mOff ? +mOff[2] / 12700 : 0,
+        w: +mExt[1] / 12700, h: +mExt[2] / 12700 } : null;
+      // recorte: srcRect l/t/r/b em 1/1000 de % (fração = /100000)
+      let crop = null;
+      const mSr = seg.match(/<a:srcRect\b([^>]*)>/);
+      if (mSr) {
+        const g = (k) => { const m = mSr[1].match(new RegExp('\\b' + k + '="(-?\\d+)"')); return m ? +m[1] / 100000 : 0; };
+        const l = g('l'), t = g('t'), r = g('r'), b = g('b');
+        if (l || t || r || b) crop = { l: l, t: t, r: r, b: b };
+      }
+      // rotação (1/60000 de grau) + espelho
+      let rot = 0, flipH = false, flipV = false;
+      const mX = seg.match(/<a:xfrm\b([^>]*)>/);
+      if (mX) {
+        const mr = mX[1].match(/\brot="(-?\d+)"/);
+        if (mr) rot = ((+mr[1] / 60000) % 360 + 360) % 360;
+        flipH = /\bflipH="1"/.test(mX[1]);
+        flipV = /\bflipV="1"/.test(mX[1]);
+      }
+      return { place: place, crop: crop, rot: rot, flipH: flipH, flipV: flipV };
+    } catch (_) { return { place: null }; }
   }
 
   async function _loadImageForItem(item, progress) {
@@ -327,78 +347,106 @@
       const ent = byName[item.name];
       if (!ent) throw new Error('Imagem não encontrada (o arquivo mudou? Analise de novo).');
       const bytes = await _entryBytes(file, ent, cache);
-      const place = await _placeFor(file, byName, item, cache);
-      _imgCache = { name: item.name, bytes, mime: _mimeOf(item.ext), place };
+      const pic = await _picInfoFor(file, byName, item, cache);
+      _imgCache = { name: item.name, bytes: bytes, mime: _mimeOf(item.ext), pic: pic };
       return _imgCache;
     } finally {
       if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
     }
   }
 
-  /* Preview (thumbnail data URL) da imagem clicada, pra o usuário ver QUAL é.
-     Retorna { url|null, w, h, place } — url null para vetor (svg/emf/wmf). */
+  /* Desenha a REGIÃO VISÍVEL (aplica crop + espelho) do bitmap num canvas
+     tw×th. Retorna o canvas. */
+  function _drawVisible(bmp, pic, tw, th) {
+    const cr = (pic && pic.crop) || { l: 0, t: 0, r: 0, b: 0 };
+    const cx = Math.round(cr.l * bmp.width), cy = Math.round(cr.t * bmp.height);
+    const cw = Math.max(1, Math.round((1 - cr.l - cr.r) * bmp.width));
+    const ch = Math.max(1, Math.round((1 - cr.t - cr.b) * bmp.height));
+    const cv = document.createElement('canvas'); cv.width = tw; cv.height = th;
+    const ctx = cv.getContext('2d');
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.save();
+    if (pic && (pic.flipH || pic.flipV)) {
+      ctx.translate(pic.flipH ? tw : 0, pic.flipV ? th : 0);
+      ctx.scale(pic.flipH ? -1 : 1, pic.flipV ? -1 : 1);
+    }
+    ctx.drawImage(bmp, cx, cy, cw, ch, 0, 0, tw, th);
+    ctx.restore();
+    return { cv: cv, cw: cw, ch: ch };
+  }
+
+  /* Preview (thumbnail) da imagem clicada — já com o recorte/espelho aplicados,
+     pra o usuário ver EXATAMENTE o que está no slide. Retorna
+     { url|null, w, h, place, cropped } — url null para vetor. */
   async function getImageThumbnail(item, progress) {
     const info = await _loadImageForItem(item, progress);
-    const out = { url: null, w: 0, h: 0, place: info.place };
+    const pic = info.pic || {};
+    const out = { url: null, w: 0, h: 0, place: pic.place, cropped: !!pic.crop };
     if (!info.mime) return out;
     let bmp;
     try { bmp = await createImageBitmap(new Blob([info.bytes], { type: info.mime })); }
     catch (_) { return out; }
-    const max = 320, s = Math.min(1, max / Math.max(bmp.width, bmp.height));
-    const tw = Math.max(1, Math.round(bmp.width * s)), th = Math.max(1, Math.round(bmp.height * s));
-    const cv = document.createElement('canvas'); cv.width = tw; cv.height = th;
-    cv.getContext('2d').drawImage(bmp, 0, 0, tw, th);
-    out.url = cv.toDataURL('image/png'); out.w = bmp.width; out.h = bmp.height;
+    const cr = pic.crop || { l: 0, t: 0, r: 0, b: 0 };
+    const cw = Math.max(1, Math.round((1 - cr.l - cr.r) * bmp.width));
+    const ch = Math.max(1, Math.round((1 - cr.t - cr.b) * bmp.height));
+    const max = 320, s = Math.min(1, max / Math.max(cw, ch));
+    const tw = Math.max(1, Math.round(cw * s)), th = Math.max(1, Math.round(ch * s));
+    const drawn = _drawVisible(bmp, pic, tw, th);
+    out.url = drawn.cv.toDataURL('image/png'); out.w = cw; out.h = ch;
     try { bmp.close && bmp.close(); } catch (_) {}
     return out;
   }
 
-  /* Níveis de otimização — 'suave' é o padrão (menos destrutivo): mantém mais
-     resolução e qualidade; ainda economiza porque reencoda no tamanho exibido. */
+  /* Níveis. 'fiel' (padrão) = mantém a resolução NATIVA da parte visível e só
+     recomprime — perda mínima. Os demais reduzem relativo ao tamanho exibido. */
   const OPT_LEVELS = {
-    suave: { q: 0.92, factor: 3, cap: 2600 },
-    media: { q: 0.85, factor: 2, cap: 1920 },
-    forte: { q: 0.80, factor: 1.5, cap: 1400 },
+    fiel: { q: 0.95, factor: Infinity, cap: 4096 },
+    equilibrado: { q: 0.90, factor: 2, cap: 2600 },
+    compacto: { q: 0.82, factor: 1.5, cap: 1600 },
   };
 
-  /* Re-encode one audited image at its DISPLAYED size and insert it on the
-     same slide, same position (the original must be deleted by hand — the
-     API can't replace it). Returns {smaller:false, bytes} when re-encoding
-     wouldn't save space. `level` ∈ {suave,media,forte}. */
+  /* Reencoda a imagem preservando o que aparece no slide (recorte, espelho,
+     rotação, posição e tamanho) e insere por cima da original (a API não
+     substitui os bytes — a original é apagada à mão). 'fiel' não reduz
+     resolução: só recomprime. Retorna {smaller:false} se não ficar menor. */
   async function optimizeImage(item, level, progress) {
     if (!inPowerPoint()) throw new Error('Disponível apenas dentro do PowerPoint.');
     const say = progress || function () {};
-    const cfg = OPT_LEVELS[level] || OPT_LEVELS.suave;
+    const cfg = OPT_LEVELS[level] || OPT_LEVELS.fiel;
     const info = await _loadImageForItem(item, say);
     if (!info.mime) throw new Error('Formato .' + item.ext + ' (vetor) não converte no navegador.');
-    const place = info.place;
+    const pic = info.pic || {};
+    const place = pic.place;
 
     say('Reprocessando…');
     let bmp;
     try { bmp = await createImageBitmap(new Blob([info.bytes], { type: info.mime })); }
     catch (_) { throw new Error('Não consegui decodificar a imagem.'); }
 
-    // alvo = tamanho exibido × fator do nível; cap por nível; NUNCA upscale.
-    let tw = bmp.width, th = bmp.height;
-    if (place && place.w > 0) {
+    // resolução nativa da parte VISÍVEL (já aplicando o crop)
+    const cr = pic.crop || { l: 0, t: 0, r: 0, b: 0 };
+    const cw = Math.max(1, Math.round((1 - cr.l - cr.r) * bmp.width));
+    const ch = Math.max(1, Math.round((1 - cr.t - cr.b) * bmp.height));
+
+    // 'fiel' mantém cw×ch; os demais reduzem relativo ao tamanho exibido. Nunca upscale.
+    let tw = cw, th = ch;
+    if (place && place.w > 0 && isFinite(cfg.factor)) {
       const disp = Math.round(place.w / 72 * 96 * cfg.factor);
-      if (disp < tw) { th = Math.round(th * disp / tw); tw = disp; }
+      if (disp < tw) { th = Math.max(1, Math.round(th * disp / tw)); tw = disp; }
     }
     const capf = cfg.cap / Math.max(tw, th);
-    if (capf < 1) { tw = Math.round(tw * capf); th = Math.round(th * capf); }
-    if (tw >= bmp.width) { tw = bmp.width; th = bmp.height; }
+    if (capf < 1) { tw = Math.max(1, Math.round(tw * capf)); th = Math.max(1, Math.round(th * capf)); }
 
-    const cv = document.createElement('canvas'); cv.width = tw; cv.height = th;
-    const ctx = cv.getContext('2d');
-    ctx.drawImage(bmp, 0, 0, tw, th);
+    const drawn = _drawVisible(bmp, pic, tw, th);
+    const ctx = drawn.cv.getContext('2d');
 
-    // PNG só se tiver alfa de verdade; senão JPG na qualidade do nível.
+    // PNG só se a parte visível tiver alfa de verdade; senão JPG.
     let hasAlpha = false;
     if (item.ext === 'png' || item.ext === 'webp' || item.ext === 'gif') {
       const d = ctx.getImageData(0, 0, tw, th).data;
       for (let i = 3; i < d.length; i += 64) { if (d[i] < 250) { hasAlpha = true; break; } }
     }
-    const outUrl = cv.toDataURL(hasAlpha ? 'image/png' : 'image/jpeg', cfg.q);
+    const outUrl = drawn.cv.toDataURL(hasAlpha ? 'image/png' : 'image/jpeg', cfg.q);
     const outBytes = Math.floor((outUrl.length - outUrl.indexOf(',') - 1) * 3 / 4);
     try { bmp.close && bmp.close(); } catch (_) {}
     if (outBytes >= item.bytes) return { smaller: false, bytes: outBytes };
@@ -408,16 +456,34 @@
     if (use && use.sldId) { await goToSlide(use.sldId); await new Promise((r) => setTimeout(r, 350)); }
     const base64 = outUrl.split(',')[1];
     const pos = place || { left: 40, top: 40, w: 300, h: 300 * th / tw };
-    const ok = await new Promise((resolve) => {
+    const rotDeg = pic.rot || 0;
+
+    if (rotDeg) {
+      // imagem girada: só o PowerPoint.run reproduz a rotação (setSelectedData não).
       try {
-        Office.context.document.setSelectedDataAsync(base64, {
-          coercionType: Office.CoercionType.Image,
-          imageLeft: pos.left, imageTop: pos.top, imageWidth: pos.w, imageHeight: pos.h,
-        }, (res) => resolve(res.status === Office.AsyncResultStatus.Succeeded ? true : res));
-      } catch (e) { resolve(e); }
-    });
-    if (ok !== true) throw new Error((ok && ok.error && ok.error.message) || 'Falha ao inserir.');
-    return { smaller: true, bytes: outBytes, saved: item.bytes - outBytes, format: hasAlpha ? 'PNG' : 'JPG', w: tw, h: th };
+        await PowerPoint.run(async (context) => {
+          const slide = context.presentation.getActiveSlide();
+          const shape = slide.shapes.addImage(base64);
+          shape.left = pos.left; shape.top = pos.top; shape.width = pos.w; shape.height = pos.h;
+          try { shape.rotation = rotDeg; } catch (_) {}
+          await context.sync();
+        });
+      } catch (_) {
+        throw new Error('Imagem girada — esta versão do PowerPoint não deixa reinserir com rotação. Otimize-a manualmente.');
+      }
+    } else {
+      const ok = await new Promise((resolve) => {
+        try {
+          Office.context.document.setSelectedDataAsync(base64, {
+            coercionType: Office.CoercionType.Image,
+            imageLeft: pos.left, imageTop: pos.top, imageWidth: pos.w, imageHeight: pos.h,
+          }, (res) => resolve(res.status === Office.AsyncResultStatus.Succeeded ? true : res));
+        } catch (e) { resolve(e); }
+      });
+      if (ok !== true) throw new Error((ok && ok.error && ok.error.message) || 'Falha ao inserir.');
+    }
+    return { smaller: true, bytes: outBytes, saved: item.bytes - outBytes, format: hasAlpha ? 'PNG' : 'JPG',
+      w: tw, h: th, cropped: !!pic.crop, rotated: !!rotDeg };
   }
 
   /* Insert the doodle PNG onto the active slide, positioned so it lands
