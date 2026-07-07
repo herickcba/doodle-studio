@@ -4,93 +4,70 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CBA Studio — instalar e usar</title>
-<meta name="description" content="CBA Studio: use online, instale a faixa do PowerPoint e a extensão Doodle + ImaGen. Guia de instalação para macOS e Windows." />
+<meta name="description" content="CBA Studio: a faixa e o painel do PowerPoint. Instale num comando só no Mac, ou use online sem instalar nada." />
 <style>
   :root{
     --bg:#F3F1EB; --surface:#FFFFFF; --surface-2:#FAF9F5;
     --ink:#1B1B22; --muted:#6E6E78; --line:#E7E4DC;
     --azul:#436AE1; --azul-d:#3557c8; --rosa:#FD5E6D; --bege:#EEECE6;
-    --radius:14px; --radius-s:10px;
-    --shadow:none;
+    --radius:14px;
     --font:"Avenir Next","Avenir",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.55;-webkit-font-smoothing:antialiased;}
   a{color:var(--azul);text-decoration:none;}
-  .wrap{max-width:1000px;margin:0 auto;padding:0 22px;}
+  .wrap{max-width:760px;margin:0 auto;padding:0 22px;}
 
-  /* header */
-  header{position:sticky;top:0;z-index:50;background:rgba(243,241,235,.82);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);}
-  .nav{display:flex;align-items:center;gap:18px;height:64px;}
+  header{border-bottom:1px solid var(--line);background:var(--bg);}
+  .nav{display:flex;align-items:center;gap:14px;height:62px;}
   .brand{display:flex;align-items:center;gap:11px;margin-right:auto;}
-  .logo{width:38px;height:38px;border-radius:10px;background:var(--azul);color:#fff;display:grid;place-items:center;font-weight:800;font-size:17px;letter-spacing:.5px;}
-  .brand b{font-size:17px;font-weight:800;letter-spacing:.2px;}
-  .brand span{display:block;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em;}
-  .nav-links{display:flex;gap:6px;}
-  .nav-links a{color:var(--muted);font-size:13.5px;font-weight:600;padding:8px 12px;border-radius:8px;}
-  .nav-links a:hover{color:var(--ink);background:var(--surface);}
+  .logo{width:36px;height:36px;border-radius:9px;background:var(--azul);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.5px;}
+  .brand b{font-size:16px;font-weight:800;}
+  .brand span{display:block;font-size:11px;color:var(--muted);font-weight:600;}
   .nav-cta{background:var(--azul);color:#fff;padding:9px 16px;border-radius:9px;font-weight:700;font-size:13.5px;white-space:nowrap;}
   .nav-cta:hover{background:var(--azul-d);}
-  @media(max-width:720px){ .nav-links{display:none;} }
 
-  /* hero */
-  .hero{padding:64px 0 26px;}
-  .eyebrow{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--rosa);margin-bottom:14px;}
-  .hero h1{margin:0 0 14px;font-size:clamp(30px,5vw,48px);line-height:1.05;font-weight:800;letter-spacing:-.01em;}
+  .hero{padding:52px 0 20px;}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--rosa);margin-bottom:12px;}
+  .hero h1{margin:0 0 12px;font-size:clamp(28px,5vw,40px);line-height:1.08;font-weight:800;letter-spacing:-.01em;}
   .hero h1 .dot{color:var(--rosa);}
-  .hero p{margin:0;font-size:18px;color:var(--muted);max-width:620px;}
-  .hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px;}
-  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:15px;padding:13px 22px;border-radius:11px;border:1px solid transparent;cursor:pointer;white-space:nowrap;}
+  .hero p{margin:0;font-size:17px;color:var(--muted);}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:15px;padding:12px 20px;border-radius:11px;border:1px solid transparent;cursor:pointer;white-space:nowrap;}
   .btn-primary{background:var(--azul);color:#fff;}
   .btn-primary:hover{background:var(--azul-d);}
   .btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--line);}
   .btn-ghost:hover{border-color:#d3d0c7;}
 
-  /* sections */
-  section{padding:26px 0;}
-  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap;}
-  .sec-head h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.01em;}
-  .sec-head p{margin:4px 0 0;color:var(--muted);font-size:14px;}
+  section{padding:22px 0;}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
+  .sec-head h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em;}
+  .sec-head p{margin:3px 0 0;color:var(--muted);font-size:14px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;}
 
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-  @media(max-width:760px){ .grid2{grid-template-columns:1fr;} }
-
-  .online-card{display:flex;align-items:center;gap:22px;flex-wrap:wrap;background:var(--surface-2);}
-  .online-card .ic{width:54px;height:54px;border-radius:13px;background:var(--bege);display:grid;place-items:center;font-size:26px;flex-shrink:0;}
-  .online-card .txt{flex:1;min-width:220px;}
-  .online-card h3{margin:0 0 4px;font-size:19px;font-weight:800;}
-  .online-card p{margin:0;color:var(--muted);font-size:14px;}
-  .pill{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;color:#1f7a4d;background:#dff3e6;padding:2px 9px;border-radius:999px;margin-left:8px;vertical-align:middle;}
-
-  /* OS toggle */
   .ostoggle{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:4px;gap:4px;}
-  .ostoggle button{border:0;background:none;font-family:inherit;font-weight:700;font-size:13.5px;color:var(--muted);padding:8px 18px;border-radius:8px;cursor:pointer;}
+  .ostoggle button{border:0;background:none;font-family:inherit;font-weight:700;font-size:13.5px;color:var(--muted);padding:8px 16px;border-radius:8px;cursor:pointer;}
   .ostoggle button.active{background:var(--azul);color:#fff;}
 
-  .comp-h{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
-  .comp-h .ic{width:40px;height:40px;border-radius:11px;background:var(--bege);display:grid;place-items:center;font-size:20px;flex-shrink:0;}
-  .comp-h h3{margin:0;font-size:18px;font-weight:800;}
-  .comp-sub{color:var(--muted);font-size:13px;margin:0 0 14px;}
-  .beta{font-size:10px;font-weight:800;letter-spacing:.04em;color:#7a5d00;background:#FFE9B0;padding:2px 8px;border-radius:6px;}
-
-  .dl{display:flex;flex-wrap:wrap;gap:9px;margin:4px 0 14px;}
-  .dl a{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13.5px;padding:10px 15px;border-radius:10px;}
-  .dl a.solid{background:var(--azul);color:#fff;}
-  .dl a.solid:hover{background:var(--azul-d);}
-  .dl a.soft{background:var(--surface-2);color:var(--ink);border:1px solid var(--line);}
-  .dl a.soft:hover{border-color:#d3d0c7;}
-
-  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:0;list-style:none;}
-  .chips li{font-size:11.5px;font-weight:700;color:#4a4a54;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap;}
-
-  ol.steps{margin:0;padding-left:20px;color:#3a3a44;font-size:14px;line-height:1.75;}
+  ol.steps{margin:0;padding-left:22px;color:#33333d;font-size:15px;line-height:1.7;}
+  ol.steps li{margin-bottom:10px;}
   ol.steps b{color:var(--ink);}
-  .note{font-size:12.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-top:12px;}
 
-  footer{border-top:1px solid var(--line);margin-top:30px;padding:26px 0 50px;color:var(--muted);font-size:13px;}
-  footer .wrap{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;}
+  .code{display:flex;align-items:stretch;margin:12px 0 2px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#1B1B22;}
+  .code code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;color:#EDEBE4;font-family:var(--mono);font-size:12.5px;padding:13px 14px;}
+  .copy{border:0;border-left:1px solid #33333d;background:var(--azul);color:#fff;font-family:inherit;font-weight:700;font-size:12.5px;padding:0 18px;cursor:pointer;white-space:nowrap;}
+  .copy:hover{background:var(--azul-d);}
+
+  .note{font-size:13px;color:#4a4a54;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-top:12px;}
+  .note b{color:var(--ink);}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0;padding:0;list-style:none;}
+  .chips li{font-size:11.5px;font-weight:700;color:#4a4a54;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;}
+
+  footer{border-top:1px solid var(--line);margin-top:24px;padding:22px 0 46px;color:var(--muted);font-size:13px;}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;}
   footer a{color:var(--muted);font-weight:600;}
   footer a:hover{color:var(--ink);}
   .sep{color:var(--line);}
@@ -104,13 +81,7 @@
       <div class="logo">CB</div>
       <div><b>CBA Studio</b><span>PowerPoint toolkit</span></div>
     </div>
-    <nav class="nav-links">
-      <a href="#online">Usar online</a>
-      <a href="#faixa">Faixa</a>
-      <a href="#extensao">Extensão</a>
-      <a href="#padroes">Padrões</a>
-    </nav>
-    <a class="nav-cta" href="/v2.html" target="_blank" rel="noopener">Abrir online ↗</a>
+    <a class="nav-cta" href="/v2.html" target="_blank" rel="noopener">Usar online ↗</a>
   </div>
 </header>
 
@@ -118,37 +89,28 @@
   <section class="hero">
     <div class="wrap">
       <span class="eyebrow">Instalar &amp; usar</span>
-      <h1>Ferramentas de design B+G<br>direto no seu PowerPoint<span class="dot">.</span></h1>
-      <p>Use online sem instalar nada, ou adicione ao PowerPoint a <b>faixa CBA Studio</b> e a <b>extensão Doodle + ImaGen</b>. Os padrões da marca (paleta, tipos, raio) são configuráveis na página de <a href="#padroes"><b>Padrões</b></a>. Guia para macOS e Windows abaixo.</p>
+      <h1>Ferramentas B+G direto<br>no seu PowerPoint<span class="dot">.</span></h1>
+      <p>A faixa <b>CBA Studio</b> e o painel <b>Doodle · Imagem · Otimização</b>. Instale num comando só, ou use online sem instalar nada.</p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="/v2.html" target="_blank" rel="noopener">🎨 Usar o Doodle Studio online ↗</a>
-        <a class="btn btn-ghost" href="/download/CBA-Studio-instalador.zip" download>📦 Baixar instalador (ZIP)</a>
-        <a class="btn btn-ghost" href="#faixa">↓ Ver o passo a passo</a>
+        <a class="btn btn-primary" href="#instalar">↓ Instalar no PowerPoint</a>
+        <a class="btn btn-ghost" href="/v2.html" target="_blank" rel="noopener">🎨 Usar online ↗</a>
       </div>
+      <ul class="chips">
+        <li>Tipografia B+G</li>
+        <li>Cores &amp; alinhamento</li>
+        <li>Doodle sobre o slide</li>
+        <li>Otimizar imagens do deck</li>
+        <li>Imagens por IA</li>
+      </ul>
     </div>
   </section>
 
-  <!-- USAR ONLINE (v2) -->
-  <section id="online">
-    <div class="wrap">
-      <div class="card online-card">
-        <div class="ic">🎨</div>
-        <div class="txt">
-          <h3>Doodle Studio online <span class="pill">SEM INSTALAR</span></h3>
-          <p>A versão 100% no navegador — desenhe doodles vetoriais (textura giz, suavização, falhas na tinta) e exporte PNG/SVG. Não depende de nenhum add-in.</p>
-        </div>
-        <a class="btn btn-primary" href="/v2.html" target="_blank" rel="noopener">Abrir agora ↗</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- INSTALAR NO POWERPOINT -->
-  <section>
+  <section id="instalar">
     <div class="wrap">
       <div class="sec-head">
         <div>
           <h2>Instalar no PowerPoint</h2>
-          <p>Dois componentes independentes — instale os que quiser. Os arquivos vão para a pasta <b>Downloads</b>.</p>
+          <p>Instala a faixa e o painel de uma vez.</p>
         </div>
         <div class="ostoggle" id="osToggle" role="group" aria-label="Sistema operacional">
           <button data-os="mac" class="active">macOS</button>
@@ -156,113 +118,29 @@
         </div>
       </div>
 
-      <div class="card online-card" style="margin-bottom:16px;">
-        <div class="ic">📦</div>
-        <div class="txt">
-          <h3>Baixar tudo num arquivo só</h3>
-          <p>Um ZIP com a faixa (.ppam), os instaladores de Mac e Windows, o manifesto da extensão e o guia (LEIA-ME). Ideal para enviar para outra pessoa começar a usar.</p>
-        </div>
-        <a class="btn btn-primary" href="/download/CBA-Studio-instalador.zip" download>📦 Baixar instalador (ZIP)</a>
+      <!-- MAC -->
+      <div class="os-mac card">
+        <ol class="steps">
+          <li><b>Abra o Terminal</b> — ⌘+Espaço, digite <b>Terminal</b> e Enter.</li>
+          <li><b>Cole este comando</b> e aperte Enter:
+            <div class="code">
+              <code id="cmd">curl -fsSL https://doodle-studio-app.vercel.app/install-mac.sh | bash</code>
+              <button class="copy" id="copyBtn" type="button">Copiar</button>
+            </div>
+          </li>
+          <li><b>Abra o PowerPoint.</b> Na 1ª vez clique em <b>Ativar Macros</b> — a aba <b>CBA Studio</b> aparece. O painel fica em <b>Inserir → Suplementos → Meus Suplementos → CBA Studio</b>.</li>
+        </ol>
+        <p class="note">💡 <b>Por que o Terminal?</b> Ele instala sem baixar arquivo, então o Mac não bloqueia por segurança (o problema dos instaladores comuns). É um comando só e já instala a faixa e o painel.</p>
+        <p class="note">Prefere baixar? <a href="/download/CBA-Studio-instalador.zip" download><b>Baixar instalador (ZIP)</b></a>. Se o Mac bloquear ao abrir, clique com o <b>botão direito → Abrir</b>, ou vá em <b>Ajustes → Privacidade e Segurança → Abrir Assim Mesmo</b>.</p>
       </div>
 
-      <div class="grid2">
-        <!-- FAIXA -->
-        <div class="card" id="faixa">
-          <div class="comp-h">
-            <div class="ic">🅰️</div>
-            <h3>Faixa “CBA Studio”</h3>
-          </div>
-          <p class="comp-sub">Aba na faixa do PowerPoint com as ferramentas do design system B+G, num clique:</p>
-          <ul class="chips">
-            <li>Tipografia (11 estilos)</li>
-            <li>Entrelinha</li>
-            <li>Negrito · Colar texto · Caps</li>
-            <li>Cores · Preenchimento · Contorno</li>
-            <li>Cantos arredondados</li>
-            <li>Alinhar &amp; distribuir + âncora</li>
-            <li>Inserir caixa / rounded box</li>
-            <li>Auditoria do deck</li>
-            <li>Padrões da marca</li>
-          </ul>
-
-          <div class="os-mac">
-            <div class="dl">
-              <a class="solid" href="/download/BG-DoodleStudio.ppam" download>⬇ Add-in (.ppam)</a>
-              <a class="soft" href="/download/instalar-faixa-mac.command" download>⬇ Instalador (Mac)</a>
-            </div>
-            <ol class="steps">
-              <li>Baixe os <b>dois</b> arquivos (vão para Downloads).</li>
-              <li>Abra o <b>instalador</b>. Se o Mac bloquear, clique com o botão direito → <b>Abrir</b>.</li>
-              <li>Reabra o PowerPoint → <b>Habilitar Macros</b>. A aba <b>CBA Studio</b> aparece.</li>
-            </ol>
-          </div>
-          <div class="os-win" hidden>
-            <div class="dl">
-              <a class="solid" href="/download/BG-DoodleStudio.ppam" download>⬇ Add-in (.ppam)</a>
-              <a class="soft" href="/download/instalar-faixa-windows.bat" download>⬇ Instalador (.bat) <span class="beta">BETA</span></a>
-            </div>
-            <ol class="steps">
-              <li>Baixe os <b>dois</b> arquivos para a pasta Downloads.</li>
-              <li>Rode o <b>instalar-faixa-windows.bat</b>.</li>
-              <li>Abra o PowerPoint → <b>Habilitar Macros</b>. A aba <b>CBA Studio</b> aparece.</li>
-            </ol>
-            <p class="note"><b>Manual</b> (se a aba não aparecer): Arquivo → Opções → Suplementos → em “Gerenciar”, escolha <b>Suplementos do PowerPoint</b> → Ir… → <b>Adicionar Novo…</b> → selecione o .ppam.</p>
-            <p class="note"><b>Validação</b>: o instalador Windows é beta. Antes de distribuir ao time, rode o <a href="/download/WINDOWS-TEST.md" target="_blank" rel="noopener"><b>checklist de teste (~10 min)</b></a> numa máquina Windows e reporte o resultado.</p>
-          </div>
-        </div>
-
-        <!-- EXTENSÃO -->
-        <div class="card" id="extensao">
-          <div class="comp-h">
-            <div class="ic">🖍️</div>
-            <h3>Extensão</h3>
-          </div>
-          <p class="comp-sub">Painel lateral com três abas (Doodle, Imagem, Otimização). Também abre no navegador:</p>
-          <ul class="chips">
-            <li>Doodle sobre o slide</li>
-            <li>Tela grande para desenhar</li>
-            <li>GIF animado do traço</li>
-            <li>Biblioteca de desenhos</li>
-            <li>Imagens por IA</li>
-            <li>Otimizar imagens do deck</li>
-            <li>Baixar / Substituir / Inspecionar</li>
-          </ul>
-
-          <div class="os-mac">
-            <div class="dl">
-              <a class="solid" href="/download/instalar-extensao-mac.command" download>⬇ Instalador (Mac)</a>
-              <a class="soft" href="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html" target="_blank" rel="noopener">↗ Abrir no navegador</a>
-            </div>
-            <ol class="steps">
-              <li>Abra o instalador (botão direito → <b>Abrir</b> se for bloqueado).</li>
-              <li>No PowerPoint: <b>Inserir → Suplementos → Meus Suplementos → CBA Studio</b>.</li>
-            </ol>
-          </div>
-          <div class="os-win" hidden>
-            <div class="dl">
-              <a class="solid" href="/download/manifest.xml" download>⬇ manifest.xml</a>
-              <a class="soft" href="https://doodle-studio-app.vercel.app/src/taskpane/taskpane.html" target="_blank" rel="noopener">↗ Abrir no navegador</a>
-            </div>
-            <ol class="steps">
-              <li>No PowerPoint: <b>Inserir → Suplementos → Meus Suplementos</b>.</li>
-              <li><b>Carregar Meu Suplemento</b> (Upload My Add-in) → escolha o <b>manifest.xml</b>.</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- PADRÕES DA MARCA (Brand Standards) -->
-  <section id="padroes">
-    <div class="wrap">
-      <div class="card online-card">
-        <div class="ic">⚙️</div>
-        <div class="txt">
-          <h3>Padrões da marca <span class="pill">CONFIGURÁVEL</span></h3>
-          <p>Paleta, cores de tipo, escala de tamanhos, entrelinha e raio do rounded — tudo que a faixa aplica vem daqui. Ajuste na página, clique <b>Copiar configuração</b> e cole no PowerPoint em <b>CBA Studio → Padrões → Aplicar config</b>. Vale para todas as apresentações e persiste entre sessões.</p>
-        </div>
-        <a class="btn btn-primary" href="/config.html" target="_blank" rel="noopener">Abrir Brand Standards ↗</a>
+      <!-- WINDOWS -->
+      <div class="os-win card" hidden>
+        <ol class="steps">
+          <li><b>Faixa:</b> baixe o <a href="/download/BG-DoodleStudio.ppam" download><b>add-in (.ppam)</b></a> e rode o <a href="/download/instalar-faixa-windows.bat" download><b>instalador (.bat)</b></a>. Abra o PowerPoint → <b>Ativar Macros</b> → a aba <b>CBA Studio</b> aparece.</li>
+          <li><b>Painel:</b> baixe o <a href="/download/manifest.xml" download><b>manifest.xml</b></a>. No PowerPoint: <b>Inserir → Suplementos → Meus Suplementos → Carregar Meu Suplemento</b> → escolha o manifest.xml.</li>
+        </ol>
+        <p class="note">Tudo num arquivo só: <a href="/download/CBA-Studio-instalador.zip" download><b>Baixar instalador (ZIP)</b></a>. O instalador Windows está em beta — se a faixa não aparecer, adicione o .ppam manualmente em Arquivo → Opções → Suplementos.</p>
       </div>
     </div>
   </section>
@@ -272,20 +150,17 @@
   <div class="wrap">
     <span>© 2026 CBA Studio</span>
     <span class="sep">·</span>
-    <a href="/v2.html" target="_blank" rel="noopener">Usar online (v2)</a>
+    <a href="/v2.html" target="_blank" rel="noopener">Usar online</a>
     <span class="sep">·</span>
     <a href="/config.html" target="_blank" rel="noopener">Padrões da marca</a>
     <span class="sep">·</span>
-    <a href="/download/LEIA-ME.txt" target="_blank" rel="noopener">Guia de instalação</a>
-    <span class="sep">·</span>
-    <a href="/download/WINDOWS-TEST.md" target="_blank" rel="noopener">Checklist Windows</a>
-    <span class="sep">·</span>
-    <a href="/v1.html" target="_blank" rel="noopener">v1 (legado)</a>
+    <a href="/download/LEIA-ME.txt" target="_blank" rel="noopener">Guia</a>
   </div>
 </footer>
 
 <script>
   (function () {
+    // OS toggle
     var toggle = document.getElementById('osToggle');
     var btns = toggle.querySelectorAll('button');
     function setOS(os) {
@@ -294,8 +169,28 @@
       document.querySelectorAll('.os-win').forEach(function (el) { el.hidden = (os !== 'win'); });
     }
     btns.forEach(function (b) { b.addEventListener('click', function () { setOS(b.getAttribute('data-os')); }); });
-    // Auto-detecta Windows
     if (/Win/i.test(navigator.platform || navigator.userAgent)) setOS('win');
+
+    // copiar comando
+    var copyBtn = document.getElementById('copyBtn');
+    var cmd = document.getElementById('cmd');
+    copyBtn.addEventListener('click', function () {
+      var text = cmd.textContent;
+      function done() { copyBtn.textContent = 'Copiado ✓'; setTimeout(function () { copyBtn.textContent = 'Copiar'; }, 1800); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () {
+          var r = document.createRange(); r.selectNode(cmd);
+          var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+          try { document.execCommand('copy'); done(); } catch (e) {}
+          s.removeAllRanges();
+        });
+      } else {
+        var r = document.createRange(); r.selectNode(cmd);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        s.removeAllRanges();
+      }
+    });
   })();
 </script>
 </body>
