@@ -598,6 +598,47 @@ for _aid, _alab, _adef in (("ancItemD", "Padrão", True), ("ancItem50", "0,5 cm"
     draw_anc_item(_alab, _adef).save(os.path.join(OUT, _aid + ".png"))
 
 
+# ---- Âncora topo (botão + dropdown) — espelho vertical dos de esquerda ----
+def draw_align_anchor_top():
+    """Linha de âncora no topo (rosa) + barras alinhadas ao topo (azul)."""
+    img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    ay = 8
+    d.line((4, ay, 28, ay), fill=ROSA, width=2)
+    for x, ln in ((10, 15), (16, 21), (22, 11)):
+        d.line((x, ay + 3, x, ay + 3 + ln), fill=AZUL, width=3)
+    return img
+
+
+def draw_anchor_top_pick():
+    """Dropdown de medida da âncora topo: barra no topo + caixa encostada embaixo."""
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.line((12, 14, 52, 14), fill=AZUL, width=5)          # barra de ancoragem (topo)
+    d.rectangle((22, 20, 42, 48), outline=ROSA, width=4)  # caixa encostada
+    d.line((32, 40, 32, 25), fill=ROSA, width=3)          # seta empurrando p/ cima
+    d.polygon([(32, 23), (28, 29), (36, 29)], fill=ROSA)
+    return img
+
+
+draw_align_anchor_top().save(os.path.join(OUT, "alignAnchorTop.png"))
+draw_anchor_top_pick().save(os.path.join(OUT, "anchorTopPick.png"))
+
+
+# ---- Linhas-guia (toggle): moldura vermelha + colunas ----
+def draw_guides():
+    VERM = (237, 28, 36, 255)
+    img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle((5, 5, 26, 26), outline=VERM, width=2)   # margem
+    d.line((13, 6, 13, 25), fill=VERM, width=1)          # colunas
+    d.line((18, 6, 18, 25), fill=VERM, width=1)
+    return img
+
+
+draw_guides().save(os.path.join(OUT, "guides.png"))
+
+
 print("Icones gerados em", os.path.normpath(OUT))
 for fn in sorted(os.listdir(OUT)):
     print("  ", fn)

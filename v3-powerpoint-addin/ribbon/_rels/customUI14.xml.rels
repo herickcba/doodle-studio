@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="alignAnchor" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/alignAnchor.png"/>
+  <Relationship Id="alignAnchorTop" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/alignAnchorTop.png"/>
+  <Relationship Id="anchorTopPick" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/anchorTopPick.png"/>
+  <Relationship Id="guides" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/guides.png"/>
   <Relationship Id="auditColors" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/auditColors.png"/>
   <Relationship Id="auditFonts" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/auditFonts.png"/>
   <Relationship Id="auditScan" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/auditScan.png"/>

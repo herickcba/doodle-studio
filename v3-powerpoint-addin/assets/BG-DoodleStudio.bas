@@ -19,6 +19,7 @@ Option Explicit
 
 Private gRibbon As IRibbonUI
 Private gAnchorCm As Single   ' ancora esq. (cm); 0 = nao setado -> usa default
+Private gAnchorTopCm As Single ' ancora topo (cm); 0 = nao setado -> usa default
 Private gRadiusOverridePx As Single   ' raio escolhido no dropdown (px @1080); 0 = Padrao (config)
 Private Const C_TRANSP As Long = 5         ' indice da cor = transparente (nao e' cor)
 
@@ -452,6 +453,161 @@ Public Sub AlignAnchorLeft(control As IRibbonControl)
         On Error GoTo 0
     End If
     If n = 0 Then MsgBox "Selecione um ou mais objetos para ancorar.", vbInformation, "CBA Studio"
+End Sub
+
+' ============================================================
+'  ALINHAR a' ancora do TOPO (medida definivel via dropdown, em cm)
+'  Espelho vertical da ancora esquerda. (gAnchorTopCm no topo do modulo)
+' ============================================================
+Private Function AnchorTopCm() As Single
+    If gAnchorTopCm <= 0 Then AnchorTopCm = 1.27 Else AnchorTopCm = gAnchorTopCm
+End Function
+
+Public Sub GetAnchorTopLabel(control As IRibbonControl, ByRef returnedVal)
+    Dim t As String
+    t = Replace(Format(AnchorTopCm, "0.##"), ".", ",")
+    Do While Len(t) > 0 And Right$(t, 1) = ","
+        t = Left$(t, Len(t) - 1)
+    Loop
+    returnedVal = "Medida: " & t & " cm"
+End Sub
+
+' onAction do gallery — id "ancTD" = padrao 1,27; "ancT150" = 1,5 cm...
+Public Sub SetAnchorTopPick(control As IRibbonControl, id As String, index As Integer)
+    If id = "ancTD" Then
+        gAnchorTopCm = 0                        ' 0 -> AnchorTopCm() devolve 1,27 (padrao)
+    Else
+        gAnchorTopCm = CSng(Val(Mid$(id, 5))) / 100#   ' "ancT150" -> 1,5 cm
+    End If
+    On Error Resume Next
+    gRibbon.InvalidateControl "anchorTopPick"
+    On Error GoTo 0
+End Sub
+
+' Ancora a borda SUPERIOR dos OBJETOS SELECIONADOS a' medida (cm). So' seleção.
+Public Sub AlignAnchorTop(control As IRibbonControl)
+    Dim sel As Object, shp As Object, n As Long, y As Single
+    Set sel = ActiveWindow.Selection
+    y = AnchorTopCm * 28.3465               ' cm -> pontos
+    n = 0
+    If sel.Type = ppSelectionShapes Then
+        On Error Resume Next
+        For Each shp In sel.ShapeRange
+            shp.Top = y
+            n = n + 1
+        Next shp
+        On Error GoTo 0
+    End If
+    If n = 0 Then MsgBox "Selecione um ou mais objetos para ancorar.", vbInformation, "CBA Studio"
+End Sub
+
+' ============================================================
+'  LINHAS-GUIA (toggle): margem de 3,15 cm em todos os lados +
+'  4 colunas com gutter de 2x o raio padrao. No slide atual.
+'  Shapes marcadas com nome "CBAGuide*" p/ localizar e remover.
+' ============================================================
+Public Sub ToggleGuides(control As IRibbonControl, pressed As Boolean)
+    Dim sld As Object
+    Set sld = CurrentSlide()
+    If sld Is Nothing Then Exit Sub
+    ' toggla pelo estado REAL do slide (robusto ao trocar de slide)
+    If SlideHasGuides(sld) Then
+        RemoveGuides sld
+    Else
+        DrawGuides sld
+    End If
+    On Error Resume Next
+    gRibbon.InvalidateControl "guidesToggle"
+    On Error GoTo 0
+End Sub
+
+Public Sub GetGuidesPressed(control As IRibbonControl, ByRef returnedVal)
+    Dim sld As Object
+    returnedVal = False
+    Set sld = CurrentSlide()
+    If sld Is Nothing Then Exit Sub
+    returnedVal = SlideHasGuides(sld)
+End Sub
+
+Private Function SlideHasGuides(ByVal sld As Object) As Boolean
+    Dim s As Object
+    SlideHasGuides = False
+    On Error Resume Next
+    For Each s In sld.Shapes
+        If Left$(s.Name, 8) = "CBAGuide" Then SlideHasGuides = True: Exit Function
+    Next s
+    On Error GoTo 0
+End Function
+
+Private Sub RemoveGuides(ByVal sld As Object)
+    Dim i As Long
+    On Error Resume Next
+    For i = sld.Shapes.Count To 1 Step -1
+        If Left$(sld.Shapes(i).Name, 8) = "CBAGuide" Then sld.Shapes(i).Delete
+    Next i
+    On Error GoTo 0
+End Sub
+
+Private Sub DrawGuides(ByVal sld As Object)
+    Dim mpt As Single, sw As Single, sh As Single, Wi As Single, Hi As Single
+    Dim g As Single, c As Single, i As Long, x As Single
+    Dim col As Long, wpt As Single
+    Dim box As Object, ln As Object
+    Dim names() As String, cnt As Long, rng As Object, grp As Object
+    Dim xs(0 To 5) As Single
+
+    EnsureCfg
+    sw = ActivePresentation.PageSetup.SlideWidth
+    sh = ActivePresentation.PageSetup.SlideHeight
+    mpt = 3.15 * 28.3465                          ' 3,15 cm -> pontos
+    Wi = sw - 2 * mpt
+    Hi = sh - 2 * mpt
+    If Wi <= 0 Or Hi <= 0 Then Exit Sub
+    g = 2 * (CDbl(gRadiusPx) / 1080#) * sh        ' gutter = 2x o raio padrao (config)
+    c = (Wi - 3 * g) / 4                          ' largura de cada coluna
+    col = RGB(237, 28, 36)                        ' vermelho guia
+    wpt = 0.75
+
+    ReDim names(0 To 6)
+    cnt = 0
+
+    ' moldura (margem de 3,15 cm)
+    On Error Resume Next
+    Set box = sld.Shapes.AddShape(msoShapeRectangle, mpt, mpt, Wi, Hi)
+    box.Fill.Visible = msoFalse
+    box.Line.ForeColor.RGB = col
+    box.Line.Weight = wpt
+    box.Line.DashStyle = msoLineDash
+    box.Name = "CBAGuideBox"
+    names(cnt) = box.Name: cnt = cnt + 1
+
+    ' 6 linhas internas (bordas dos gutters entre as 4 colunas)
+    If c > 0 Then
+        xs(0) = mpt + c
+        xs(1) = mpt + c + g
+        xs(2) = mpt + 2 * c + g
+        xs(3) = mpt + 2 * c + 2 * g
+        xs(4) = mpt + 3 * c + 2 * g
+        xs(5) = mpt + 3 * c + 3 * g
+        For i = 0 To 5
+            x = xs(i)
+            Set ln = sld.Shapes.AddLine(x, mpt, x, sh - mpt)
+            ln.Line.ForeColor.RGB = col
+            ln.Line.Weight = wpt
+            ln.Line.DashStyle = msoLineDash
+            ln.Name = "CBAGuideCol" & i
+            names(cnt) = ln.Name: cnt = cnt + 1
+        Next i
+    End If
+
+    ' agrupa (se der) num unico objeto de guia — evita mexer numa linha por vez
+    If cnt > 1 Then
+        ReDim Preserve names(0 To cnt - 1)
+        Set rng = sld.Shapes.Range(names)
+        Set grp = rng.Group
+        grp.Name = "CBAGuides"
+    End If
+    On Error GoTo 0
 End Sub
 
 ' Alinhar/distribuir tradicionais. NAO usamos ShapeRange.Align (no Mac o enum

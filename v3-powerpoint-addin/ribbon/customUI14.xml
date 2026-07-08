@@ -9,6 +9,12 @@
             screentip="Inserir caixa de texto" supertip="Cria uma caixa de texto no slide atual (Avenir Next), na margem da âncora."/>
           <button id="insRoundBox" label="Rounded box" image="insRoundBox" size="large" onAction="InsertRoundedBox"
             screentip="Inserir caixa arredondada" supertip="Cria um retângulo de cantos arredondados no raio padrão, preenchido (branco, ou bege se o fundo for branco), no centro do slide."/>
+          <button id="dsPaste"  label="Colar texto" image="dsPaste"  size="large" onAction="PasteTextOnly"
+            screentip="Colar sem formatação" supertip="Cola o conteúdo da área de transferência como texto simples (sem formatação de origem)."/>
+        </group>
+        <group id="dsGrpGuias" label="Guias">
+          <toggleButton id="guidesToggle" label="Linhas-guia" image="guides" size="large" onAction="ToggleGuides" getPressed="GetGuidesPressed"
+            screentip="Linhas-guia (liga/desliga)" supertip="Desenha no slide atual linhas-guia vermelhas: margem de 3,15 cm em todos os lados e 4 colunas com gutter de 2× o raio padrão. Clique de novo para remover. São linhas no slide — desligue antes de exportar."/>
         </group>
         <group id="dsGrpTipografia" label="Tipografia">
           <button id="dsHero"       label="Statement 120" image="sqHero"       onAction="ApplyStyle" screentip="Statement · 120pt" supertip="A frase-manifesto da página. Avenir Next Bold · 120pt · 0.8x · magenta, ponto azul."/>
@@ -37,8 +43,6 @@
         <group id="dsGrpTexto" label="Texto">
           <button id="dsBold"   label="Negrito"     image="dsBold"   size="large" onAction="ToggleBold"
             screentip="Negrito" supertip="Liga/desliga o negrito do texto selecionado."/>
-          <button id="dsPaste"  label="Colar texto" image="dsPaste"  size="large" onAction="PasteTextOnly"
-            screentip="Colar sem formatação" supertip="Cola o conteúdo da área de transferência como texto simples (sem formatação de origem)."/>
           <button id="dsCaps"   label="Caps"        image="dsCaps"   size="large" onAction="CapsLoose"
             screentip="Caps + loose" supertip="Deixa o texto selecionado em MAIÚSCULAS e com o espaçamento entre letras solto (loose)."/>
           <button id="dsExpand" label="Expandir"    image="dsExpand" size="large" onAction="ExpandContent"
@@ -109,6 +113,21 @@
             <item id="anc300" image="ancItem300" label="3 cm"/>
             <item id="anc400" image="ancItem400" label="4 cm"/>
             <item id="anc500" image="ancItem500" label="5 cm"/>
+          </gallery>
+          <button id="alignAnchorTop" label="Âncora topo" image="alignAnchorTop" size="large" onAction="AlignAnchorTop"
+            screentip="Ancorar ao topo (seleção)" supertip="Ancora a borda superior dos objetos SELECIONADOS à medida escolhida no dropdown ao lado (cm)."/>
+          <gallery id="anchorTopPick" getLabel="GetAnchorTopLabel" image="anchorTopPick" size="large"
+            columns="1" itemWidth="88" itemHeight="36" showItemImage="true" showItemLabel="false" onAction="SetAnchorTopPick"
+            screentip="Medida da âncora topo" supertip="Distância (cm) da borda superior do slide onde os objetos vão ancorar. 'Padrão' = 1,27 cm.">
+            <item id="ancTD" image="ancItemD" label="Padrão (1,27 cm)"/>
+            <item id="ancT50" image="ancItem50" label="0,5 cm"/>
+            <item id="ancT100" image="ancItem100" label="1 cm"/>
+            <item id="ancT150" image="ancItem150" label="1,5 cm"/>
+            <item id="ancT200" image="ancItem200" label="2 cm"/>
+            <item id="ancT250" image="ancItem250" label="2,5 cm"/>
+            <item id="ancT300" image="ancItem300" label="3 cm"/>
+            <item id="ancT400" image="ancItem400" label="4 cm"/>
+            <item id="ancT500" image="ancItem500" label="5 cm"/>
           </gallery>
         </group>
         <group id="dsGrpAuditoria" label="Auditoria">
