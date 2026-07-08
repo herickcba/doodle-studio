@@ -6,8 +6,9 @@ São DOIS componentes para o PowerPoint:
 1) FAIXA "CBA Studio" (add-in .ppam) — aba na faixa com: tipografia B+G
    (11 estilos), entrelinha, negrito/colar texto/caps, cores/preenchimento/
    contorno, cantos arredondados, alinhar & distribuir + âncora (esquerda
-   e topo, com medida em cm), linhas-guia (margem 3,15 cm + 4 colunas),
-   inserir caixa/rounded box, auditoria do deck e Padrões da marca.
+   e topo, com medida em cm), linhas-guia em todos os slides (margem
+   3,15 cm + 4 colunas; cor adapta ao fundo: vermelha no claro, branca
+   no escuro/colorido), inserir caixa/rounded box, auditoria e Padrões.
 
 2) EXTENSÃO (painel lateral — abas Doodle / Imagem / Otimização):
    desenhe sobre o slide (tela grande, GIF animado, biblioteca), gere

@@ -502,32 +502,41 @@ Public Sub AlignAnchorTop(control As IRibbonControl)
 End Sub
 
 ' ============================================================
-'  LINHAS-GUIA (toggle): margem de 3,15 cm em todos os lados +
-'  4 colunas com gutter de 2x o raio padrao. No slide atual.
-'  Shapes marcadas com nome "CBAGuide*" p/ localizar e remover.
+'  LINHAS-GUIA (toggle CROSS-SLIDE): margem de 3,15 cm em todos os
+'  lados + 4 colunas com gutter de 2x o raio padrao, em TODOS os
+'  slides. A cor adapta ao fundo de cada slide: fundo claro -> vermelha;
+'  escuro/colorido -> branca. Shapes marcadas "CBAGuide*".
 ' ============================================================
 Public Sub ToggleGuides(control As IRibbonControl, pressed As Boolean)
     Dim sld As Object
-    Set sld = CurrentSlide()
-    If sld Is Nothing Then Exit Sub
-    ' toggla pelo estado REAL do slide (robusto ao trocar de slide)
-    If SlideHasGuides(sld) Then
-        RemoveGuides sld
-    Else
-        DrawGuides sld
-    End If
     On Error Resume Next
+    If ActivePresentation.Slides.Count = 0 Then Exit Sub
+    If PresHasGuides() Then
+        For Each sld In ActivePresentation.Slides
+            RemoveGuides sld
+        Next sld
+    Else
+        For Each sld In ActivePresentation.Slides
+            DrawGuides sld
+        Next sld
+    End If
     gRibbon.InvalidateControl "guidesToggle"
     On Error GoTo 0
 End Sub
 
 Public Sub GetGuidesPressed(control As IRibbonControl, ByRef returnedVal)
-    Dim sld As Object
-    returnedVal = False
-    Set sld = CurrentSlide()
-    If sld Is Nothing Then Exit Sub
-    returnedVal = SlideHasGuides(sld)
+    returnedVal = PresHasGuides()
 End Sub
+
+' Ha' guias no deck? (checa o 1o slide — sao aplicadas em todos de uma vez)
+Private Function PresHasGuides() As Boolean
+    PresHasGuides = False
+    On Error Resume Next
+    If ActivePresentation.Slides.Count >= 1 Then
+        PresHasGuides = SlideHasGuides(ActivePresentation.Slides(1))
+    End If
+    On Error GoTo 0
+End Function
 
 Private Function SlideHasGuides(ByVal sld As Object) As Boolean
     Dim s As Object
@@ -565,7 +574,7 @@ Private Sub DrawGuides(ByVal sld As Object)
     If Wi <= 0 Or Hi <= 0 Then Exit Sub
     g = 2 * (CDbl(gRadiusPx) / 1080#) * sh        ' gutter = 2x o raio padrao (config)
     c = (Wi - 3 * g) / 4                          ' largura de cada coluna
-    col = RGB(237, 28, 36)                        ' vermelho guia
+    col = GuideColor(sld)                         ' vermelha (fundo claro) ou branca (escuro/colorido)
     wpt = 0.75
 
     ReDim names(0 To 6)
@@ -609,6 +618,67 @@ Private Sub DrawGuides(ByVal sld As Object)
     End If
     On Error GoTo 0
 End Sub
+
+' Cor da guia conforme o fundo do slide: claro e neutro -> vermelha;
+' escuro OU colorido (saturado) -> branca. Desconhecido -> vermelha.
+Private Function GuideColor(ByVal sld As Object) As Long
+    Dim rgbBg As Long, r As Long, g As Long, b As Long
+    Dim mx As Long, mn As Long, L As Double, chroma As Double
+    rgbBg = SlideBgColor(sld)
+    If rgbBg < 0 Then GuideColor = RGB(237, 28, 36): Exit Function
+    r = rgbBg And &HFF
+    g = (rgbBg \ &H100) And &HFF
+    b = (rgbBg \ &H10000) And &HFF
+    mx = r: If g > mx Then mx = g
+    If b > mx Then mx = b
+    mn = r: If g < mn Then mn = g
+    If b < mn Then mn = b
+    L = (0.299 * r + 0.587 * g + 0.114 * b) / 255#
+    chroma = (mx - mn) / 255#
+    If L >= 0.6 And chroma < 0.18 Then
+        GuideColor = RGB(237, 28, 36)     ' fundo claro e neutro -> vermelho
+    Else
+        GuideColor = RGB(255, 255, 255)   ' escuro ou colorido -> branco
+    End If
+End Function
+
+' Cor de fundo efetiva do slide (best-effort). -1 se desconhecida.
+'  1) maior forma solida cobrindo o slide (deck "desenhado"); 2) fundo do slide.
+Private Function SlideBgColor(ByVal sld As Object) As Long
+    Dim c As Long
+    c = BigCoverColor(sld)
+    If c < 0 Then
+        On Error Resume Next
+        If sld.Background.Fill.Type = msoFillSolid Then c = sld.Background.Fill.ForeColor.RGB
+        On Error GoTo 0
+    End If
+    SlideBgColor = c
+End Function
+
+' Cor da forma solida MAIS ATRAS que cobre ~todo o slide (fundo desenhado).
+' Varre do backmost (indice 1) e retorna a 1a que cobre. -1 se nao ha'.
+Private Function BigCoverColor(ByVal sld As Object) As Long
+    Dim s As Object, i As Long, sw As Single, sh As Single, covers As Boolean
+    BigCoverColor = -1
+    sw = ActivePresentation.PageSetup.SlideWidth
+    sh = ActivePresentation.PageSetup.SlideHeight
+    On Error Resume Next
+    For i = 1 To sld.Shapes.Count
+        Set s = sld.Shapes(i)
+        If Left$(s.Name, 8) <> "CBAGuide" Then
+            covers = (s.Left <= sw * 0.02) And (s.Top <= sh * 0.02) _
+                And (s.Left + s.Width >= sw * 0.98) And (s.Top + s.Height >= sh * 0.98)
+            If covers Then
+                If s.Fill.Visible = msoTrue And s.Fill.Type = msoFillSolid Then
+                    BigCoverColor = s.Fill.ForeColor.RGB
+                    Exit Function
+                End If
+            End If
+        End If
+        Set s = Nothing
+    Next i
+    On Error GoTo 0
+End Function
 
 ' Alinhar/distribuir tradicionais. NAO usamos ShapeRange.Align (no Mac o enum
 ' MsoAlignCmd vem deslocado: 1 caiu em "centers", 4 em "middles"). Calculamos
