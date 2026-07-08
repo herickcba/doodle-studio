@@ -1684,11 +1684,26 @@ Public Sub FixPageSize(control As IRibbonControl)
     End If
     If MsgBox("Mudar o tamanho de " & CLng(w) & " x " & CLng(hgt) & " pt para o padrao B+G 1583 x 891 pt (55,85 x 31,43 cm)?" & vbCrLf & _
               "Objetos existentes podem precisar de ajuste depois.", vbQuestion + vbOKCancel, "CBA Studio") <> vbOK Then Exit Sub
+    ' O PowerPoint REJEITA (silenciosamente) mudar uma dimensao se o resultado
+    ' intermediario ficar com proporcao muito extrema — ex.: pôr 1583 de largura
+    ' enquanto a altura ainda e' 540 (1583x540 = 2,9:1) e' bloqueado, e so' a
+    ' altura mudava -> slide quase quadrado. Solucao: altura PRIMEIRO (proporcao
+    ' vai ficando menos extrema) e repetir em passadas ate' fixar.
+    Dim i As Long
     On Error Resume Next
-    ActivePresentation.PageSetup.SlideWidth = 1583
-    ActivePresentation.PageSetup.SlideHeight = 891
+    For i = 1 To 4
+        ActivePresentation.PageSetup.SlideHeight = 891
+        ActivePresentation.PageSetup.SlideWidth = 1583
+    Next i
+    w = ActivePresentation.PageSetup.SlideWidth
+    hgt = ActivePresentation.PageSetup.SlideHeight
     On Error GoTo 0
-    MsgBox "Formato ajustado para 1583 x 891 pt (55,85 x 31,43 cm).", vbInformation, "CBA Studio"
+    If Abs(w - 1583) < 1 And Abs(hgt - 891) < 1 Then
+        MsgBox "Formato ajustado para 1583 x 891 pt (55,85 x 31,43 cm).", vbInformation, "CBA Studio"
+    Else
+        MsgBox "Ajustei para " & CLng(w) & " x " & CLng(hgt) & " pt, mas nao cheguei ao alvo exato" & vbCrLf & _
+               "(proporcao de origem muito extrema). Ajuste em Design > Tamanho do Slide.", vbExclamation, "CBA Studio"
+    End If
 End Sub
 
 ' A analise de imagens (MB por arquivo, conversao) exige ler o .pptx —
