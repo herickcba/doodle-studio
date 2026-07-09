@@ -163,7 +163,12 @@
     <div class="hint">Otimizar/Substituir <b>colam por cima</b> da original (mesmo lugar, mantendo o recorte) — a original fica atrás; apague-a para reduzir o arquivo. <b>Baixar todas</b> salva as imagens num ZIP pra você reduzir fora e recolocar com <b>Substituir</b>. Vetores (SVG/EMF) não são convertidos.</div>
   </div><!-- /view-optimize -->
 
-  <!-- UI + drawing run immediately; office.js loads deferred so it never blocks first paint -->
+  <div class="verline" id="verLine"></div>
+
+  <!-- UI + drawing run immediately; office.js loads deferred so it never blocks first paint.
+       A tag fica ANTES dos scripts clássicos: o fetch começa cedo e o elemento já existe
+       quando taskpane.js registra o listener de load (defer só executa depois deles). -->
+  <script defer id="officeJs" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <script src="../engine/doodle-engine.js"></script>
   <script src="../shared/controls.js"></script>
   <script src="../shared/library.js"></script>
@@ -175,6 +180,5 @@
   <script src="../modules/image-gen.js"></script>
   <script src="../modules/img-audit.js"></script>
   <script src="taskpane.js"></script>
-  <script defer src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </body>
 </html>

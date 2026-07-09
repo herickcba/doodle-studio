@@ -207,7 +207,27 @@
 
   boot();
 
-  // office.js is loaded deferred (after this script), so poll until it's ready.
+  // ---- Versão + aviso de update ----------------------------------------
+  // O painel sempre roda a versão publicada (web); quem fica pra trás é a
+  // FAIXA (.ppam instalado). O version.json diz a última versão lançada —
+  // se este painel for mais antigo (webview cacheado), avisa pra recarregar.
+  const CBA_VERSION = '1.5.0';
+  (function versionLine() {
+    const el = $('verLine');
+    if (!el) return;
+    el.textContent = 'CBA Studio v' + CBA_VERSION;
+    fetch('https://doodle-studio-sigma.vercel.app/download/version.json', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((v) => {
+        if (!v || !v.version || v.version === CBA_VERSION) return;
+        el.classList.add('warn');
+        el.innerHTML = 'CBA Studio v' + CBA_VERSION + ' · <b>v' + String(v.version).replace(/[^0-9.]/g, '') +
+          ' disponível</b> — rode o instalador do site de novo.';
+      })
+      .catch(() => { /* offline/CORS: fica só a versão local */ });
+  })();
+
+  // office.js is loaded deferred, so it executes after this script.
   // The UI and drawing already work; this only enables the Office features.
   function wireOffice() {
     if (typeof Office === 'undefined' || !Office.onReady) return false;
@@ -219,7 +239,9 @@
     return true;
   }
   if (!wireOffice()) {
-    const t = setInterval(() => { if (wireOffice()) clearInterval(t); }, 60);
-    setTimeout(() => clearInterval(t), 10000);
+    const tag = document.getElementById('officeJs');
+    if (tag) tag.addEventListener('load', wireOffice, { once: true });
+    // rede/CDN pode falhar o load event silenciosamente — uma reconferência única
+    setTimeout(() => { wireOffice(); }, 10000);
   }
 })();

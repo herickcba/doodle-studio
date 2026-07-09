@@ -639,6 +639,19 @@ def draw_guides():
 draw_guides().save(os.path.join(OUT, "guides.png"))
 
 
+# ---- Sobre (versao instalada): "i" num circulo azul ----
+def draw_about():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.ellipse((10, 10, 54, 54), outline=AZUL, width=4)
+    d.ellipse((29, 18, 35, 24), fill=AZUL)               # pingo do i
+    d.rectangle((29, 28, 35, 46), fill=AZUL)             # haste
+    return img
+
+
+draw_about().save(os.path.join(OUT, "about.png"))
+
+
 print("Icones gerados em", os.path.normpath(OUT))
 for fn in sorted(os.listdir(OUT)):
     print("  ", fn)

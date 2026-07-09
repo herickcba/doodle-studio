@@ -17,10 +17,21 @@ Attribute VB_Name = "BG_DoodleStudio"
 ' ============================================================
 Option Explicit
 
+' Versao do produto (faixa + extensao + landing andam juntas).
+' Ao lancar: atualizar tambem download/version.json, manifest.xml e index.html.
+Public Const CBA_VERSION As String = "1.5.0"
+
+' ---- Constantes de layout (fonte unica destes numeros) ----
+Private Const PT_PER_CM As Single = 28.3465    ' pontos por cm (72 pt/in / 2,54 cm/in)
+Private Const ANCHOR_DEFAULT_CM As Single = 1.27 ' ancora padrao (esq. e topo)
+Private Const GUIDE_MARGIN_CM As Single = 3.15 ' margem das linhas-guia
+Private Const MAX_DEPTH As Long = 12           ' recursao maxima em grupos aninhados
+
 Private gRibbon As IRibbonUI
 Private gAnchorCm As Single   ' ancora esq. (cm); 0 = nao setado -> usa default
 Private gAnchorTopCm As Single ' ancora topo (cm); 0 = nao setado -> usa default
 Private gRadiusOverridePx As Single   ' raio escolhido no dropdown (px @1080); 0 = Padrao (config)
+Private gCfgWarned As Boolean         ' aviso de config quebrada ja' mostrado?
 Private Const C_TRANSP As Long = 5         ' indice da cor = transparente (nao e' cor)
 
 ' ---- Brand Standards (config). SetDefaults preenche os valores de fabrica;
@@ -56,6 +67,13 @@ End Sub
 ' ============================================================
 Private Sub EnsureCfg()
     If gStyle Is Nothing Then SetDefaults: LoadConfig
+    ' Se mesmo assim nao carregou, avisa UMA vez (em vez de falhar mudo botao a botao).
+    If gStyle Is Nothing And Not gCfgWarned Then
+        gCfgWarned = True
+        MsgBox "Nao consegui carregar os padroes da marca - os botoes de estilo " & _
+               "podem nao funcionar. Reabra o PowerPoint ou reaplique a config " & _
+               "(Padroes > Aplicar config).", vbExclamation, "CBA Studio"
+    End If
 End Sub
 
 Private Sub SetDefaults()
@@ -228,10 +246,10 @@ End Sub
 Public Sub ConfigApply(control As IRibbonControl)
     Dim s As String
     s = InputBox("Cole a configuracao copiada da pagina de Brand Standards:", _
-                 "CBA Studio — Aplicar padroes")
+                 "CBA Studio - Aplicar padroes")
     If Len(Trim$(s)) = 0 Then Exit Sub
     If Len(s) > 20000 Then
-        MsgBox "Essa configuracao e' grande demais — copie de novo na pagina de Brand Standards.", _
+        MsgBox "Essa configuracao e' grande demais - copie de novo na pagina de Brand Standards.", _
                vbExclamation, "CBA Studio"
         Exit Sub
     End If
@@ -255,7 +273,7 @@ bad:
     SetDefaults
     LoadConfig
     On Error GoTo 0
-    MsgBox "Configuracao invalida — nada foi alterado." & vbCrLf & _
+    MsgBox "Configuracao invalida - nada foi alterado." & vbCrLf & _
            "Copie a string de novo na pagina de Brand Standards.", vbExclamation, "CBA Studio"
 End Sub
 
@@ -366,7 +384,7 @@ Private Sub SetSpacingOnRange(ByVal tr As Object, ByVal mult As Single)
 End Sub
 
 Private Function SetSpacingOnShape(ByVal shp As Object, ByVal mult As Single, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
@@ -393,12 +411,45 @@ Public Sub BG_AplicarEntrelinhaTudo()
 End Sub
 
 ' ============================================================
-'  ALINHAR a' ancora esquerda (medida definivel via editBox, em cm)
-'  (gAnchorCm declarada no topo do modulo)
+'  ALINHAR a's ancoras ESQUERDA e TOPO (medida via dropdown, em cm)
+'  Nucleo compartilhado; os callbacks publicos so' delegam.
+'  (gAnchorCm / gAnchorTopCm declaradas no topo do modulo)
 ' ============================================================
 Private Function AnchorCm() As Single
-    If gAnchorCm <= 0 Then AnchorCm = 1.27 Else AnchorCm = gAnchorCm
+    If gAnchorCm <= 0 Then AnchorCm = ANCHOR_DEFAULT_CM Else AnchorCm = gAnchorCm
 End Function
+
+Private Function AnchorTopCm() As Single
+    If gAnchorTopCm <= 0 Then AnchorTopCm = ANCHOR_DEFAULT_CM Else AnchorTopCm = gAnchorTopCm
+End Function
+
+' "Medida: 1,27 cm" — Format "0.##" no locale pt-BR pode deixar um separador
+' solto ("3," em vez de "3"); normaliza pra virgula e tira o pendurado.
+Private Function AnchorLabelFor(ByVal cm As Single) As String
+    Dim t As String
+    t = Replace(Format(cm, "0.##"), ".", ",")
+    Do While Len(t) > 0 And Right$(t, 1) = ","
+        t = Left$(t, Len(t) - 1)
+    Loop
+    AnchorLabelFor = "Medida: " & t & " cm"
+End Function
+
+' Ancora a borda (esquerda ou topo) dos OBJETOS SELECIONADOS a' medida em cm.
+Private Sub AnchorAlign(ByVal cm As Single, ByVal topAxis As Boolean)
+    Dim sel As Object, shp As Object, n As Long, p As Single
+    Set sel = ActiveWindow.Selection
+    p = cm * PT_PER_CM
+    n = 0
+    If sel.Type = ppSelectionShapes Then
+        On Error Resume Next
+        For Each shp In sel.ShapeRange
+            If topAxis Then shp.Top = p Else shp.Left = p
+            n = n + 1
+        Next shp
+        On Error GoTo 0
+    End If
+    If n = 0 Then MsgBox "Selecione um ou mais objetos para ancorar.", vbInformation, "CBA Studio"
+End Sub
 
 Public Sub GetAnchorText(control As IRibbonControl, ByRef text As Variant)
     text = Format(AnchorCm, "0.0#")
@@ -410,22 +461,19 @@ Public Sub SetAnchorText(control As IRibbonControl, text As String)
     If v > 0 Then gAnchorCm = v
 End Sub
 
-' Dropdown de medida da ancora (gallery). Label mostra o valor atual;
-' cada item seta gAnchorCm (id "ancD" = padrao 1,27; "anc50" = 0,5 cm...).
+' Dropdown de medida (gallery). Label mostra o valor atual; cada item seta
+' o global (id "ancD" = padrao; "anc150" -> 1,5 cm; "ancT150" -> topo 1,5 cm).
 Public Sub GetAnchorLabel(control As IRibbonControl, ByRef returnedVal)
-    ' Format "0.##" no locale pt-BR pode deixar um separador solto ("3," em vez
-    ' de "3") — normaliza pra vírgula e tira separador decimal pendurado.
-    Dim t As String
-    t = Replace(Format(AnchorCm, "0.##"), ".", ",")
-    Do While Len(t) > 0 And Right$(t, 1) = ","
-        t = Left$(t, Len(t) - 1)
-    Loop
-    returnedVal = "Medida: " & t & " cm"
+    returnedVal = AnchorLabelFor(AnchorCm)
+End Sub
+
+Public Sub GetAnchorTopLabel(control As IRibbonControl, ByRef returnedVal)
+    returnedVal = AnchorLabelFor(AnchorTopCm)
 End Sub
 
 Public Sub SetAnchorPick(control As IRibbonControl, id As String, index As Integer)
     If id = "ancD" Then
-        gAnchorCm = 0                       ' 0 -> AnchorCm() devolve 1,27 (padrao)
+        gAnchorCm = 0                       ' 0 -> AnchorCm() devolve o padrao
     Else
         gAnchorCm = CSng(Val(Mid$(id, 4))) / 100#   ' "anc150" -> 1,5 cm
     End If
@@ -434,48 +482,9 @@ Public Sub SetAnchorPick(control As IRibbonControl, id As String, index As Integ
     On Error GoTo 0
 End Sub
 
-' Alinha a borda esquerda a' ancora.
-'  - Se houver OBJETOS selecionados: alinha esses (qualquer tipo).
-'  - Se NADA estiver selecionado: alinha automaticamente todas as
-'    caixas de TEXTO do slide atual (sem precisar selecionar nada).
-' Ancora a borda esquerda dos OBJETOS SELECIONADOS a' medida (cm). So' seleção.
-Public Sub AlignAnchorLeft(control As IRibbonControl)
-    Dim sel As Object, shp As Object, n As Long, x As Single
-    Set sel = ActiveWindow.Selection
-    x = AnchorCm * 28.3465                 ' cm -> pontos
-    n = 0
-    If sel.Type = ppSelectionShapes Then
-        On Error Resume Next
-        For Each shp In sel.ShapeRange
-            shp.Left = x
-            n = n + 1
-        Next shp
-        On Error GoTo 0
-    End If
-    If n = 0 Then MsgBox "Selecione um ou mais objetos para ancorar.", vbInformation, "CBA Studio"
-End Sub
-
-' ============================================================
-'  ALINHAR a' ancora do TOPO (medida definivel via dropdown, em cm)
-'  Espelho vertical da ancora esquerda. (gAnchorTopCm no topo do modulo)
-' ============================================================
-Private Function AnchorTopCm() As Single
-    If gAnchorTopCm <= 0 Then AnchorTopCm = 1.27 Else AnchorTopCm = gAnchorTopCm
-End Function
-
-Public Sub GetAnchorTopLabel(control As IRibbonControl, ByRef returnedVal)
-    Dim t As String
-    t = Replace(Format(AnchorTopCm, "0.##"), ".", ",")
-    Do While Len(t) > 0 And Right$(t, 1) = ","
-        t = Left$(t, Len(t) - 1)
-    Loop
-    returnedVal = "Medida: " & t & " cm"
-End Sub
-
-' onAction do gallery — id "ancTD" = padrao 1,27; "ancT150" = 1,5 cm...
 Public Sub SetAnchorTopPick(control As IRibbonControl, id As String, index As Integer)
     If id = "ancTD" Then
-        gAnchorTopCm = 0                        ' 0 -> AnchorTopCm() devolve 1,27 (padrao)
+        gAnchorTopCm = 0                    ' 0 -> AnchorTopCm() devolve o padrao
     Else
         gAnchorTopCm = CSng(Val(Mid$(id, 5))) / 100#   ' "ancT150" -> 1,5 cm
     End If
@@ -484,21 +493,12 @@ Public Sub SetAnchorTopPick(control As IRibbonControl, id As String, index As In
     On Error GoTo 0
 End Sub
 
-' Ancora a borda SUPERIOR dos OBJETOS SELECIONADOS a' medida (cm). So' seleção.
+Public Sub AlignAnchorLeft(control As IRibbonControl)
+    AnchorAlign AnchorCm, False
+End Sub
+
 Public Sub AlignAnchorTop(control As IRibbonControl)
-    Dim sel As Object, shp As Object, n As Long, y As Single
-    Set sel = ActiveWindow.Selection
-    y = AnchorTopCm * 28.3465               ' cm -> pontos
-    n = 0
-    If sel.Type = ppSelectionShapes Then
-        On Error Resume Next
-        For Each shp In sel.ShapeRange
-            shp.Top = y
-            n = n + 1
-        Next shp
-        On Error GoTo 0
-    End If
-    If n = 0 Then MsgBox "Selecione um ou mais objetos para ancorar.", vbInformation, "CBA Studio"
+    AnchorAlign AnchorTopCm, True
 End Sub
 
 ' ============================================================
@@ -568,7 +568,7 @@ Private Sub DrawGuides(ByVal sld As Object)
     EnsureCfg
     sw = ActivePresentation.PageSetup.SlideWidth
     sh = ActivePresentation.PageSetup.SlideHeight
-    mpt = 3.15 * 28.3465                          ' 3,15 cm -> pontos
+    mpt = GUIDE_MARGIN_CM * PT_PER_CM             ' 3,15 cm -> pontos
     Wi = sw - 2 * mpt
     Hi = sh - 2 * mpt
     If Wi <= 0 Or Hi <= 0 Then Exit Sub
@@ -803,7 +803,7 @@ Private Function AlignTextShape(ByVal shp As Object, ByVal x As Single) As Long
 End Function
 
 Private Function GroupHasText(ByVal grp As Object, Optional ByVal depth As Long = 0) As Boolean
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim s As Object
     On Error Resume Next
     For Each s In grp.GroupItems
@@ -823,7 +823,7 @@ Public Sub InsertTextBox(control As IRibbonControl)
     Dim sld As Object, tb As Object, x As Single, w As Single
     Set sld = CurrentSlide()
     If sld Is Nothing Then Exit Sub
-    x = AnchorCm * 28.3465                       ' margem esquerda da ancora
+    x = AnchorCm * PT_PER_CM                     ' margem esquerda da ancora
     w = ActivePresentation.PageSetup.SlideWidth / 3
     Set tb = sld.Shapes.AddTextbox(msoTextOrientationHorizontal, x, 80, w, 60)
     On Error Resume Next
@@ -967,7 +967,7 @@ Public Sub ExpandContent(control As IRibbonControl)
 End Sub
 
 Private Function ZeroInsets(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
@@ -1041,7 +1041,7 @@ End Sub
 
 ' transforma o shape em rounded (imagem/caixa/retangulo) e seta o raio
 Private Function MakeRounded(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim done As Long, s As Object, doIt As Boolean
     done = 0
     On Error Resume Next
@@ -1117,7 +1117,7 @@ Public Sub RoundAllShapes(control As IRibbonControl)
 End Sub
 
 Private Function NormalizeRounded(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object, t As Long
     cnt = 0
     On Error Resume Next
@@ -1183,7 +1183,7 @@ Public Sub UnroundAll(control As IRibbonControl)
 End Sub
 
 Private Function MakeStraight(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
@@ -1234,7 +1234,7 @@ Public Sub SetShapeFill(control As IRibbonControl)
 End Sub
 
 Private Function FillShape(ByVal shp As Object, ByVal i As Long, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
@@ -1303,7 +1303,7 @@ Private Sub ApplyFontColor2(ByVal tr2 As Object, ByVal i As Long)
 End Sub
 
 Private Function FontColorShape(ByVal shp As Object, ByVal i As Long, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
@@ -1342,7 +1342,7 @@ Public Sub SetShapeOutline(control As IRibbonControl)
 End Sub
 
 Private Function OutlineShape(ByVal shp As Object, ByVal i As Long, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next
@@ -1403,7 +1403,7 @@ End Function
 ' Coleta findings recursivamente. col guarda Array(slideIdx, shape, detalhe).
 Private Sub ScanShape(ByVal shp As Object, ByVal slideIdx As Long, ByVal col As Collection, _
                       ByRef nf As Long, ByRef nc As Long, ByRef nr As Long, Optional ByVal depth As Long = 0)
-    If depth > 12 Then Exit Sub      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Sub      ' guarda contra grupos aninhados demais
     Dim s As Object, std As Single, adj As Single, nm As String
     On Error Resume Next
     If shp.Type = msoGroup Then
@@ -1595,7 +1595,7 @@ Private Function MapBrandColor(ByVal c As Long, ByVal bgLum As Double, ByVal isT
 End Function
 
 Private Function FixColorsShape(ByVal shp As Object, ByVal slideLum As Double, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim n As Long, s As Object, c As Long, t As Long, textBg As Double, run As Object
     n = 0
     On Error Resume Next
@@ -1706,6 +1706,15 @@ Public Sub FixPageSize(control As IRibbonControl)
     End If
 End Sub
 
+' Sobre: mostra a versao instalada da faixa. Compare com a versao no site
+' (doodle-studio-sigma.vercel.app) — atualizar = rodar o instalador de novo.
+Public Sub ShowAbout(control As IRibbonControl)
+    MsgBox "CBA Studio - faixa v" & CBA_VERSION & vbCrLf & vbCrLf & _
+           "Pra atualizar: rode o instalador de novo" & vbCrLf & _
+           "(comando do site) e reabra o PowerPoint." & vbCrLf & vbCrLf & _
+           "doodle-studio-sigma.vercel.app", vbInformation, "CBA Studio"
+End Sub
+
 ' A analise de imagens (MB por arquivo, conversao) exige ler o .pptx —
 ' so' a extensao consegue; este botao aponta o caminho.
 Public Sub AuditImages(control As IRibbonControl)
@@ -1715,7 +1724,7 @@ Public Sub AuditImages(control As IRibbonControl)
 End Sub
 
 Private Function FixTypeShape(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object, tr As Object, k As Long
     cnt = 0
     On Error Resume Next
@@ -1808,7 +1817,7 @@ End Function
 '  Aplicacao de ESTILO (fonte+tamanho+cor+ponto+entrelinha)
 ' ============================================================
 Private Function ApplyStyleToShape(ByVal shp As Object, ByRef spec As StyleSpec, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object, isBlue As Boolean
     cnt = 0
     On Error Resume Next
@@ -1927,7 +1936,7 @@ Private Sub ApplySpacingToRange(ByVal tr As Object)
 End Sub
 
 Private Function ApplyToShape(ByVal shp As Object, Optional ByVal depth As Long = 0) As Long
-    If depth > 12 Then Exit Function      ' guarda contra grupos aninhados demais
+    If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
     Dim cnt As Long, s As Object
     cnt = 0
     On Error Resume Next

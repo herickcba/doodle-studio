@@ -268,7 +268,7 @@
         setStatus('Edição aplicada ✓', 'ok');
       } catch (e) { setStatus(e && e.message ? e.message : 'Erro ao editar.', 'warn'); }
       finally { setBusy(false); }
-    }, initialPrompt || '');
+    }, initialPrompt || '', { onError: (m) => setStatus(m, 'warn') });
   }
 
   function refreshKeyUI() {

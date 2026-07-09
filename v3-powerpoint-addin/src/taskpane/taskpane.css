@@ -192,6 +192,10 @@ input[type=range]:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); bord
 .imga-level-label span { color: var(--muted); }
 .imga-detail .seg { margin: 0 0 12px; }
 
+.verline { font-size: 10.5px; color: var(--muted); text-align: center; margin: 18px 0 8px; }
+.verline.warn { color: var(--text); }
+.verline b { font-weight: 700; }
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
   .swatch:hover { transform: none; }

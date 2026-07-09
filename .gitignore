@@ -1,3 +1,12 @@
 .vercel
 .env*
 .claude/
+
+# SO / editor
+.DS_Store
+Thumbs.db
+
+# builds / deps (se entrarem no futuro)
+node_modules/
+dist/
+*.log

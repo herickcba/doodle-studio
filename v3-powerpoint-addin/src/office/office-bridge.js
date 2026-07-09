@@ -81,6 +81,24 @@
     if (typeof d === 'string') { const b = atob(d), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
     return d instanceof Uint8Array ? d : Uint8Array.from(d);
   }
+  /* ---- Cache de fatias COMPARTILHADO entre operações ----
+     O handle do Office precisa fechar logo (limite de 2 abertos), mas os BYTES
+     das fatias continuam válidos enquanto o arquivo não muda. A chave usa
+     tamanho + nº de fatias do snapshot: qualquer edição no deck (inclusive as
+     nossas otimizações) muda o tamanho → chave nova → cache zera sozinho.
+     TTL curto limita a memória (até ~24 fatias × 4 MB) e janelas de staleness. */
+  const SLICE_TTL_MS = 120000;
+  let _sliceStore = { key: '', ts: 0, map: null };
+  function _sliceCacheFor(file) {
+    const key = String(file.size) + ':' + String(file.sliceCount);
+    const now = Date.now();
+    if (!_sliceStore.map || _sliceStore.key !== key || (now - _sliceStore.ts) > SLICE_TTL_MS) {
+      _sliceStore = { key: key, ts: now, map: new Map() };
+    }
+    _sliceStore.ts = now;
+    return _sliceStore.map;
+  }
+
   /* Read an absolute byte range [start, start+len) by fetching only the slices
      that overlap it — not the whole file. `cache` (Map opcional) evita rebaixar
      a mesma fatia em leituras repetidas (auditoria lê ~90 rels vizinhos). */
@@ -219,7 +237,7 @@
     try {
       say('Lendo o arquivo…');
       file = await _getFile();
-      const cache = new Map();
+      const cache = _sliceCacheFor(file);
       const entries = await _readCentralDir(file, cache);
       const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
 
@@ -285,9 +303,22 @@
   }
 
   /* ---- shared: carrega os bytes de UMA imagem + sua posição no 1º slide ----
-     Cache de 1 item (o último clicado) — evita rebaixar os mesmos MB quando o
-     usuário clica pra pré-visualizar e depois Otimiza a MESMA imagem. */
-  let _imgCache = null; // { name, bytes, mime, pics:[{use,place,crop,rot,flip,name}], pic }
+     LRU de 5 itens decodificados — clicar entre imagens da lista não re-infla
+     os mesmos MB (as fatias cruas já vêm do _sliceStore; isto poupa o inflate). */
+  const IMG_LRU_MAX = 5;
+  const _imgItems = new Map(); // name -> { name, bytes, mime, pics:[...], pic }
+  function _imgCacheGet(name) {
+    const v = _imgItems.get(name);
+    if (v) { _imgItems.delete(name); _imgItems.set(name, v); } // move pro fim (recente)
+    return v || null;
+  }
+  function _imgCachePut(v) {
+    if (!v || !v.name) return v;
+    _imgItems.delete(v.name);
+    _imgItems.set(v.name, v);
+    if (_imgItems.size > IMG_LRU_MAX) _imgItems.delete(_imgItems.keys().next().value);
+    return v;
+  }
 
   function _mimeOf(ext) {
     return { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
@@ -364,17 +395,17 @@
   }
 
   async function _loadImageForItem(item, progress) {
-    if (_imgCache && _imgCache.name === item.name) return _imgCache;
+    const hit = _imgCacheGet(item.name);
+    if (hit) return hit;
     const say = progress || function () {};
     let file = null;
     try {
       say('Lendo a imagem…');
       file = await _getFile();
-      const cache = new Map();
+      const cache = _sliceCacheFor(file);
       const entries = await _readCentralDir(file, cache);
       const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
-      _imgCache = await _readItem(file, byName, item, cache);
-      return _imgCache;
+      return _imgCachePut(await _readItem(file, byName, item, cache));
     } finally {
       if (file) { try { file.closeAsync(() => {}); } catch (_) {} }
     }
@@ -557,7 +588,7 @@
     try {
       say('Lendo o arquivo…');
       file = await _getFile();
-      const cache = new Map();
+      const cache = _sliceCacheFor(file);
       const entries = await _readCentralDir(file, cache);
       const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
       for (let i = 0; i < raster.length; i++) {
@@ -684,7 +715,7 @@
     try {
       say('Lendo o arquivo…');
       file = await _getFile();
-      const cache = new Map();
+      const cache = _sliceCacheFor(file);
       const entries = await _readCentralDir(file, cache);
       const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
       const out = [], used = {};
@@ -755,7 +786,7 @@
     let file = null;
     try {
       file = await _getFile();
-      const cache = new Map();
+      const cache = _sliceCacheFor(file);
       const entries = await _readCentralDir(file, cache);
       const byName = {}; entries.forEach((en) => { byName[en.name] = en; });
       const fileToPos = await _buildFileToPos(file, byName, cache);
@@ -810,7 +841,7 @@
       const item = { name: 'ppt/media/' + best.base, base: best.base, ext: ext,
         bytes: ent.csize, usize: ent.usize,
         slides: [{ slideFile: best.slideFile, pos: fp.pos, sldId: fp.sldId }] };
-      try { _imgCache = await _readItem(file, byName, item, cache); } catch (_) {}
+      try { _imgCachePut(await _readItem(file, byName, item, cache)); } catch (_) {}
       return { item: item };
     } finally {
       if (file) { try { file.closeAsync(() => {}); } catch (_) {} }

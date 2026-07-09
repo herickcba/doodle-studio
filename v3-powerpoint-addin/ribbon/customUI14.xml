@@ -147,6 +147,8 @@
             screentip="Abrir Brand Standards" supertip="Abre a página de Brand Standards no navegador para ajustar paleta, cores de tipo, escala de tamanhos, entrelinha e raio."/>
           <button id="configApply" label="Aplicar config" image="configApply" size="large" onAction="ConfigApply"
             screentip="Aplicar configuração" supertip="Cole aqui a configuração copiada da página. Atualiza os padrões da marca (paleta, tipos, tamanhos, entrelinha, raio) e salva para as próximas sessões."/>
+          <button id="dsAbout" label="Sobre" image="about" size="large" onAction="ShowAbout"
+            screentip="Versão instalada" supertip="Mostra a versão desta faixa. Para atualizar, rode o instalador do site de novo e reabra o PowerPoint."/>
         </group>
       </tab>
     </tabs>

@@ -5,7 +5,7 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>74647E3E-4C47-4D22-8166-95594303BBD8</Id>
-  <Version>1.4.0.0</Version>
+  <Version>1.5.0.0</Version>
   <ProviderName>CBA Studio</ProviderName>
   <DefaultLocale>pt-BR</DefaultLocale>
   <DisplayName DefaultValue="CBA Studio" />

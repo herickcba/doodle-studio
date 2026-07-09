@@ -10,9 +10,11 @@ set -uo pipefail
 
 PPAM_URL="https://doodle-studio-sigma.vercel.app/download/BG-DoodleStudio.ppam"
 MANIFEST_URL="https://doodle-studio-app.vercel.app/manifest.xml"
+VERSION_URL="https://doodle-studio-sigma.vercel.app/download/version.json"
 ADDIN="DoodleStudio"
 
-echo "→ Instalando CBA Studio…"
+VER=$(curl -fsSL "$VERSION_URL" 2>/dev/null | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+echo "→ Instalando CBA Studio${VER:+ v$VER}…"
 
 # fecha o PowerPoint p/ recarregar tudo
 osascript -e 'tell application "Microsoft PowerPoint" to quit' >/dev/null 2>&1 || true
@@ -77,6 +79,7 @@ else
 fi
 
 echo ""
-echo "✅ Pronto! Abra o PowerPoint:"
+echo "✅ Pronto!${VER:+ CBA Studio v$VER instalado.} Abra o PowerPoint:"
 echo "   • Na 1ª vez, clique em \"Ativar Macros\" → a aba \"CBA Studio\" aparece."
 echo "   • Painel: Inserir → Suplementos → Meus Suplementos → CBA Studio."
+echo "   • Pra atualizar no futuro: rode este mesmo comando de novo."

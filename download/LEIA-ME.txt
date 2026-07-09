@@ -1,5 +1,10 @@
-CBA Studio — pacote de instalação
-==================================
+CBA Studio v1.5.0 — pacote de instalação
+=========================================
+
+ATUALIZAR: já tem o CBA Studio? Atualizar = instalar de novo por cima
+(mesmo comando do Terminal no Mac, ou rodar o instalador de novo no
+Windows) e reabrir o PowerPoint. Confira a versão instalada em
+CBA Studio > Sobre e compare com a do site.
 
 São DOIS componentes para o PowerPoint:
 
