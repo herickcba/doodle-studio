@@ -626,6 +626,26 @@
     return off.toDataURL('image/png');
   }
 
+  /* Thumbnail de strokes externos (presets/biblioteca) usando a config DELES,
+     sem mexer no estado vivo — mesmo padrão do renderExternalPNG. */
+  function thumbnailExternal(strokes, config, maxPx) {
+    const saved = {
+      ms: state.mouseSmoothing, vs: state.vectorSmoothing,
+      ft: state.faultTypes, fl: state.faultLevel, gs: state.gapSize,
+    };
+    if (config) {
+      state.mouseSmoothing = config.mouseSmoothing;
+      state.vectorSmoothing = config.vectorSmoothing;
+      state.faultTypes = config.faultTypes || [];
+      state.faultLevel = config.faultLevel;
+      state.gapSize = config.gapSize;
+    }
+    const t = thumbnailOf(strokes.map((s) => Object.assign({}, s, { _cache: null })), maxPx);
+    state.mouseSmoothing = saved.ms; state.vectorSmoothing = saved.vs;
+    state.faultTypes = saved.ft; state.faultLevel = saved.fl; state.gapSize = saved.gs;
+    return t;
+  }
+
   function isEmpty() { return state.strokes.length === 0; }
 
   /* ============================================================
@@ -722,7 +742,9 @@
     const holdMs = opts.holdMs != null ? opts.holdMs : 600, easing = opts.easing || 'linear';
     const loop = opts.loop !== false;   // default: loop forever
     const bbox = bboxOfStrokes(strokes); if (!bbox) return null;
-    const CAP = 720, scale = Math.min(1, CAP / Math.max(bbox.w, bbox.h));
+    // 1080 (era 720): o grão do giz tem pontos de ~1-2px em coordenadas do frame;
+    // rasterizar menor esmaga a textura e o GIF fica "liso" comparado ao PNG.
+    const CAP = 1080, scale = Math.min(1, CAP / Math.max(bbox.w, bbox.h));
     const W = Math.max(1, Math.round(bbox.w * scale)), H = Math.max(1, Math.round(bbox.h * scale));
     const base = document.createElement('canvas'); base.width = W; base.height = H; const bctx = base.getContext('2d');
     const gif = document.createElement('canvas'); gif.width = W; gif.height = H; const gctx = gif.getContext('2d');
@@ -751,10 +773,22 @@
     for (let i = 0; i < tableSize; i++) { if (i < realCount) bytes.push(palette[i][0], palette[i][1], palette[i][2]); else bytes.push(0, 0, 0); }
     if (loop) { bytes.push(0x21, 0xFF, 0x0B); writeStr('NETSCAPE2.0'); bytes.push(0x03, 0x01, 0x00, 0x00, 0x00); }
     const idx = new Uint8Array(W * H), cache = new Map();
+    // GIF só tem transparência binária (pixel opaco OU invisível), mas a textura
+    // de giz é feita de pixels SEMI-transparentes (base a 35%, grão a 70%).
+    // Um corte duro em alpha>=128 apaga metade do grão e engrossa o resto —
+    // por isso o GIF ficava com textura diferente do PNG. Dithering ordenado
+    // (Bayer 4x4): o limiar varia por posição, então translucidez vira
+    // DENSIDADE de pontos — de longe, lê igual ao PNG. Determinístico por
+    // pixel, então não pisca entre frames.
+    const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
     // Emit one frame. disposal: 1 = leave in place (reveal is additive),
     // 2 = restore to background (clears before the next frame).
     const emitFrame = (data, delay, disposal) => {
-      for (let i = 0, pix = 0; i < data.length; i += 4, pix++) idx[pix] = data[i+3] < 128 ? transIndex : gifNearest(palette, data[i], data[i+1], data[i+2], cache);
+      for (let i = 0, pix = 0; i < data.length; i += 4, pix++) {
+        const x = pix % W, y = (pix / W) | 0;
+        const thr = ((BAYER4[((y & 3) << 2) | (x & 3)] + 0.5) / 16) * 255;
+        idx[pix] = data[i+3] <= thr ? transIndex : gifNearest(palette, data[i], data[i+1], data[i+2], cache);
+      }
       bytes.push(0x21, 0xF9, 0x04, ((disposal || 1) << 2) | 0x01, delay & 0xff, (delay >> 8) & 0xff, transIndex, 0x00);
       bytes.push(0x2C); write16(0); write16(0); write16(W); write16(H); bytes.push(0x00); bytes.push(minCodeSize);
       const lzw = lzwEncode(minCodeSize, idx);
@@ -811,5 +845,6 @@
     exportGifs, renderExternalGifs,
     vectorize, anchorCount,
     handleStrokeClick, getSelectedStroke, clearSelection, loadStrokes, thumbnailOf,
+    thumbnailExternal,
   };
 })(window);

@@ -110,6 +110,19 @@ input[type=range]:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); bord
 .lib-empty { font-size: 11px; color: var(--muted); line-height: 1.5; }
 .lib-grid:not(:empty) + .lib-empty { display: none; }
 
+/* fundo azul da marca quando TODOS os traços são neutros claros (branco/cinza/
+   bege) — sem isso o preview some no card branco */
+.lib-item.tint-azul { background: #436AE1; }
+.lib-item.tint-azul .lib-del { background: rgba(255,255,255,.92); }
+
+/* ⧉ copiar código do doodle (vira preset via repo) — par do × de excluir */
+.lib-copy { position: absolute; bottom: 2px; right: 2px; width: 18px; height: 18px; border-radius: 4px; border: 0; background: rgba(255,255,255,.85); color: var(--muted-2); font-size: 11px; line-height: 1; cursor: pointer; display: none; align-items: center; justify-content: center; }
+.lib-item:hover .lib-copy { display: flex; }
+.lib-copy:hover { background: var(--accent); color: #fff; }
+
+/* separadores "Doodles B+G" / "Meus doodles" na grade */
+.lib-sep { grid-column: 1 / -1; font-size: 10px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin: 4px 0 -2px; }
+
 /* ---------------- Module navigation (top tabs) ---------------- */
 .modnav { position: sticky; top: 0; z-index: 5; display: flex; gap: 2px; margin: -12px -14px 14px; padding: 8px 14px 0; background: var(--bg); border-bottom: 1px solid var(--border-2); }
 .modtab { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 11px 9px; font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: .3px; color: var(--muted); cursor: pointer; transition: color .12s, border-color .12s; }

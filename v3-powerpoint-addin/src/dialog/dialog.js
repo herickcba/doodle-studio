@@ -103,16 +103,14 @@
     }
   }
 
-  function finish(kind, gif) {
+  function finish(kind, gifSaved) {
     if (sending) return;                 // dedup: um clique por vez
     let p = null;
     if (kind === 'inserted') {
       p = Doodle.payload();
-      if (gif) {
-        const o = gifOpts();
-        p.asGif = true; p.gifLoop = false;   // inserted GIFs go in without loop
-        p.gifDuration = o.duration; p.gifEasing = o.easing; p.gifFps = o.fps; p.gifHold = o.holdMs;
-      }
+      // O slide recebe SEMPRE o PNG estático (textura fiel); o GIF animado
+      // fica na biblioteca (3 versões) — de lá se insere quando quiser.
+      if (gifSaved) p.gifSaved = true;
     }
     if (window.opener) {            // standalone window.open() (modo navegador)
       try { localStorage.setItem('doodle.result', JSON.stringify(p)); } catch (_) {}
@@ -161,7 +159,7 @@
     $('redoBtn').addEventListener('click', () => Doodle.redo());
     $('clearBtn').addEventListener('click', () => Doodle.clear());
     $('insertBtn').addEventListener('click', () => { if (!Doodle.isEmpty()) finish('inserted', false); });
-    // Insert as GIF (no loop) AND stash the 3 versions in the library.
+    // Salva o GIF na biblioteca (3 versões) e insere o PNG estático no slide.
     $('gifBtn').addEventListener('click', () => { if (!Doodle.isEmpty()) { saveGifToLibrary(); finish('inserted', true); } });
     $('cancelBtn').addEventListener('click', () => finish('cancel'));
     ['saveGifBtn', 'saveAllBtn', 'saveSelBtn'].forEach((id) => { const b = $(id); if (b) b.dataset.label = b.textContent; });

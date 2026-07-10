@@ -29,25 +29,57 @@
   }
 
   /* ---------------- Library (save + browse) ---------------- */
-  function renderLibrary() {
-    const grid = $('libGrid');
-    const items = DoodleLibrary.list();
-    grid.innerHTML = '';
-    for (const it of items) {
-      const isGif = it.kind === 'gif';
-      const cell = document.createElement('div');
-      cell.className = 'lib-item';
-      const img = document.createElement('img');
-      img.src = it.thumb; img.alt = it.name || 'Doodle';
-      cell.appendChild(img);
-      if (isGif) {
-        const looping = !(it.gif && it.gif.loop === false);
-        const badge = document.createElement('span');
-        badge.className = 'lib-badge';
-        badge.textContent = looping ? 'GIF ↻' : 'GIF 1×';
-        badge.title = looping ? 'GIF em loop' : 'GIF sem loop';
-        cell.appendChild(badge);
-      }
+
+  // Traço branco/cinza some no fundo claro do preview — detecta traços NEUTROS
+  // e CLAROS (baixa saturação + luminância alta) e tinge o fundo do card de
+  // azul da marca pra dar contraste. Cores da paleta (rosa, azul) não tingem.
+  function libTintClass(it) {
+    const strokes = (it && it.payload && it.payload.strokes) || [];
+    if (!strokes.length) return '';
+    for (const s of strokes) {
+      const m = /^#?([0-9a-f]{6})$/i.exec(s.color || '');
+      if (!m) return '';
+      const v = parseInt(m[1], 16), r = (v >> 16) & 255, g = (v >> 8) & 255, b = v & 255;
+      const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      const chroma = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+      if (!(chroma < 0.16 && lum > 0.45)) return '';   // algum traço tem cor — preview legível
+    }
+    return 'tint-azul';
+  }
+
+  function copyText(t) {
+    const legacy = () => {
+      const ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (_) {}
+      ta.remove();
+      return ok;
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(t).then(() => true).catch(() => legacy());
+    }
+    return Promise.resolve(legacy());
+  }
+
+  // Célula da grade — usada pros itens do usuário e pros presets embarcados.
+  function libCell(it, opts) {
+    const isGif = it.kind === 'gif';
+    const cell = document.createElement('div');
+    cell.className = ('lib-item ' + libTintClass(it)).trim();
+    const img = document.createElement('img');
+    img.src = it.thumb; img.alt = it.name || 'Doodle';
+    cell.appendChild(img);
+    if (isGif) {
+      const looping = !(it.gif && it.gif.loop === false);
+      const badge = document.createElement('span');
+      badge.className = 'lib-badge';
+      badge.textContent = looping ? 'GIF ↻' : 'GIF 1×';
+      badge.title = looping ? 'GIF em loop' : 'GIF sem loop';
+      cell.appendChild(badge);
+    }
+    if (!opts || !opts.preset) {
       const del = document.createElement('button');
       del.className = 'lib-del'; del.textContent = '×'; del.title = 'Excluir';
       del.addEventListener('click', (e) => {
@@ -56,10 +88,43 @@
         renderLibrary();
       });
       cell.appendChild(del);
-      cell.title = isGif ? 'Inserir GIF no slide no tamanho salvo' : 'Inserir no slide no tamanho salvo';
-      cell.addEventListener('click', () => isGif ? insertGifFromLibrary(it) : insertFromLibrary(it));
-      grid.appendChild(cell);
+      // ⧉ copia o JSON do item — cole no chat/repo pra virar preset de todos
+      const cp = document.createElement('button');
+      cp.className = 'lib-copy'; cp.textContent = '⧉';
+      cp.title = 'Copiar código do doodle (pra virar preset do app)';
+      cp.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const json = JSON.stringify({ name: it.name, kind: it.kind, gif: it.gif, payload: it.payload });
+        const ok = await copyText(json);
+        setStatus(ok ? 'Código do doodle copiado ✓ — cole pra virar preset.' : 'Não consegui copiar — tente de novo.', ok ? 'ok' : 'warn');
+      });
+      cell.appendChild(cp);
     }
+    cell.title = isGif ? 'Inserir GIF no slide no tamanho salvo' : 'Inserir no slide no tamanho salvo';
+    cell.addEventListener('click', () => isGif ? insertGifFromLibrary(it) : insertFromLibrary(it));
+    return cell;
+  }
+
+  function renderLibrary() {
+    const grid = $('libGrid');
+    grid.innerHTML = '';
+    // presets embarcados (src/shared/presets.js) — iguais pra todo mundo
+    const presets = window.DoodlePresets || [];
+    if (presets.length) {
+      const sep = document.createElement('div');
+      sep.className = 'lib-sep'; sep.textContent = 'Doodles B+G';
+      grid.appendChild(sep);
+      for (const p of presets) {
+        if (!p._thumb) {
+          try { p._thumb = Doodle.thumbnailExternal(p.payload.strokes, p.payload.config); } catch (_) { p._thumb = ''; }
+        }
+        grid.appendChild(libCell(Object.assign({ thumb: p._thumb }, p), { preset: true }));
+      }
+      const sep2 = document.createElement('div');
+      sep2.className = 'lib-sep'; sep2.textContent = 'Meus doodles';
+      grid.appendChild(sep2);
+    }
+    for (const it of DoodleLibrary.list()) grid.appendChild(libCell(it));
   }
 
   // Insert a saved item straight into the slide, at the resolution it was
@@ -189,6 +254,7 @@
         return;
       }
       if (payload.asGif) {
+        // compat: dialog antigo em cache (SWR) ainda pode mandar asGif
         setStatus('Gerando GIF…');
         const gifs = await Doodle.renderExternalGifs(payload.strokes, payload.config, payload.insertSeparate,
           { duration: payload.gifDuration || 2.5, loop: payload.gifLoop !== false,
@@ -196,8 +262,12 @@
             easing: payload.gifEasing || 'linear' });
         await insertPNGs(gifs, gifs.length > 1 ? `${gifs.length} GIFs inseridos (tela grande) ✓` : 'GIF inserido (tela grande) ✓');
       } else {
+        // o slide recebe sempre o PNG estático; se o usuário pediu GIF,
+        // ele já foi salvo na biblioteca pelo próprio dialog
         const pngs = Doodle.renderExternalPNGs(payload.strokes, payload.config, payload.insertSeparate);
-        await insertPNGs(pngs, 'Inserido no slide (tela grande) ✓');
+        await insertPNGs(pngs, payload.gifSaved
+          ? 'GIF salvo na biblioteca ✓ · PNG estático inserido no slide ✓'
+          : 'Inserido no slide (tela grande) ✓');
       }
     }, {
       onOpen: () => setStatus('Tela grande aberta — desenhe e clique Inserir lá.', 'ok'),
