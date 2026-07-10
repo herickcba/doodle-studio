@@ -71,14 +71,17 @@
     const img = document.createElement('img');
     img.src = it.thumb; img.alt = it.name || 'Doodle';
     cell.appendChild(img);
+    const badge = document.createElement('span');
+    badge.className = 'lib-badge' + (isGif ? '' : ' lib-badge-png');
     if (isGif) {
       const looping = !(it.gif && it.gif.loop === false);
-      const badge = document.createElement('span');
-      badge.className = 'lib-badge';
       badge.textContent = looping ? 'GIF ↻' : 'GIF 1×';
       badge.title = looping ? 'GIF em loop' : 'GIF sem loop';
-      cell.appendChild(badge);
+    } else {
+      badge.textContent = 'PNG';
+      badge.title = 'Imagem estática';
     }
+    cell.appendChild(badge);
     if (!opts || !opts.preset) {
       const del = document.createElement('button');
       del.className = 'lib-del'; del.textContent = '×'; del.title = 'Excluir';
