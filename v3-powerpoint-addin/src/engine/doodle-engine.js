@@ -735,9 +735,18 @@
 
   /* Build an animated, transparent GIF of the progressive reveal, cropped to the
      content bbox. Returns { dataUrl, bbox, frame } like the PNG exporters. */
+  // Peso do traço SÓ no GIF (escolhido em comparação visual): a transparência
+  // binária do GIF deixa cada grão 100% opaco e o traço lê mais denso que o
+  // pincel; com peso 70%, menos grãos sobrevivem ao corte e o GIF recupera o
+  // arejado do PNG. Não afeta o desenho ao vivo, o PNG nem a biblioteca.
+  const GIF_STROKE_WEIGHT = 0.7;
   async function makeAnimatedGif(strokes, opts) {
     opts = opts || {};
     if (!strokes || !strokes.length) return null;
+    strokes = strokes.map((s) => Object.assign({}, s, {
+      opacity: (s.opacity != null ? s.opacity : 1) * GIF_STROKE_WEIGHT,
+      _cache: null, _arc: null,
+    }));
     const fps = opts.fps || 12, duration = opts.duration || 2.5;
     const holdMs = opts.holdMs != null ? opts.holdMs : 600, easing = opts.easing || 'linear';
     const loop = opts.loop !== false;   // default: loop forever
