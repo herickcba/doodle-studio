@@ -2,6 +2,12 @@
   "version": 2,
   "headers": [
     {
+      "source": "/download/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=300, s-maxage=86400" }
+      ]
+    },
+    {
       "source": "/download/version.json",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
