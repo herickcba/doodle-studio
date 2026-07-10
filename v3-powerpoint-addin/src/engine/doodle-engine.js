@@ -689,18 +689,9 @@
     return strokes.map((s, i) => t * durs[i]);
   }
 
-  // Compõe um pixel semi-transparente sobre BRANCO (matte). O GIF não tem
-  // transparência parcial; o matte reproduz a aparência do PNG em slide claro
-  // (o caso de uso da marca) — translucidez vira tom mais claro, não speckle.
-  function gifMatte(r, g, b, a) {
-    const t = a / 255, u = 1 - t;
-    return [(r * t + 255 * u) | 0, (g * t + 255 * u) | 0, (b * t + 255 * u) | 0];
-  }
-  const GIF_ALPHA_MIN = 9;   // abaixo disso o pixel fica realmente transparente
-
   function gifBuildPalette(rgba, maxColors) {
     let samples = [];
-    for (let i = 0; i < rgba.length; i += 4) if (rgba[i+3] >= GIF_ALPHA_MIN) samples.push(gifMatte(rgba[i], rgba[i+1], rgba[i+2], rgba[i+3]));
+    for (let i = 0; i < rgba.length; i += 4) if (rgba[i+3] >= 128) samples.push([rgba[i], rgba[i+1], rgba[i+2]]);
     if (samples.length === 0) return [[0, 0, 0]];
     if (samples.length > 20000) { const s = [], stp = samples.length / 20000; for (let k = 0; k < 20000; k++) s.push(samples[Math.floor(k * stp)]); samples = s; }
     let boxes = [samples];
@@ -751,9 +742,7 @@
     const holdMs = opts.holdMs != null ? opts.holdMs : 600, easing = opts.easing || 'linear';
     const loop = opts.loop !== false;   // default: loop forever
     const bbox = bboxOfStrokes(strokes); if (!bbox) return null;
-    // 1080 (era 720): o grão do giz tem pontos de ~1-2px em coordenadas do frame;
-    // rasterizar menor esmaga a textura e o GIF fica "liso" comparado ao PNG.
-    const CAP = 1080, scale = Math.min(1, CAP / Math.max(bbox.w, bbox.h));
+    const CAP = 720, scale = Math.min(1, CAP / Math.max(bbox.w, bbox.h));
     const W = Math.max(1, Math.round(bbox.w * scale)), H = Math.max(1, Math.round(bbox.h * scale));
     const base = document.createElement('canvas'); base.width = W; base.height = H; const bctx = base.getContext('2d');
     const gif = document.createElement('canvas'); gif.width = W; gif.height = H; const gctx = gif.getContext('2d');
@@ -782,21 +771,10 @@
     for (let i = 0; i < tableSize; i++) { if (i < realCount) bytes.push(palette[i][0], palette[i][1], palette[i][2]); else bytes.push(0, 0, 0); }
     if (loop) { bytes.push(0x21, 0xFF, 0x0B); writeStr('NETSCAPE2.0'); bytes.push(0x03, 0x01, 0x00, 0x00, 0x00); }
     const idx = new Uint8Array(W * H), cache = new Map();
-    // GIF só tem transparência binária (pixel opaco OU invisível), mas a
-    // textura de giz é feita de pixels SEMI-transparentes (base a 35%, grão a
-    // 70%). Corte duro em alpha>=128 apagava metade do grão; dithering virava
-    // speckle de 1px. A solução: MATTE — compor cada pixel translúcido sobre
-    // branco, como ele aparece no PNG num slide claro. Grão e traço ficam com
-    // a MESMA forma do PNG; só perde em slide escuro (halo claro sutil).
     // Emit one frame. disposal: 1 = leave in place (reveal is additive),
     // 2 = restore to background (clears before the next frame).
     const emitFrame = (data, delay, disposal) => {
-      for (let i = 0, pix = 0; i < data.length; i += 4, pix++) {
-        const a = data[i+3];
-        if (a < GIF_ALPHA_MIN) { idx[pix] = transIndex; continue; }
-        const m = gifMatte(data[i], data[i+1], data[i+2], a);
-        idx[pix] = gifNearest(palette, m[0], m[1], m[2], cache);
-      }
+      for (let i = 0, pix = 0; i < data.length; i += 4, pix++) idx[pix] = data[i+3] < 128 ? transIndex : gifNearest(palette, data[i], data[i+1], data[i+2], cache);
       bytes.push(0x21, 0xF9, 0x04, ((disposal || 1) << 2) | 0x01, delay & 0xff, (delay >> 8) & 0xff, transIndex, 0x00);
       bytes.push(0x2C); write16(0); write16(0); write16(W); write16(H); bytes.push(0x00); bytes.push(minCodeSize);
       const lzw = lzwEncode(minCodeSize, idx);
