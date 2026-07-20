@@ -652,6 +652,24 @@ def draw_about():
 draw_about().save(os.path.join(OUT, "about.png"))
 
 
+# ---- Crop de imagem: as duas alças em L cruzadas (símbolo universal) ----
+def draw_crop():
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # retângulo da foto, ao fundo, em cinza claro
+    d.rectangle((18, 18, 46, 46), fill=(232, 235, 245, 255))
+    # alça superior-esquerda (azul)
+    d.rectangle((14, 6, 20, 50), fill=AZUL)
+    d.rectangle((14, 44, 58, 50), fill=AZUL)
+    # alça inferior-direita (rosa)
+    d.rectangle((44, 14, 50, 58), fill=ROSA)
+    d.rectangle((6, 14, 50, 20), fill=ROSA)
+    return img
+
+
+draw_crop().save(os.path.join(OUT, "cropPic.png"))
+
+
 print("Icones gerados em", os.path.normpath(OUT))
 for fn in sorted(os.listdir(OUT)):
     print("  ", fn)

@@ -71,6 +71,8 @@
           <button id="outline5" image="outlineT" onAction="SetShapeOutline" showLabel="false" screentip="Contorno da forma: Sem linha (transparente)"/>
         </group>
         <group id="dsGrpFormas" label="Formas">
+          <button id="cropPic" label="Crop" image="cropPic" size="large" onAction="CropPicture"
+            screentip="Recortar imagem" supertip="Entra no modo de recorte do PowerPoint na imagem selecionada — o crop normal, retangular (para o crop arredondado, use o botão Rounded ao lado)."/>
           <button id="roundOne" label="Rounded" image="rounded" size="large" onAction="RoundCorner"
             screentip="Cantos arredondados (seleção)" supertip="Arredonda a forma/imagem selecionada no raio padrão. Imagem = crop arredondado."/>
           <button id="roundAll" label="Padronizar" image="roundedAll" size="large" onAction="RoundAllShapes"

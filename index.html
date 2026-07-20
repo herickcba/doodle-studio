@@ -3,114 +3,165 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CBA Studio — instalar e usar</title>
-<meta name="description" content="CBA Studio: a faixa e o painel do PowerPoint. Instale num comando só no Mac, ou use online sem instalar nada." />
+<title>CBA Studio — ferramentas B+G no PowerPoint</title>
+<meta name="description" content="A faixa CBA Studio e o painel Doodle · Imagem · Otimização. Instale no PowerPoint com um comando só." />
 <style>
-  :root{
-    --bg:#F3F1EB; --surface:#FFFFFF; --surface-2:#FAF9F5;
-    --ink:#1B1B22; --muted:#6E6E78; --line:#E7E4DC;
-    --azul:#436AE1; --azul-d:#3557c8; --rosa:#FD5E6D; --bege:#EEECE6;
-    --radius:14px;
-    --font:"Avenir Next","Avenir",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  }
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.55;-webkit-font-smoothing:antialiased;}
-  a{color:var(--azul);text-decoration:none;}
-  .wrap{max-width:760px;margin:0 auto;padding:0 22px;}
+/* ============================================================
+   Sistema visual CBA B+G (mesmos tokens dos protótipos RGM).
+   Fontes: apenas pesos 400 e 700 — nunca 800/900.
+   ============================================================ */
+:root{
+  --blue:#436AE1;       /* primária: heroes, botões */
+  --navy:#264BB9;       /* títulos e blocos escuros */
+  --navy-2:#3A53C6;     /* cards sobre fundo escuro */
+  --coral:#FC5E6D;      /* accent */
+  --coral-btn:#FB3E50;  /* CTA */
+  --ice:#E4EBFF; --ice-2:#C6D4FF;
+  --gray:#F2F2F2; --white:#FFFFFF; --ink:#3A4668; --maxw:1120px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{font-family:"Avenir Next","Avenir","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;
+  color:var(--navy);background:var(--white);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px}
+h1,h2,h3{line-height:1.05;letter-spacing:-.02em;font-weight:700}
+h2{font-size:clamp(28px,4vw,48px)}
+/* balance só em texto curto; pretty evita órfã no corpo */
+h1,h2,h3,h4,.card h3,.kpi .l,.linkcard h3{text-wrap:balance}
+p,li,.lead,.card p,.linkcard p,.note{text-wrap:pretty}
+a{color:var(--coral-btn)}
+section{padding:96px 0}
 
-  header{border-bottom:1px solid var(--line);background:var(--bg);}
-  .nav{display:flex;align-items:center;gap:14px;height:62px;}
-  .brand{display:flex;align-items:center;gap:11px;margin-right:auto;}
-  .logo{width:36px;height:36px;border-radius:9px;background:var(--azul);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.5px;}
-  .brand b{font-size:16px;font-weight:800;}
-  .brand span{display:block;font-size:11px;color:var(--muted);font-weight:600;}
-  .nav-cta{background:var(--azul);color:#fff;padding:9px 16px;border-radius:9px;font-weight:700;font-size:13.5px;white-space:nowrap;}
-  .nav-cta:hover{background:var(--azul-d);}
+/* ---- barra de topo ---- */
+.topbar{background:var(--navy);color:#fff;font-size:13px}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:52px}
+.logo-img{height:22px;width:auto;display:block}
+.topbar a{color:#fff;text-decoration:none;opacity:.85;font-weight:700}
+.topbar a:hover{opacity:1}
 
-  .hero{padding:52px 0 20px;}
-  .eyebrow{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--rosa);margin-bottom:12px;}
-  .hero h1{margin:0 0 12px;font-size:clamp(28px,5vw,40px);line-height:1.08;font-weight:800;letter-spacing:-.01em;}
-  .hero h1 .dot{color:var(--rosa);}
-  .hero p{margin:0;font-size:17px;color:var(--muted);}
-  .hero-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;}
-  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:15px;padding:12px 20px;border-radius:11px;border:1px solid transparent;cursor:pointer;white-space:nowrap;}
-  .btn-primary{background:var(--azul);color:#fff;}
-  .btn-primary:hover{background:var(--azul-d);}
-  .btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--line);}
-  .btn-ghost:hover{border-color:#d3d0c7;}
+/* ---- badges / buttons / eyebrow ---- */
+.badge{display:inline-block;background:rgba(255,255,255,.16);color:#fff;font-size:12.5px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;padding:11px 24px;border-radius:40px;margin-bottom:30px}
+.btn{display:inline-block;background:var(--coral-btn);color:#fff;text-decoration:none;font-weight:700;
+  font-size:16px;padding:17px 40px;border-radius:40px;transition:transform .15s,box-shadow .15s;border:none;cursor:pointer}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(251,62,80,.32)}
+.btn.ghost{background:transparent;border:2px solid #fff;color:#fff}
+.btn.ghost:hover{box-shadow:none;background:rgba(255,255,255,.1)}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--coral);margin-bottom:20px}
+.lead{font-size:21px;line-height:1.5;font-weight:400}
 
-  section{padding:22px 0;}
-  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
-  .sec-head h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em;}
-  .sec-head p{margin:3px 0 0;color:var(--muted);font-size:14px;}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;}
+/* ---- hero ---- */
+.hero{background:var(--blue);color:#fff;padding:88px 0 100px}
+.hero h1{font-size:clamp(40px,6.4vw,88px);color:#fff;max-width:15ch}
+.hero h1 em{font-style:normal;color:var(--coral)}
+.hero .lead{color:#fff;opacity:.94;max-width:58ch;margin:28px 0 36px}
+.hero .cta-row{display:flex;gap:14px;flex-wrap:wrap}
 
-  .ostoggle{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:4px;gap:4px;}
-  .ostoggle button{border:0;background:none;font-family:inherit;font-weight:700;font-size:13.5px;color:var(--muted);padding:8px 16px;border-radius:8px;cursor:pointer;}
-  .ostoggle button.active{background:var(--azul);color:#fff;}
+/* ---- faixa de destaques ---- */
+.strip{background:var(--navy);color:#fff;padding:0}
+.strip .grid{display:grid;grid-template-columns:repeat(4,1fr)}
+.strip .kpi{padding:38px 26px;border-right:1px solid rgba(255,255,255,.12)}
+.strip .kpi:last-child{border-right:0}
+.strip .n{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--coral);margin-bottom:10px}
+.strip .l{font-size:17px;color:#fff;opacity:.92}
 
-  ol.steps{margin:0;padding-left:22px;color:#33333d;font-size:15px;line-height:1.7;}
-  ol.steps li{margin-bottom:10px;}
-  ol.steps b{color:var(--ink);}
+/* ---- instalação ---- */
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;margin-bottom:38px}
+.sec-head p{font-size:17px;color:var(--ink);margin-top:12px}
+.ostoggle{display:inline-flex;background:var(--ice);border-radius:40px;padding:5px;gap:4px}
+.ostoggle button{border:0;background:transparent;font:inherit;font-weight:700;font-size:14px;color:var(--navy);
+  padding:11px 26px;border-radius:40px;cursor:pointer;transition:background .15s,color .15s}
+.ostoggle button.active{background:var(--navy);color:#fff}
 
-  .code{display:flex;align-items:stretch;margin:12px 0 2px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#1B1B22;}
-  .code code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;color:#EDEBE4;font-family:var(--mono);font-size:12.5px;padding:13px 14px;}
-  .copy{border:0;border-left:1px solid #33333d;background:var(--azul);color:#fff;font-family:inherit;font-weight:700;font-size:12.5px;padding:0 18px;cursor:pointer;white-space:nowrap;}
-  .copy:hover{background:var(--azul-d);}
+.card{background:#fff;border:2px solid var(--ice);border-radius:18px;padding:38px 36px}
+.steps{list-style:none;counter-reset:s}
+.steps li{counter-increment:s;position:relative;padding-left:52px;margin-bottom:26px;font-size:17px;color:var(--ink)}
+.steps li:last-child{margin-bottom:0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:-2px;width:34px;height:34px;border-radius:50%;
+  background:var(--blue);color:#fff;font-weight:700;font-size:15px;display:grid;place-items:center}
+.steps b{color:var(--navy)}
 
-  .note{font-size:13px;color:#4a4a54;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-top:12px;}
-  .note b{color:var(--ink);}
+.code{display:flex;align-items:center;gap:14px;background:var(--navy);border-radius:12px;
+  padding:16px 16px 16px 20px;margin-top:14px;flex-wrap:wrap}
+.code code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;color:#fff;flex:1;min-width:260px;word-break:break-all}
+.copy{background:var(--coral-btn);color:#fff;border:0;border-radius:40px;padding:11px 22px;
+  font:inherit;font-weight:700;font-size:14px;cursor:pointer;transition:transform .15s}
+.copy:hover{transform:translateY(-1px)}
 
-  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0;padding:0;list-style:none;}
-  .chips li{font-size:11.5px;font-weight:700;color:#4a4a54;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;}
+.note{font-size:15px;color:var(--ink);margin-top:22px;padding-top:22px;border-top:1px solid var(--ice)}
+.note b{color:var(--navy)}
 
-  footer{border-top:1px solid var(--line);margin-top:24px;padding:22px 0 46px;color:var(--muted);font-size:13px;}
-  footer .wrap{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;}
-  footer a{color:var(--muted);font-weight:600;}
-  footer a:hover{color:var(--ink);}
-  .sep{color:var(--line);}
+/* ---- o que vem junto ---- */
+.what{background:var(--ice)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:44px}
+.linkcard{display:block;text-decoration:none;background:#fff;border:2px solid transparent;border-radius:20px;
+  padding:32px 30px;transition:border-color .2s,transform .2s,box-shadow .2s;color:var(--navy)}
+.linkcard:hover{border-color:var(--blue);transform:translateY(-4px);box-shadow:0 16px 40px rgba(15,32,80,.08)}
+.linkcard h3{font-size:22px;margin-bottom:12px}
+.linkcard p{font-size:15.5px;color:var(--ink)}
+.linkcard .go{display:inline-block;margin-top:18px;font-weight:700;font-size:14px;color:var(--coral-btn)}
+
+/* ---- footer ---- */
+footer{background:var(--navy);color:#fff;padding:52px 0}
+footer .wrap{display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap}
+footer a{color:#fff;text-decoration:none;opacity:.85;font-weight:700;font-size:14.5px}
+footer a:hover{opacity:1}
+footer .links{display:flex;gap:26px;flex-wrap:wrap}
+footer .cr{font-size:13.5px;opacity:.6}
+
+@media (max-width:860px){
+  section{padding:64px 0}
+  .strip .grid{grid-template-columns:repeat(2,1fr)}
+  .strip .kpi:nth-child(2){border-right:0}
+  .strip .kpi:nth-child(1),.strip .kpi:nth-child(2){border-bottom:1px solid rgba(255,255,255,.12)}
+  .cards{grid-template-columns:1fr}
+  .card{padding:28px 22px}
+  .sec-head{align-items:flex-start}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="wrap nav">
-    <div class="brand">
-      <div class="logo">CB</div>
-      <div><b>CBA Studio</b><span>PowerPoint toolkit</span></div>
-    </div>
-    <a class="nav-cta" href="/v2.html" target="_blank" rel="noopener">Usar online ↗</a>
+<div class="topbar">
+  <div class="wrap">
+    <img class="logo-img" src="/assets/logo-cba.png" alt="CBA B+G" />
+    <a href="/v2.html" target="_blank" rel="noopener">Usar online ↗</a>
   </div>
-</header>
+</div>
 
 <main>
   <section class="hero">
     <div class="wrap">
-      <span class="eyebrow">Instalar &amp; usar · v1.5.0</span>
-      <h1>Ferramentas B+G direto<br>no seu PowerPoint<span class="dot">.</span></h1>
-      <p>A faixa <b>CBA Studio</b> e o painel <b>Doodle · Imagem · Otimização</b>. Instale num comando só, ou use online sem instalar nada.</p>
-      <div class="hero-cta">
-        <a class="btn btn-primary" href="#instalar">↓ Instalar no PowerPoint</a>
-        <a class="btn btn-ghost" href="/v2.html" target="_blank" rel="noopener">🎨 Usar online ↗</a>
+      <span class="badge">CBA Studio · v1.5.0</span>
+      <h1>As ferramentas B+G dentro do seu <em>PowerPoint</em>.</h1>
+      <p class="lead">Tipografia, cores, alinhamento e rabiscos da marca — sem sair do slide.
+        Instala com um comando só e some da sua frente até você precisar.</p>
+      <div class="cta-row">
+        <a class="btn" href="#instalar">Instalar no PowerPoint</a>
+        <a class="btn ghost" href="/v2.html" target="_blank" rel="noopener">Usar online</a>
       </div>
-      <ul class="chips">
-        <li>Tipografia B+G</li>
-        <li>Cores &amp; alinhamento</li>
-        <li>Doodle sobre o slide</li>
-        <li>Otimizar imagens do deck</li>
-        <li>Imagens por IA</li>
-      </ul>
     </div>
   </section>
+
+  <div class="strip">
+    <div class="wrap">
+      <div class="grid">
+        <div class="kpi"><div class="n">Tipografia</div><div class="l">11 estilos da escala B+G, num clique</div></div>
+        <div class="kpi"><div class="n">Layout</div><div class="l">Cores, âncoras, rounded e linhas-guia</div></div>
+        <div class="kpi"><div class="n">Doodle</div><div class="l">Rabisco da marca sobre o slide</div></div>
+        <div class="kpi"><div class="n">Imagens</div><div class="l">Deck mais leve em poucos cliques</div></div>
+      </div>
+    </div>
+  </div>
 
   <section id="instalar">
     <div class="wrap">
       <div class="sec-head">
         <div>
-          <h2>Instalar no PowerPoint</h2>
-          <p>Instala a faixa e o painel de uma vez.</p>
+          <span class="eyebrow">Instalação</span>
+          <h2>Um comando, duas ferramentas.</h2>
+          <p>Instala a faixa e o painel de uma vez só.</p>
         </div>
         <div class="ostoggle" id="osToggle" role="group" aria-label="Sistema operacional">
           <button data-os="mac" class="active">macOS</button>
@@ -130,9 +181,9 @@
           </li>
           <li><b>Abra o PowerPoint.</b> Na 1ª vez clique em <b>Ativar Macros</b> — a aba <b>CBA Studio</b> aparece. O painel fica em <b>Inserir → Suplementos → Meus Suplementos → CBA Studio</b>.</li>
         </ol>
-        <p class="note">💡 <b>Por que o Terminal?</b> Ele instala sem baixar arquivo, então o Mac não bloqueia por segurança (o problema dos instaladores comuns). É um comando só e já instala a faixa e o painel.</p>
-        <p class="note">🔄 <b>Já tem instalado?</b> Atualizar é rodar o mesmo comando de novo e reabrir o PowerPoint. Confira sua versão em <b>CBA Studio → Sobre</b> — a atual é a <b>v1.5.0</b>.</p>
-        <p class="note">Prefere baixar? <a href="/download/CBA-Studio-instalador.zip" download><b>Baixar instalador (ZIP)</b></a>. Se o Mac bloquear ao abrir, clique com o <b>botão direito → Abrir</b>, ou vá em <b>Ajustes → Privacidade e Segurança → Abrir Assim Mesmo</b>.</p>
+        <p class="note"><b>Por que o Terminal?</b> Ele instala sem baixar arquivo, então o Mac não bloqueia por segurança — que é onde os instaladores comuns travam. Um comando só, e já vem a faixa e o painel.</p>
+        <p class="note"><b>Já tem instalado?</b> Atualizar é rodar o mesmo comando de novo e reabrir o PowerPoint. Sua versão aparece em <b>CBA Studio → Sobre</b>; a atual é a <b>v1.5.0</b>.</p>
+        <p class="note">Prefere baixar? <a href="/download/CBA-Studio-instalador.zip" download><b>Instalador em ZIP</b></a>. Se o Mac bloquear ao abrir, clique com o <b>botão direito → Abrir</b>, ou vá em <b>Ajustes → Privacidade e Segurança → Abrir Assim Mesmo</b>.</p>
       </div>
 
       <!-- WINDOWS -->
@@ -141,8 +192,33 @@
           <li><b>Faixa:</b> baixe o <a href="/download/BG-DoodleStudio.ppam" download><b>add-in (.ppam)</b></a> e rode o <a href="/download/instalar-faixa-windows.bat" download><b>instalador (.bat)</b></a>. Abra o PowerPoint → <b>Ativar Macros</b> → a aba <b>CBA Studio</b> aparece.</li>
           <li><b>Painel:</b> baixe o <a href="/download/manifest.xml" download><b>manifest.xml</b></a>. No PowerPoint: <b>Inserir → Suplementos → Meus Suplementos → Carregar Meu Suplemento</b> → escolha o manifest.xml.</li>
         </ol>
-        <p class="note">Tudo num arquivo só: <a href="/download/CBA-Studio-instalador.zip" download><b>Baixar instalador (ZIP)</b></a>. O instalador Windows está em beta — se a faixa não aparecer, adicione o .ppam manualmente em Arquivo → Opções → Suplementos.</p>
-        <p class="note">🔄 <b>Já tem instalado?</b> Atualizar é baixar e rodar o instalador de novo. Confira sua versão em <b>CBA Studio → Sobre</b> — a atual é a <b>v1.5.0</b>.</p>
+        <p class="note">Tudo num arquivo só: <a href="/download/CBA-Studio-instalador.zip" download><b>Instalador em ZIP</b></a>. O instalador Windows está em beta — se a faixa não aparecer, adicione o .ppam manualmente em Arquivo → Opções → Suplementos.</p>
+        <p class="note"><b>Já tem instalado?</b> Atualizar é baixar e rodar o instalador de novo. Sua versão aparece em <b>CBA Studio → Sobre</b>; a atual é a <b>v1.5.0</b>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="what">
+    <div class="wrap">
+      <span class="eyebrow">O que vem junto</span>
+      <h2>Duas ferramentas e um painel de padrões.</h2>
+      <div class="cards">
+        <div class="linkcard">
+          <h3>Faixa CBA Studio</h3>
+          <p>Aba própria no PowerPoint: os 11 estilos da escala, entrelinha, paleta, alinhamento e âncoras,
+            cantos arredondados, linhas-guia e auditoria do deck.</p>
+        </div>
+        <div class="linkcard">
+          <h3>Painel lateral</h3>
+          <p>Doodle sobre o slide (com GIF animado e biblioteca), geração de imagem por IA e
+            otimização das imagens do arquivo para deixar o deck leve.</p>
+        </div>
+        <a class="linkcard" href="/config.html" target="_blank" rel="noopener">
+          <h3>Padrões da marca</h3>
+          <p>Paleta, tipos, tamanhos, entrelinha e raio ficam configuráveis — ajuste e aplique
+            em todo mundo pela página de Brand Standards.</p>
+          <span class="go">Abrir padrões →</span>
+        </a>
       </div>
     </div>
   </section>
@@ -150,19 +226,20 @@
 
 <footer>
   <div class="wrap">
-    <span>© 2026 CBA Studio</span>
-    <span class="sep">·</span>
-    <a href="/v2.html" target="_blank" rel="noopener">Usar online</a>
-    <span class="sep">·</span>
-    <a href="/config.html" target="_blank" rel="noopener">Padrões da marca</a>
-    <span class="sep">·</span>
-    <a href="/download/LEIA-ME.txt" target="_blank" rel="noopener">Guia</a>
+    <img class="logo-img" src="/assets/logo-cba.png" alt="CBA B+G" />
+    <div class="links">
+      <a href="#instalar">Instalar</a>
+      <a href="/v2.html" target="_blank" rel="noopener">Usar online</a>
+      <a href="/config.html" target="_blank" rel="noopener">Padrões da marca</a>
+      <a href="/download/LEIA-ME.txt" target="_blank" rel="noopener">Guia</a>
+    </div>
+    <span class="cr">© 2026 CBA B+G</span>
   </div>
 </footer>
 
 <script>
   (function () {
-    // OS toggle
+    // alterna macOS / Windows
     var toggle = document.getElementById('osToggle');
     var btns = toggle.querySelectorAll('button');
     function setOS(os) {
@@ -173,25 +250,20 @@
     btns.forEach(function (b) { b.addEventListener('click', function () { setOS(b.getAttribute('data-os')); }); });
     if (/Win/i.test(navigator.platform || navigator.userAgent)) setOS('win');
 
-    // copiar comando
+    // copiar o comando de instalação
     var copyBtn = document.getElementById('copyBtn');
     var cmd = document.getElementById('cmd');
+    function done() { copyBtn.textContent = 'Copiado ✓'; setTimeout(function () { copyBtn.textContent = 'Copiar'; }, 1800); }
+    function fallback() {
+      var r = document.createRange(); r.selectNode(cmd);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      s.removeAllRanges();
+    }
     copyBtn.addEventListener('click', function () {
-      var text = cmd.textContent;
-      function done() { copyBtn.textContent = 'Copiado ✓'; setTimeout(function () { copyBtn.textContent = 'Copiar'; }, 1800); }
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(done).catch(function () {
-          var r = document.createRange(); r.selectNode(cmd);
-          var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
-          try { document.execCommand('copy'); done(); } catch (e) {}
-          s.removeAllRanges();
-        });
-      } else {
-        var r = document.createRange(); r.selectNode(cmd);
-        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
-        try { document.execCommand('copy'); done(); } catch (e) {}
-        s.removeAllRanges();
-      }
+        navigator.clipboard.writeText(cmd.textContent).then(done).catch(fallback);
+      } else { fallback(); }
     });
   })();
 </script>

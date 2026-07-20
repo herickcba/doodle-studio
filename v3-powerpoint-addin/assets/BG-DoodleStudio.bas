@@ -26,6 +26,8 @@ Private Const PT_PER_CM As Single = 28.3465    ' pontos por cm (72 pt/in / 2,54 
 Private Const ANCHOR_DEFAULT_CM As Single = 1.27 ' ancora padrao (esq. e topo)
 Private Const GUIDE_MARGIN_CM As Single = 3.15 ' margem das linhas-guia
 Private Const MAX_DEPTH As Long = 12           ' recursao maxima em grupos aninhados
+Private Const STYLE_INSERT As String = "dsH5"  ' estilo das caixas inseridas: Texto 24
+Private Const SAMPLE_MAX As Long = 24          ' formas amostradas no Page Size
 
 Private gRibbon As IRibbonUI
 Private gAnchorCm As Single   ' ancora esq. (cm); 0 = nao setado -> usa default
@@ -861,8 +863,32 @@ Public Sub InsertTextBox(control As IRibbonControl)
     On Error Resume Next
     tb.TextFrame.WordWrap = msoTrue
     tb.TextFrame.TextRange.Text = "Texto"
-    tb.TextFrame.TextRange.Font.Name = gFonte
+    ApplyInsertStyle tb                          ' ja' nasce no Texto 24 (B+G)
     tb.Select
+    On Error GoTo 0
+End Sub
+
+' Estilo padrao das caixas que a faixa insere: Texto 24 (dsH5) + entrelinha B+G.
+' Escreve no Font do TextRange, que vale tanto pro texto ja' existente quanto
+' pro que a pessoa for digitar depois (caso do rounded box, que nasce vazio).
+Private Sub ApplyInsertStyle(ByVal shp As Object)
+    Dim spec As StyleSpec, ls As Single
+    spec = SpecFor(STYLE_INSERT)
+    If Not spec.found Then Exit Sub
+    On Error Resume Next
+    With shp.TextFrame.TextRange.Font
+        .Name = gFonte
+        .size = spec.size
+        .Bold = IIf(spec.bold, msoTrue, msoFalse)
+        .Color.RGB = spec.color
+    End With
+    ls = MapSpacing(spec.size)
+    If ls > 0 Then
+        With shp.TextFrame.TextRange.ParagraphFormat
+            .LineRuleWithin = msoTrue
+            .SpaceWithin = ls
+        End With
+    End If
     On Error GoTo 0
 End Sub
 
@@ -886,7 +912,42 @@ Public Sub InsertRoundedBox(control As IRibbonControl)
     shp.Line.Visible = msoFalse
     SetRoundedRadius shp                          ' raio padrao (~25px @1080)
     SetRoundedTextInset shp                       ' padding interno = 2x o raio
+    ApplyInsertStyle shp                          ' nasce vazio, mas ja' no Texto 24
     shp.Select
+    On Error GoTo 0
+End Sub
+
+' Crop de imagem: entra no modo de recorte NATIVO do PowerPoint na imagem
+' selecionada (ExecuteMso late-bound, mesmo padrao ja' validado no Colar texto).
+Public Sub CropPicture(control As IRibbonControl)
+    Dim sel As Object, shp As Object, cb As Object, temImagem As Boolean
+    temImagem = False
+    On Error Resume Next
+    Set sel = ActiveWindow.Selection
+    If sel.Type = ppSelectionShapes Then
+        For Each shp In sel.ShapeRange
+            If shp.Type = msoPicture Or shp.Type = msoPlaceholder Then temImagem = True
+        Next shp
+    End If
+    On Error GoTo 0
+    If Not temImagem Then
+        MsgBox "Selecione uma imagem para recortar.", vbInformation, "CBA Studio"
+        Exit Sub
+    End If
+    On Error Resume Next
+    Set cb = Application.CommandBars
+    Err.Clear
+    cb.ExecuteMso "PictureCrop"
+    If Err.Number <> 0 Then
+        Err.Clear
+        cb.ExecuteMso "Crop"                      ' fallback (varia por build do Mac)
+    End If
+    If Err.Number <> 0 Then
+        On Error GoTo 0
+        MsgBox "Nao consegui abrir o recorte por aqui." & vbCrLf & _
+               "Use Formato da Imagem > Recortar.", vbExclamation, "CBA Studio"
+        Exit Sub
+    End If
     On Error GoTo 0
 End Sub
 
@@ -1712,10 +1773,20 @@ Public Sub AuditFixColors(control As IRibbonControl)
 End Sub
 
 ' Forca o tamanho padrao do template B+G: 1583 x 891 pt (55,85 x 31,43 cm, 16:9).
-' O PowerPoint as vezes escala o conteudo junto com o canvas e as vezes NAO
-' (depende do deck e de como ele foi criado). Aqui a gente mede o que aconteceu
-' e, se ele nao escalou, escala o conteudo na mao — o resultado fica igual nos
-' dois casos: o desenho cresce junto com a pagina.
+'
+' LICAO APRENDIDA (nao refazer): a versao que escalava o conteudo na mao
+' quebrava o layout e era lenta. Dois motivos:
+'  (a) FONTE — o PowerPoint escala o texto pelo fator de autoajuste da caixa,
+'      que NAO aparece em Font.Size. Ler Font.Size igual antes/depois parece
+'      "ele nao escalou", mas escalou. Multiplicar Font.Size por cima disso
+'      dobrava o tamanho e, em caixas com autoajuste, mudava a ALTURA delas —
+'      e ai todo o layout relativo saia do lugar. Fonte: nunca mais tocamos.
+'  (b) VELOCIDADE — percorrer cada run de cada caixa de texto de cada slide
+'      era o que deixava lento em decks grandes.
+' Hoje: confiamos no redimensionamento nativo (que faz o certo quando a
+' proporcao e' mantida, o caso normal 16:9 -> 16:9) e so' conferimos, por
+' AMOSTRAGEM barata, se ele realmente mexeu. Se nao mexeu, PERGUNTAMOS antes
+' de ajustar a geometria — nunca em silencio.
 Public Sub FixPageSize(control As IRibbonControl)
     Dim w As Single, hgt As Single
     On Error Resume Next
@@ -1726,15 +1797,22 @@ Public Sub FixPageSize(control As IRibbonControl)
         MsgBox "A apresentacao ja esta no formato padrao B+G (1583 x 891 pt).", vbInformation, "CBA Studio"
         Exit Sub
     End If
-    If MsgBox("Mudar o tamanho de " & CLng(w) & " x " & CLng(hgt) & " pt para o padrao B+G 1583 x 891 pt (55,85 x 31,43 cm)?" & vbCrLf & _
-              "O conteudo dos slides e' redimensionado junto, proporcionalmente.", vbQuestion + vbOKCancel, "CBA Studio") <> vbOK Then Exit Sub
 
-    ' Forma de referencia: serve pra medir DEPOIS o que o PowerPoint fez sozinho.
-    ' Geometria e FONTE sao medidas separado — na pratica o PowerPoint costuma
-    ' escalar a caixa e NAO o corpo da fonte, e ai o texto fica pequeno demais
-    ' pra pagina nova. Cada um tem seu proprio "ele ja' fez?".
-    Dim refSld As Long, refShp As Long, refW As Single, refFont As Single, temRef As Boolean
-    temRef = FindRefShape(refSld, refShp, refW, refFont)
+    Dim aviso As String
+    aviso = ""
+    If w > 1 And hgt > 1 Then
+        If Abs((w / hgt) - (1583# / 891#)) > 0.02 Then
+            aviso = vbCrLf & vbCrLf & "Atencao: a proporcao atual e' diferente de 16:9, entao alguns" & vbCrLf & _
+                    "objetos podem precisar de reposicionamento depois."
+        End If
+    End If
+    If MsgBox("Mudar o tamanho de " & CLng(w) & " x " & CLng(hgt) & " pt para o padrao B+G 1583 x 891 pt (55,85 x 31,43 cm)?" & aviso, _
+              vbQuestion + vbOKCancel, "CBA Studio") <> vbOK Then Exit Sub
+
+    ' Amostra barata (ate' 24 formas espalhadas pelo deck) pra saber DEPOIS se
+    ' o PowerPoint mexeu no conteudo. Nao percorre o deck inteiro.
+    Dim smpSld() As Long, smpShp() As Long, smpW() As Single, nSmp As Long
+    nSmp = SampleShapes(smpSld, smpShp, smpW)
 
     ' O PowerPoint REJEITA (silenciosamente) mudar uma dimensao se o resultado
     ' intermediario ficar com proporcao muito extrema — ex.: pôr 1583 de largura
@@ -1752,94 +1830,86 @@ Public Sub FixPageSize(control As IRibbonControl)
     novoH = ActivePresentation.PageSetup.SlideHeight
     On Error GoTo 0
 
-    ' O que o PowerPoint ja' fez sozinho? (tolerancia de 0,5pt em cada medida)
-    Dim geoOK As Boolean, fonteOK As Boolean, depoisW As Single, depoisFont As Single
-    geoOK = False: fonteOK = False
-    If temRef Then
-        On Error Resume Next
-        depoisW = ActivePresentation.Slides(refSld).Shapes(refShp).Width
-        depoisFont = -1
-        depoisFont = ActivePresentation.Slides(refSld).Shapes(refShp).TextFrame.TextRange.Font.size
-        On Error GoTo 0
-        geoOK = (Abs(depoisW - refW) > 0.5)
-        If refFont > 0 And depoisFont > 0 Then
-            fonteOK = (Abs(depoisFont - refFont) > 0.5)
-        Else
-            fonteOK = geoOK       ' sem leitura confiavel de fonte, segue a geometria
-        End If
-    End If
-
-    Dim nGeo As Long, nFonte As Long
-    nGeo = 0: nFonte = 0
-    If temRef And w > 1 And hgt > 1 Then
-        ' Escala UNIFORME (o menor fator) pra nao distorcer, e centraliza o
-        ' conteudo no canvas novo quando a proporcao de origem era diferente.
-        Dim sx As Single, sy As Single, k As Single, offX As Single, offY As Single
-        sx = novoW / w
-        sy = novoH / hgt
-        k = sx: If sy < k Then k = sy
-        offX = (novoW - w * k) / 2#
-        offY = (novoH - hgt * k) / 2#
-        If Not geoOK Then nGeo = ScaleAllGeometry(k, offX, offY)
-        If Not fonteOK Then nFonte = ScaleAllFonts(k)
-    End If
+    Dim chegou As Boolean
+    chegou = (Abs(novoW - 1583) < 1 And Abs(novoH - 891) < 1)
 
     Dim extra As String
     extra = ""
-    If nGeo > 0 Or nFonte > 0 Then
-        extra = vbCrLf & "Conteudo ajustado junto ("
-        If nGeo > 0 Then extra = extra & nGeo & " objeto(s)"
-        If nGeo > 0 And nFonte > 0 Then extra = extra & " e "
-        If nFonte > 0 Then extra = extra & nFonte & " texto(s)"
-        extra = extra & ")."
-    ElseIf geoOK And fonteOK Then
-        extra = vbCrLf & "O PowerPoint redimensionou o conteudo junto."
+    If nSmp > 0 And chegou And w > 1 And hgt > 1 Then
+        If Not SampleMoved(nSmp, smpSld, smpShp, smpW) Then
+            ' Caso raro: a pagina mudou e o conteudo ficou parado. Oferece
+            ' o ajuste em vez de fazer sozinho (evita surpresa em deck bom).
+            If MsgBox("A pagina mudou, mas o PowerPoint nao redimensionou o conteudo." & vbCrLf & vbCrLf & _
+                      "Quer que eu redimensione os objetos proporcionalmente?" & vbCrLf & _
+                      "(o corpo das fontes nao e' alterado)", _
+                      vbQuestion + vbYesNo, "CBA Studio") = vbYes Then
+                Dim sx As Single, sy As Single, k As Single, offX As Single, offY As Single
+                sx = novoW / w
+                sy = novoH / hgt
+                k = sx: If sy < k Then k = sy         ' uniforme: nao distorce
+                offX = (novoW - w * k) / 2#
+                offY = (novoH - hgt * k) / 2#
+                extra = vbCrLf & "Conteudo redimensionado em " & ScaleAllGeometry(k, offX, offY) & " objeto(s)."
+            End If
+        End If
     End If
 
-    If Abs(novoW - 1583) < 1 And Abs(novoH - 891) < 1 Then
+    If chegou Then
         MsgBox "Formato ajustado para 1583 x 891 pt (55,85 x 31,43 cm)." & extra, vbInformation, "CBA Studio"
     Else
         MsgBox "Ajustei para " & CLng(novoW) & " x " & CLng(novoH) & " pt, mas nao cheguei ao alvo exato" & vbCrLf & _
-               "(proporcao de origem muito extrema). Ajuste em Design > Tamanho do Slide." & extra, vbExclamation, "CBA Studio"
+               "(proporcao de origem muito extrema). Ajuste em Design > Tamanho do Slide.", vbExclamation, "CBA Studio"
     End If
 End Sub
 
-' Acha uma forma de referencia e devolve indices + largura e corpo de fonte
-' atuais. Prefere uma forma COM TEXTO (pra poder medir a fonte tambem);
-' se nao houver nenhuma, aceita a primeira forma medivel (fonte = 0).
-Private Function FindRefShape(ByRef sldIdx As Long, ByRef shpIdx As Long, _
-                              ByRef wid As Single, ByRef fnt As Single) As Boolean
-    Dim i As Long, j As Long, w As Single, f As Single
-    Dim bkI As Long, bkJ As Long, bkW As Single, temBackup As Boolean
-    FindRefShape = False: temBackup = False
-    fnt = 0
+' Amostra ate' SAMPLE_MAX formas espalhadas pelo deck (no maximo 3 por slide,
+' pulando slides em decks grandes) e guarda a largura de cada uma.
+Private Function SampleShapes(ByRef sldIx() As Long, ByRef shpIx() As Long, ByRef wid() As Single) As Long
+    Dim n As Long, i As Long, j As Long, nSld As Long, passo As Long, noSlide As Long, w As Single
+    ReDim sldIx(1 To SAMPLE_MAX)
+    ReDim shpIx(1 To SAMPLE_MAX)
+    ReDim wid(1 To SAMPLE_MAX)
+    n = 0
     On Error Resume Next
-    For i = 1 To ActivePresentation.Slides.Count
+    nSld = ActivePresentation.Slides.Count
+    If nSld < 1 Then SampleShapes = 0: Exit Function
+    passo = 1
+    If nSld > 8 Then passo = nSld \ 8
+    For i = 1 To nSld Step passo
+        noSlide = 0
         For j = 1 To ActivePresentation.Slides(i).Shapes.Count
+            If n >= SAMPLE_MAX Or noSlide >= 3 Then Exit For
             w = 0
             w = ActivePresentation.Slides(i).Shapes(j).Width
             If w > 1 Then
-                f = -1
-                f = ActivePresentation.Slides(i).Shapes(j).TextFrame.TextRange.Font.size
-                If f > 0 Then                      ' tem texto com corpo legivel
-                    sldIdx = i: shpIdx = j: wid = w: fnt = f
-                    FindRefShape = True
-                    Exit Function
-                ElseIf Not temBackup Then
-                    bkI = i: bkJ = j: bkW = w
-                    temBackup = True
-                End If
+                n = n + 1: noSlide = noSlide + 1
+                sldIx(n) = i: shpIx(n) = j: wid(n) = w
             End If
         Next j
+        If n >= SAMPLE_MAX Then Exit For
     Next i
     On Error GoTo 0
-    If temBackup Then
-        sldIdx = bkI: shpIdx = bkJ: wid = bkW: fnt = 0
-        FindRefShape = True
-    End If
+    SampleShapes = n
 End Function
 
-' Escala a GEOMETRIA de todos os slides pelo fator k, deslocando por (offX, offY).
+' A maioria das formas amostradas mudou de largura? (= o PowerPoint escalou)
+Private Function SampleMoved(ByVal n As Long, ByRef sldIx() As Long, ByRef shpIx() As Long, ByRef wid() As Single) As Boolean
+    Dim i As Long, mudou As Long, w As Single
+    mudou = 0
+    On Error Resume Next
+    For i = 1 To n
+        w = 0
+        w = ActivePresentation.Slides(sldIx(i)).Shapes(shpIx(i)).Width
+        If w > 0 Then
+            If Abs(w - wid(i)) > 0.5 Then mudou = mudou + 1
+        End If
+    Next i
+    On Error GoTo 0
+    SampleMoved = (mudou * 2 > n)          ' mais da metade
+End Function
+
+' Escala SO' a geometria (posicao e tamanho) de todos os slides pelo fator k,
+' deslocando por (offX, offY). Nao toca em fonte — ver a licao no topo.
 Private Function ScaleAllGeometry(ByVal k As Single, ByVal offX As Single, ByVal offY As Single) As Long
     Dim sld As Object, shp As Object, n As Long
     n = 0
@@ -1856,45 +1926,6 @@ Private Function ScaleAllGeometry(ByVal k As Single, ByVal offX As Single, ByVal
     Next sld
     On Error GoTo 0
     ScaleAllGeometry = n
-End Function
-
-' Escala os CORPOS DE FONTE de todos os slides pelo fator k (recursivo em grupos).
-Private Function ScaleAllFonts(ByVal k As Single) As Long
-    Dim sld As Object, shp As Object, n As Long
-    n = 0
-    On Error Resume Next
-    For Each sld In ActivePresentation.Slides
-        For Each shp In sld.Shapes
-            n = n + ScaleFontsIn(shp, k)
-        Next shp
-    Next sld
-    On Error GoTo 0
-    ScaleAllFonts = n
-End Function
-
-' Multiplica o corpo de fonte por k em todos os runs da forma (entra em grupos).
-' Devolve quantas caixas de texto foram ajustadas.
-Private Function ScaleFontsIn(ByVal shp As Object, ByVal k As Single, Optional ByVal depth As Long = 0) As Long
-    If depth > MAX_DEPTH Then Exit Function
-    Dim s As Object, tr As Object, i As Long, sz As Single, n As Long
-    n = 0
-    On Error Resume Next
-    If shp.Type = msoGroup Then
-        For Each s In shp.GroupItems
-            n = n + ScaleFontsIn(s, k, depth + 1)
-        Next s
-    ElseIf shp.HasTextFrame Then
-        If shp.TextFrame.HasText Then
-            Set tr = shp.TextFrame.TextRange
-            For i = 1 To tr.Runs.Count
-                sz = tr.Runs(i).Font.size
-                If sz > 0 Then tr.Runs(i).Font.size = sz * k
-            Next i
-            n = 1
-        End If
-    End If
-    On Error GoTo 0
-    ScaleFontsIn = n
 End Function
 
 ' Sobre: mostra a versao instalada da faixa. Compare com a versao no site
