@@ -1729,10 +1729,12 @@ Public Sub FixPageSize(control As IRibbonControl)
     If MsgBox("Mudar o tamanho de " & CLng(w) & " x " & CLng(hgt) & " pt para o padrao B+G 1583 x 891 pt (55,85 x 31,43 cm)?" & vbCrLf & _
               "O conteudo dos slides e' redimensionado junto, proporcionalmente.", vbQuestion + vbOKCancel, "CBA Studio") <> vbOK Then Exit Sub
 
-    ' Forma de referencia (1a forma do 1o slide que tiver alguma): serve pra
-    ' medir DEPOIS se o PowerPoint escalou o conteudo por conta propria.
-    Dim refSld As Long, refShp As Long, refW As Single, temRef As Boolean
-    temRef = FindRefShape(refSld, refShp, refW)
+    ' Forma de referencia: serve pra medir DEPOIS o que o PowerPoint fez sozinho.
+    ' Geometria e FONTE sao medidas separado — na pratica o PowerPoint costuma
+    ' escalar a caixa e NAO o corpo da fonte, e ai o texto fica pequeno demais
+    ' pra pagina nova. Cada um tem seu proprio "ele ja' fez?".
+    Dim refSld As Long, refShp As Long, refW As Single, refFont As Single, temRef As Boolean
+    temRef = FindRefShape(refSld, refShp, refW, refFont)
 
     ' O PowerPoint REJEITA (silenciosamente) mudar uma dimensao se o resultado
     ' intermediario ficar com proporcao muito extrema — ex.: pôr 1583 de largura
@@ -1750,20 +1752,26 @@ Public Sub FixPageSize(control As IRibbonControl)
     novoH = ActivePresentation.PageSetup.SlideHeight
     On Error GoTo 0
 
-    ' Escalou sozinho? Compara a largura da forma de referencia com a de antes.
-    Dim escalouSozinho As Boolean, depoisW As Single
-    escalouSozinho = False
+    ' O que o PowerPoint ja' fez sozinho? (tolerancia de 0,5pt em cada medida)
+    Dim geoOK As Boolean, fonteOK As Boolean, depoisW As Single, depoisFont As Single
+    geoOK = False: fonteOK = False
     If temRef Then
         On Error Resume Next
         depoisW = ActivePresentation.Slides(refSld).Shapes(refShp).Width
+        depoisFont = -1
+        depoisFont = ActivePresentation.Slides(refSld).Shapes(refShp).TextFrame.TextRange.Font.size
         On Error GoTo 0
-        ' tolerancia de 0,5pt: abaixo disso a forma nao mexeu
-        escalouSozinho = (Abs(depoisW - refW) > 0.5)
+        geoOK = (Abs(depoisW - refW) > 0.5)
+        If refFont > 0 And depoisFont > 0 Then
+            fonteOK = (Abs(depoisFont - refFont) > 0.5)
+        Else
+            fonteOK = geoOK       ' sem leitura confiavel de fonte, segue a geometria
+        End If
     End If
 
-    Dim nEsc As Long
-    nEsc = 0
-    If temRef And Not escalouSozinho And w > 1 And hgt > 1 Then
+    Dim nGeo As Long, nFonte As Long
+    nGeo = 0: nFonte = 0
+    If temRef And w > 1 And hgt > 1 Then
         ' Escala UNIFORME (o menor fator) pra nao distorcer, e centraliza o
         ' conteudo no canvas novo quando a proporcao de origem era diferente.
         Dim sx As Single, sy As Single, k As Single, offX As Single, offY As Single
@@ -1772,13 +1780,19 @@ Public Sub FixPageSize(control As IRibbonControl)
         k = sx: If sy < k Then k = sy
         offX = (novoW - w * k) / 2#
         offY = (novoH - hgt * k) / 2#
-        nEsc = ScaleAllSlides(k, offX, offY)
+        If Not geoOK Then nGeo = ScaleAllGeometry(k, offX, offY)
+        If Not fonteOK Then nFonte = ScaleAllFonts(k)
     End If
 
     Dim extra As String
-    If nEsc > 0 Then
-        extra = vbCrLf & "Conteudo redimensionado junto em " & nEsc & " objeto(s)."
-    ElseIf escalouSozinho Then
+    extra = ""
+    If nGeo > 0 Or nFonte > 0 Then
+        extra = vbCrLf & "Conteudo ajustado junto ("
+        If nGeo > 0 Then extra = extra & nGeo & " objeto(s)"
+        If nGeo > 0 And nFonte > 0 Then extra = extra & " e "
+        If nFonte > 0 Then extra = extra & nFonte & " texto(s)"
+        extra = extra & ")."
+    ElseIf geoOK And fonteOK Then
         extra = vbCrLf & "O PowerPoint redimensionou o conteudo junto."
     End If
 
@@ -1790,27 +1804,43 @@ Public Sub FixPageSize(control As IRibbonControl)
     End If
 End Sub
 
-' Acha a 1a forma "medivel" do deck e devolve indices + largura atual.
-Private Function FindRefShape(ByRef sldIdx As Long, ByRef shpIdx As Long, ByRef wid As Single) As Boolean
-    Dim i As Long, j As Long
-    FindRefShape = False
+' Acha uma forma de referencia e devolve indices + largura e corpo de fonte
+' atuais. Prefere uma forma COM TEXTO (pra poder medir a fonte tambem);
+' se nao houver nenhuma, aceita a primeira forma medivel (fonte = 0).
+Private Function FindRefShape(ByRef sldIdx As Long, ByRef shpIdx As Long, _
+                              ByRef wid As Single, ByRef fnt As Single) As Boolean
+    Dim i As Long, j As Long, w As Single, f As Single
+    Dim bkI As Long, bkJ As Long, bkW As Single, temBackup As Boolean
+    FindRefShape = False: temBackup = False
+    fnt = 0
     On Error Resume Next
     For i = 1 To ActivePresentation.Slides.Count
         For j = 1 To ActivePresentation.Slides(i).Shapes.Count
-            wid = ActivePresentation.Slides(i).Shapes(j).Width
-            If wid > 1 Then
-                sldIdx = i: shpIdx = j
-                FindRefShape = True
-                Exit Function
+            w = 0
+            w = ActivePresentation.Slides(i).Shapes(j).Width
+            If w > 1 Then
+                f = -1
+                f = ActivePresentation.Slides(i).Shapes(j).TextFrame.TextRange.Font.size
+                If f > 0 Then                      ' tem texto com corpo legivel
+                    sldIdx = i: shpIdx = j: wid = w: fnt = f
+                    FindRefShape = True
+                    Exit Function
+                ElseIf Not temBackup Then
+                    bkI = i: bkJ = j: bkW = w
+                    temBackup = True
+                End If
             End If
         Next j
     Next i
     On Error GoTo 0
+    If temBackup Then
+        sldIdx = bkI: shpIdx = bkJ: wid = bkW: fnt = 0
+        FindRefShape = True
+    End If
 End Function
 
-' Escala geometria + tamanhos de fonte de TODOS os slides pelo fator k,
-' deslocando por (offX, offY). Devolve quantos objetos foram tocados.
-Private Function ScaleAllSlides(ByVal k As Single, ByVal offX As Single, ByVal offY As Single) As Long
+' Escala a GEOMETRIA de todos os slides pelo fator k, deslocando por (offX, offY).
+Private Function ScaleAllGeometry(ByVal k As Single, ByVal offX As Single, ByVal offY As Single) As Long
     Dim sld As Object, shp As Object, n As Long
     n = 0
     On Error Resume Next
@@ -1821,23 +1851,37 @@ Private Function ScaleAllSlides(ByVal k As Single, ByVal offX As Single, ByVal o
             shp.Top = shp.Top * k + offY
             shp.Width = shp.Width * k
             shp.Height = shp.Height * k
-            ' As fontes NAO acompanham a caixa — escala uma a uma (recursivo).
-            ScaleFontsIn shp, k
             n = n + 1
         Next shp
     Next sld
     On Error GoTo 0
-    ScaleAllSlides = n
+    ScaleAllGeometry = n
+End Function
+
+' Escala os CORPOS DE FONTE de todos os slides pelo fator k (recursivo em grupos).
+Private Function ScaleAllFonts(ByVal k As Single) As Long
+    Dim sld As Object, shp As Object, n As Long
+    n = 0
+    On Error Resume Next
+    For Each sld In ActivePresentation.Slides
+        For Each shp In sld.Shapes
+            n = n + ScaleFontsIn(shp, k)
+        Next shp
+    Next sld
+    On Error GoTo 0
+    ScaleAllFonts = n
 End Function
 
 ' Multiplica o corpo de fonte por k em todos os runs da forma (entra em grupos).
-Private Sub ScaleFontsIn(ByVal shp As Object, ByVal k As Single, Optional ByVal depth As Long = 0)
-    If depth > MAX_DEPTH Then Exit Sub
-    Dim s As Object, tr As Object, i As Long, sz As Single
+' Devolve quantas caixas de texto foram ajustadas.
+Private Function ScaleFontsIn(ByVal shp As Object, ByVal k As Single, Optional ByVal depth As Long = 0) As Long
+    If depth > MAX_DEPTH Then Exit Function
+    Dim s As Object, tr As Object, i As Long, sz As Single, n As Long
+    n = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
         For Each s In shp.GroupItems
-            ScaleFontsIn s, k, depth + 1
+            n = n + ScaleFontsIn(s, k, depth + 1)
         Next s
     ElseIf shp.HasTextFrame Then
         If shp.TextFrame.HasText Then
@@ -1846,10 +1890,12 @@ Private Sub ScaleFontsIn(ByVal shp As Object, ByVal k As Single, Optional ByVal 
                 sz = tr.Runs(i).Font.size
                 If sz > 0 Then tr.Runs(i).Font.size = sz * k
             Next i
+            n = 1
         End If
     End If
     On Error GoTo 0
-End Sub
+    ScaleFontsIn = n
+End Function
 
 ' Sobre: mostra a versao instalada da faixa. Compare com a versao no site
 ' (doodle-studio-sigma.vercel.app) — atualizar = rodar o instalador de novo.
