@@ -132,13 +132,13 @@
           <button id="auditScan" label="Auditar" image="auditScan" size="large" onAction="AuditScan"
             screentip="Auditar a apresentação" supertip="Procura fontes fora do padrão, cores fora da paleta e raios não-padrão. Mostra um resumo e leva você de alerta em alerta."/>
           <button id="auditFonts" label="Padronizar tipografia" image="auditFonts" size="large" onAction="AuditFixFonts"
-            screentip="Padronizar tipografia" supertip="Troca as fontes por Avenir Next (heavy/black → Bold) e encaixa o tamanho de cada texto na escala B+G mais próxima."/>
-          <button id="auditEntre" label="Padronizar entrelinha" image="entreTudo" size="large" onAction="EntrelinhaTudo"
-            screentip="Padronizar entrelinha (todos os slides)" supertip="Aplica a entrelinha B+G em todas as caixas de texto de todos os slides."/>
+            screentip="Padronizar tipografia (slides selecionados)" supertip="Nos SLIDES SELECIONADOS no painel de miniaturas (ou no slide atual): troca as fontes por Avenir Next (heavy/black → Bold) e encaixa o tamanho de cada texto na escala B+G mais próxima."/>
+          <button id="auditEntre" label="Padronizar entrelinha" image="entreTudo" size="large" onAction="EntrelinhaSlides"
+            screentip="Padronizar entrelinha (slides selecionados)" supertip="Aplica a entrelinha B+G em todas as caixas de texto dos SLIDES SELECIONADOS no painel de miniaturas (ou do slide atual)."/>
           <button id="auditColors" label="Padronizar cores" image="auditColors" size="large" onAction="AuditFixColors"
-            screentip="Padronizar cores na paleta" supertip="Converte as cores existentes (texto, preenchimento e contorno) para as 4 cores da marca — magenta, azul-violeta, bege e branco — aproximando por matiz/saturação e preservando o contraste figura-fundo. Imagens não são alteradas."/>
+            screentip="Padronizar cores (slides selecionados)" supertip="Nos SLIDES SELECIONADOS no painel de miniaturas (ou no slide atual): converte as cores existentes (texto, preenchimento e contorno) para as 4 cores da marca — magenta, azul-violeta, bege e branco — aproximando por matiz/saturação e preservando o contraste figura-fundo. Imagens não são alteradas."/>
           <button id="pageSize" label="Page Size" image="pageSize" size="large" onAction="FixPageSize"
-            screentip="Padronizar o tamanho do slide" supertip="Ajusta a apresentação para o widescreen padrão do template B+G: 1583 × 891 pt (55,85 × 31,43 cm, 16:9)."/>
+            screentip="Padronizar o tamanho do slide" supertip="Ajusta a apresentação para o widescreen padrão do template B+G: 1583 × 891 pt (55,85 × 31,43 cm, 16:9). O conteúdo dos slides é redimensionado junto, proporcionalmente."/>
           <button id="imgAudit" label="Image Size" image="imgAudit" size="large" onAction="AuditImages"
             screentip="Analisar as imagens do arquivo" supertip="A lista de imagens (extensão, MB, slide) e a conversão otimizada ficam no painel lateral CBA Studio — este botão mostra o caminho."/>
         </group>

@@ -11,9 +11,9 @@ Attribute VB_Name = "BG_DoodleStudio"
 '    OnLoad(ribbon)         -> guarda o IRibbonUI
 '    ApplyStyle(control)    -> aplica o estilo do botao (control.id)
 '    Entrelinha(control)    -> entrelinha B+G na SELECAO
-'    EntrelinhaTudo(control)-> entrelinha B+G em TODOS os slides
+'    EntrelinhaSlides(ctrl) -> entrelinha B+G nos SLIDES SELECIONADOS
 '  Tambem expostos sem args p/ Option+F8 (fallback):
-'    BG_AplicarEntrelinha / BG_AplicarEntrelinhaTudo
+'    BG_AplicarEntrelinha / BG_AplicarEntrelinhaSlides
 ' ============================================================
 Option Explicit
 
@@ -317,10 +317,42 @@ Public Sub Entrelinha(control As IRibbonControl)
     DoEntrelinhaSelecao
 End Sub
 
-Public Sub EntrelinhaTudo(control As IRibbonControl)
-    If Not ConfirmBigDeck("aplicar a entrelinha") Then Exit Sub
-    DoEntrelinhaTudo
+Public Sub EntrelinhaSlides(control As IRibbonControl)
+    DoEntrelinhaSlides
 End Sub
+
+' ============================================================
+'  Alvo das operacoes de PADRONIZAR (tipografia, entrelinha, cores)
+'  Regra unica: os SLIDES selecionados no painel; se a selecao for de
+'  objetos, o slide deles; sem nada selecionado, o slide atual.
+'  NUNCA a apresentacao inteira — padronizar tudo de uma vez era
+'  destrutivo demais em decks reais (e sem undo confiavel).
+' ============================================================
+Private Function TargetSlides() As Collection
+    Dim col As Collection, sel As Object, sld As Object
+    Set col = New Collection
+    On Error Resume Next
+    Set sel = ActiveWindow.Selection
+    If sel.Type = ppSelectionSlides Then
+        For Each sld In sel.SlideRange
+            col.Add sld
+        Next sld
+    ElseIf sel.Type = ppSelectionShapes Or sel.Type = ppSelectionText Then
+        Set sld = sel.ShapeRange(1).Parent
+        If Not sld Is Nothing Then col.Add sld
+    End If
+    If col.Count = 0 Then
+        Set sld = CurrentSlide()
+        If Not sld Is Nothing Then col.Add sld
+    End If
+    On Error GoTo 0
+    Set TargetSlides = col
+End Function
+
+' Sufixo padrao das mensagens: "em N objeto(s), em M slide(s)."
+Private Function ScopeMsg(ByVal n As Long, ByVal nSlides As Long) As String
+    ScopeMsg = " em " & n & " objeto(s), em " & nSlides & " slide(s)."
+End Function
 
 ' Operacoes que varrem a apresentacao inteira podem demorar em decks grandes
 ' (o PowerPoint nao expoe ScreenUpdating no VBA): confirma antes de rodar.
@@ -406,8 +438,8 @@ End Function
 Public Sub BG_AplicarEntrelinha()
     DoEntrelinhaSelecao
 End Sub
-Public Sub BG_AplicarEntrelinhaTudo()
-    DoEntrelinhaTudo
+Public Sub BG_AplicarEntrelinhaSlides()
+    DoEntrelinhaSlides
 End Sub
 
 ' ============================================================
@@ -1501,15 +1533,19 @@ End Sub
 ' Padronizar tipografia: por run -> Avenir Next (heavy/black/bold -> Bold) e
 ' tamanho encaixado na escala B+G mais proxima.
 Public Sub AuditFixFonts(control As IRibbonControl)
-    If Not ConfirmBigDeck("padronizar a tipografia") Then Exit Sub
-    Dim sld As Object, shp As Object, n As Long
+    Dim alvo As Collection, sld As Object, shp As Object, n As Long
+    Set alvo = TargetSlides()
+    If alvo.Count = 0 Then
+        MsgBox "Selecione um ou mais slides no painel de miniaturas.", vbInformation, "CBA Studio"
+        Exit Sub
+    End If
     n = 0
-    For Each sld In ActivePresentation.Slides
+    For Each sld In alvo
         For Each shp In sld.Shapes
             n = n + FixTypeShape(shp)
         Next shp
     Next sld
-    MsgBox "Tipografia padronizada (Avenir Next + peso + tamanho na escala) em " & n & " objeto(s).", vbInformation, "CBA Studio"
+    MsgBox "Tipografia padronizada (Avenir Next + peso + tamanho na escala)" & ScopeMsg(n, alvo.Count), vbInformation, "CBA Studio"
 End Sub
 
 ' ============================================================
@@ -1659,19 +1695,27 @@ Private Function FixColorsShape(ByVal shp As Object, ByVal slideLum As Double, O
 End Function
 
 Public Sub AuditFixColors(control As IRibbonControl)
-    If Not ConfirmBigDeck("padronizar as cores") Then Exit Sub
-    Dim sld As Object, shp As Object, n As Long, bg As Double
+    Dim alvo As Collection, sld As Object, shp As Object, n As Long, bg As Double
+    Set alvo = TargetSlides()
+    If alvo.Count = 0 Then
+        MsgBox "Selecione um ou mais slides no painel de miniaturas.", vbInformation, "CBA Studio"
+        Exit Sub
+    End If
     n = 0
-    For Each sld In ActivePresentation.Slides
+    For Each sld In alvo
         bg = SlideBgLum(sld)
         For Each shp In sld.Shapes
             n = n + FixColorsShape(shp, bg)
         Next shp
     Next sld
-    MsgBox "Cores padronizadas na paleta (magenta, azul-violeta, bege, branco) em " & n & " elemento(s).", vbInformation, "CBA Studio"
+    MsgBox "Cores padronizadas na paleta (magenta, azul-violeta, bege, branco)" & ScopeMsg(n, alvo.Count), vbInformation, "CBA Studio"
 End Sub
 
 ' Forca o tamanho padrao do template B+G: 1583 x 891 pt (55,85 x 31,43 cm, 16:9).
+' O PowerPoint as vezes escala o conteudo junto com o canvas e as vezes NAO
+' (depende do deck e de como ele foi criado). Aqui a gente mede o que aconteceu
+' e, se ele nao escalou, escala o conteudo na mao — o resultado fica igual nos
+' dois casos: o desenho cresce junto com a pagina.
 Public Sub FixPageSize(control As IRibbonControl)
     Dim w As Single, hgt As Single
     On Error Resume Next
@@ -1683,7 +1727,13 @@ Public Sub FixPageSize(control As IRibbonControl)
         Exit Sub
     End If
     If MsgBox("Mudar o tamanho de " & CLng(w) & " x " & CLng(hgt) & " pt para o padrao B+G 1583 x 891 pt (55,85 x 31,43 cm)?" & vbCrLf & _
-              "Objetos existentes podem precisar de ajuste depois.", vbQuestion + vbOKCancel, "CBA Studio") <> vbOK Then Exit Sub
+              "O conteudo dos slides e' redimensionado junto, proporcionalmente.", vbQuestion + vbOKCancel, "CBA Studio") <> vbOK Then Exit Sub
+
+    ' Forma de referencia (1a forma do 1o slide que tiver alguma): serve pra
+    ' medir DEPOIS se o PowerPoint escalou o conteudo por conta propria.
+    Dim refSld As Long, refShp As Long, refW As Single, temRef As Boolean
+    temRef = FindRefShape(refSld, refShp, refW)
+
     ' O PowerPoint REJEITA (silenciosamente) mudar uma dimensao se o resultado
     ' intermediario ficar com proporcao muito extrema — ex.: pôr 1583 de largura
     ' enquanto a altura ainda e' 540 (1583x540 = 2,9:1) e' bloqueado, e so' a
@@ -1695,15 +1745,110 @@ Public Sub FixPageSize(control As IRibbonControl)
         ActivePresentation.PageSetup.SlideHeight = 891
         ActivePresentation.PageSetup.SlideWidth = 1583
     Next i
-    w = ActivePresentation.PageSetup.SlideWidth
-    hgt = ActivePresentation.PageSetup.SlideHeight
+    Dim novoW As Single, novoH As Single
+    novoW = ActivePresentation.PageSetup.SlideWidth
+    novoH = ActivePresentation.PageSetup.SlideHeight
     On Error GoTo 0
-    If Abs(w - 1583) < 1 And Abs(hgt - 891) < 1 Then
-        MsgBox "Formato ajustado para 1583 x 891 pt (55,85 x 31,43 cm).", vbInformation, "CBA Studio"
-    Else
-        MsgBox "Ajustei para " & CLng(w) & " x " & CLng(hgt) & " pt, mas nao cheguei ao alvo exato" & vbCrLf & _
-               "(proporcao de origem muito extrema). Ajuste em Design > Tamanho do Slide.", vbExclamation, "CBA Studio"
+
+    ' Escalou sozinho? Compara a largura da forma de referencia com a de antes.
+    Dim escalouSozinho As Boolean, depoisW As Single
+    escalouSozinho = False
+    If temRef Then
+        On Error Resume Next
+        depoisW = ActivePresentation.Slides(refSld).Shapes(refShp).Width
+        On Error GoTo 0
+        ' tolerancia de 0,5pt: abaixo disso a forma nao mexeu
+        escalouSozinho = (Abs(depoisW - refW) > 0.5)
     End If
+
+    Dim nEsc As Long
+    nEsc = 0
+    If temRef And Not escalouSozinho And w > 1 And hgt > 1 Then
+        ' Escala UNIFORME (o menor fator) pra nao distorcer, e centraliza o
+        ' conteudo no canvas novo quando a proporcao de origem era diferente.
+        Dim sx As Single, sy As Single, k As Single, offX As Single, offY As Single
+        sx = novoW / w
+        sy = novoH / hgt
+        k = sx: If sy < k Then k = sy
+        offX = (novoW - w * k) / 2#
+        offY = (novoH - hgt * k) / 2#
+        nEsc = ScaleAllSlides(k, offX, offY)
+    End If
+
+    Dim extra As String
+    If nEsc > 0 Then
+        extra = vbCrLf & "Conteudo redimensionado junto em " & nEsc & " objeto(s)."
+    ElseIf escalouSozinho Then
+        extra = vbCrLf & "O PowerPoint redimensionou o conteudo junto."
+    End If
+
+    If Abs(novoW - 1583) < 1 And Abs(novoH - 891) < 1 Then
+        MsgBox "Formato ajustado para 1583 x 891 pt (55,85 x 31,43 cm)." & extra, vbInformation, "CBA Studio"
+    Else
+        MsgBox "Ajustei para " & CLng(novoW) & " x " & CLng(novoH) & " pt, mas nao cheguei ao alvo exato" & vbCrLf & _
+               "(proporcao de origem muito extrema). Ajuste em Design > Tamanho do Slide." & extra, vbExclamation, "CBA Studio"
+    End If
+End Sub
+
+' Acha a 1a forma "medivel" do deck e devolve indices + largura atual.
+Private Function FindRefShape(ByRef sldIdx As Long, ByRef shpIdx As Long, ByRef wid As Single) As Boolean
+    Dim i As Long, j As Long
+    FindRefShape = False
+    On Error Resume Next
+    For i = 1 To ActivePresentation.Slides.Count
+        For j = 1 To ActivePresentation.Slides(i).Shapes.Count
+            wid = ActivePresentation.Slides(i).Shapes(j).Width
+            If wid > 1 Then
+                sldIdx = i: shpIdx = j
+                FindRefShape = True
+                Exit Function
+            End If
+        Next j
+    Next i
+    On Error GoTo 0
+End Function
+
+' Escala geometria + tamanhos de fonte de TODOS os slides pelo fator k,
+' deslocando por (offX, offY). Devolve quantos objetos foram tocados.
+Private Function ScaleAllSlides(ByVal k As Single, ByVal offX As Single, ByVal offY As Single) As Long
+    Dim sld As Object, shp As Object, n As Long
+    n = 0
+    On Error Resume Next
+    For Each sld In ActivePresentation.Slides
+        For Each shp In sld.Shapes
+            ' Grupos: mexer no grupo ja' reposiciona/redimensiona os filhos.
+            shp.Left = shp.Left * k + offX
+            shp.Top = shp.Top * k + offY
+            shp.Width = shp.Width * k
+            shp.Height = shp.Height * k
+            ' As fontes NAO acompanham a caixa — escala uma a uma (recursivo).
+            ScaleFontsIn shp, k
+            n = n + 1
+        Next shp
+    Next sld
+    On Error GoTo 0
+    ScaleAllSlides = n
+End Function
+
+' Multiplica o corpo de fonte por k em todos os runs da forma (entra em grupos).
+Private Sub ScaleFontsIn(ByVal shp As Object, ByVal k As Single, Optional ByVal depth As Long = 0)
+    If depth > MAX_DEPTH Then Exit Sub
+    Dim s As Object, tr As Object, i As Long, sz As Single
+    On Error Resume Next
+    If shp.Type = msoGroup Then
+        For Each s In shp.GroupItems
+            ScaleFontsIn s, k, depth + 1
+        Next s
+    ElseIf shp.HasTextFrame Then
+        If shp.TextFrame.HasText Then
+            Set tr = shp.TextFrame.TextRange
+            For i = 1 To tr.Runs.Count
+                sz = tr.Runs(i).Font.size
+                If sz > 0 Then tr.Runs(i).Font.size = sz * k
+            Next i
+        End If
+    End If
+    On Error GoTo 0
 End Sub
 
 ' Sobre: mostra a versao instalada da faixa. Compare com a versao no site
@@ -1912,15 +2057,20 @@ Private Sub DoEntrelinhaSelecao()
     If n = 0 Then MsgBox "Selecione um texto, objetos ou slides no painel.", vbInformation, "CBA Studio"
 End Sub
 
-Private Sub DoEntrelinhaTudo()
-    Dim sld As Object, shp As Object, n As Long
+Private Sub DoEntrelinhaSlides()
+    Dim alvo As Collection, sld As Object, shp As Object, n As Long
+    Set alvo = TargetSlides()
+    If alvo.Count = 0 Then
+        MsgBox "Selecione um ou mais slides no painel de miniaturas.", vbInformation, "CBA Studio"
+        Exit Sub
+    End If
     n = 0
-    For Each sld In ActivePresentation.Slides
+    For Each sld In alvo
         For Each shp In sld.Shapes
             n = n + ApplyToShape(shp)
         Next shp
     Next sld
-    MsgBox "Entrelinha B+G aplicada em " & n & " caixas de texto, em todos os slides.", vbInformation, "CBA Studio"
+    MsgBox "Entrelinha B+G aplicada" & ScopeMsg(n, alvo.Count), vbInformation, "CBA Studio"
 End Sub
 
 Private Sub ApplySpacingToRange(ByVal tr As Object)
