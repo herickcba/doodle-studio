@@ -1843,13 +1843,9 @@ Public Sub FixPageSize(control As IRibbonControl)
                       "Quer que eu redimensione os objetos proporcionalmente?" & vbCrLf & _
                       "(o corpo das fontes nao e' alterado)", _
                       vbQuestion + vbYesNo, "CBA Studio") = vbYes Then
-                Dim sx As Single, sy As Single, k As Single, offX As Single, offY As Single
-                sx = novoW / w
-                sy = novoH / hgt
-                k = sx: If sy < k Then k = sy         ' uniforme: nao distorce
-                offX = (novoW - w * k) / 2#
-                offY = (novoH - hgt * k) / 2#
-                extra = vbCrLf & "Conteudo redimensionado em " & ScaleAllGeometry(k, offX, offY) & " objeto(s)."
+                ' TryScaleContent NUNCA gera erro: se algo falhar, mantem so' o
+                ' slide redimensionado e devolve um aviso gentil.
+                extra = TryScaleContent(w, hgt, novoW, novoH)
             End If
         End If
     End If
@@ -1908,24 +1904,71 @@ Private Function SampleMoved(ByVal n As Long, ByRef sldIx() As Long, ByRef shpIx
     SampleMoved = (mudou * 2 > n)          ' mais da metade
 End Function
 
+' Tenta redimensionar o conteudo proporcionalmente. NUNCA gera erro do VBA:
+' o handler pega qualquer imprevisto e o slide continua redimensionado, so'
+' com um aviso gentil. Devolve a frase de status pra mensagem final.
+Private Function TryScaleContent(ByVal w As Single, ByVal hgt As Single, _
+                                 ByVal novoW As Single, ByVal novoH As Single) As String
+    Dim k As Single, offX As Single, offY As Single, nEsc As Long, AVISO As String
+    AVISO = vbCrLf & "Mantive o tamanho do slide; ajuste os objetos manualmente se precisar."
+    TryScaleContent = ""
+    On Error GoTo falhou
+    If w <= 1 Or hgt <= 1 Then Exit Function
+    k = novoW / w
+    If (novoH / hgt) < k Then k = novoH / hgt      ' uniforme: nao distorce
+    If k <= 0 Or k > 100 Then TryScaleContent = AVISO: Exit Function
+    offX = (novoW - w * k) / 2#
+    offY = (novoH - hgt * k) / 2#
+    nEsc = ScaleAllGeometry(k, offX, offY)
+    If nEsc > 0 Then
+        TryScaleContent = vbCrLf & "Conteudo redimensionado em " & nEsc & " objeto(s)."
+    Else
+        TryScaleContent = AVISO
+    End If
+    Exit Function
+falhou:
+    ' qualquer erro inesperado: o slide ja' foi redimensionado; nada de dialogo
+    TryScaleContent = AVISO
+End Function
+
 ' Escala SO' a geometria (posicao e tamanho) de todos os slides pelo fator k,
 ' deslocando por (offX, offY). Nao toca em fonte — ver a licao no topo.
+' Cada forma e' tratada em ScaleOneShape com protecao total: uma forma
+' problematica e' PULADA, nunca derruba o resto.
 Private Function ScaleAllGeometry(ByVal k As Single, ByVal offX As Single, ByVal offY As Single) As Long
     Dim sld As Object, shp As Object, n As Long
     n = 0
+    If k <= 0 Or k > 100 Then ScaleAllGeometry = 0: Exit Function
     On Error Resume Next
     For Each sld In ActivePresentation.Slides
         For Each shp In sld.Shapes
-            ' Grupos: mexer no grupo ja' reposiciona/redimensiona os filhos.
-            shp.Left = shp.Left * k + offX
-            shp.Top = shp.Top * k + offY
-            shp.Width = shp.Width * k
-            shp.Height = shp.Height * k
-            n = n + 1
+            If ScaleOneShape(shp, k, offX, offY) Then n = n + 1
         Next shp
     Next sld
     On Error GoTo 0
     ScaleAllGeometry = n
+End Function
+
+' Escala UMA forma (grupos incluidos: mexer no grupo ja' move os filhos).
+' Le cada dimensao pra variavel local, valida faixa sã (sentinelas de
+' placeholder retornam valores absurdos que estouram na multiplicacao) e so'
+' entao grava. Qualquer erro -> pula a forma. Devolve True se conseguiu.
+Private Function ScaleOneShape(ByVal shp As Object, ByVal k As Single, ByVal offX As Single, ByVal offY As Single) As Boolean
+    Dim l As Single, t As Single, wd As Single, ht As Single
+    ScaleOneShape = False
+    On Error Resume Next
+    l = 1000000: t = 1000000: wd = -1: ht = -1
+    l = shp.Left: t = shp.Top: wd = shp.Width: ht = shp.Height
+    If Err.Number <> 0 Then Err.Clear: Exit Function
+    ' faixa sã de um slide (em pontos). Fora disso e' sentinela/objeto especial.
+    If Abs(l) > 100000 Or Abs(t) > 100000 Then Exit Function
+    If wd <= 0 Or wd > 100000 Or ht <= 0 Or ht > 100000 Then Exit Function
+    shp.Left = l * k + offX
+    shp.Top = t * k + offY
+    shp.Width = wd * k
+    shp.Height = ht * k
+    If Err.Number = 0 Then ScaleOneShape = True
+    Err.Clear
 End Function
 
 ' Sobre: mostra a versao instalada da faixa. Compare com a versao no site
