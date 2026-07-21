@@ -6,81 +6,98 @@
 <title>CBA Studio — Brand Standards</title>
 <meta name="description" content="Ajuste os padrões da marca (paleta, cores de tipo, escala de tamanhos, entrelinha e raio) e copie a configuração para o add-in CBA Studio." />
 <style>
+  /* Sistema visual CBA B+G (mesmos tokens da landing). Pesos 400 e 700. */
   :root{
-    --bg:#F3F1EB; --surface:#FFFFFF; --surface-2:#FAF9F5;
-    --ink:#1B1B22; --muted:#6E6E78; --line:#E7E4DC;
-    --azul:#436AE1; --azul-d:#3557c8; --rosa:#FD5E6D; --bege:#EEECE6;
-    --radius:14px; --radius-s:10px;
-    --font:"Avenir Next","Avenir",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --blue:#436AE1; --navy:#264BB9; --coral:#FC5E6D; --coral-btn:#FB3E50;
+    --ice:#E4EBFF; --gray:#F2F2F2; --white:#FFFFFF; --ink:#3A4668; --muted:#8892b0;
+    --line:#E4E7EF; --radius:18px;
+    --font:"Avenir Next","Avenir","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;
   }
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:96px;}
-  .wrap{max-width:920px;margin:0 auto;padding:0 22px;}
-  header{position:sticky;top:0;z-index:50;background:rgba(243,241,235,.86);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);}
-  .nav{display:flex;align-items:center;gap:11px;height:62px;}
-  .logo{width:36px;height:36px;border-radius:10px;background:var(--azul);color:#fff;display:grid;place-items:center;font-weight:800;font-size:16px;letter-spacing:.5px;}
-  .nav b{font-size:16px;font-weight:800;}
-  .nav b span{display:block;font-size:11px;color:var(--muted);font-weight:600;}
-  .hero{padding:30px 0 6px;}
-  .eyebrow{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--rosa);margin-bottom:10px;}
-  .hero h1{margin:0 0 8px;font-size:clamp(26px,4vw,36px);line-height:1.06;font-weight:800;letter-spacing:-.01em;}
-  .hero p{margin:0;font-size:15px;color:var(--muted);max-width:640px;}
-  section{padding:18px 0;}
-  .sec-head h2{margin:0 0 2px;font-size:19px;font-weight:800;}
-  .sec-head p{margin:0 0 14px;color:var(--muted);font-size:13px;}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--white);color:var(--navy);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:104px;}
+  .wrap{max-width:940px;margin:0 auto;padding:0 32px;}
+  h1,h2{line-height:1.05;letter-spacing:-.02em;font-weight:700;}
+  a{color:var(--coral-btn);}
 
-  .palette{display:flex;flex-wrap:wrap;gap:14px;}
-  .swatch{display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
-  .swatch label{font-size:12px;font-weight:700;color:var(--muted);}
+  /* topo navy */
+  .topbar{background:var(--navy);color:#fff;}
+  .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:52px;}
+  .logo-img{height:22px;width:auto;display:block;}
+  .topbar a{color:#fff;text-decoration:none;opacity:.85;font-weight:700;font-size:13px;}
+  .topbar a:hover{opacity:1;}
+
+  /* hero azul */
+  .hero{background:var(--blue);color:#fff;padding:52px 0 60px;}
+  .eyebrow{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--coral);margin-bottom:18px;}
+  .hero h1{font-size:clamp(34px,5vw,60px);color:#fff;margin-bottom:20px;max-width:18ch;}
+  .hero h1 em{font-style:normal;color:var(--coral);}
+  .hero p{font-size:18px;color:#fff;opacity:.94;max-width:60ch;}
+  .hero p b{font-weight:700;}
+
+  section{padding:44px 0 0;}
+  .sec-head{margin-bottom:20px;}
+  .sec-head h2{font-size:clamp(24px,3vw,32px);margin-bottom:8px;}
+  .sec-head p{color:var(--ink);font-size:15.5px;max-width:70ch;}
+  .card{background:var(--white);border:2px solid var(--ice);border-radius:var(--radius);padding:26px 28px;}
+
+  .palette{display:flex;flex-wrap:wrap;gap:18px;}
+  .swatch{display:flex;flex-direction:column;gap:8px;align-items:flex-start;}
+  .swatch label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
   .swatch .row{display:flex;align-items:center;gap:8px;}
-  input[type=color]{-webkit-appearance:none;appearance:none;width:40px;height:32px;border:1px solid var(--line);border-radius:8px;background:none;cursor:pointer;padding:0;}
+  input[type=color]{-webkit-appearance:none;appearance:none;width:44px;height:36px;border:2px solid var(--ice);border-radius:10px;background:none;cursor:pointer;padding:0;}
   input[type=color]::-webkit-color-swatch-wrapper{padding:3px;}
-  input[type=color]::-webkit-color-swatch{border:none;border-radius:5px;}
-  .hex{width:84px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;text-transform:uppercase;border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:var(--surface-2);}
+  input[type=color]::-webkit-color-swatch{border:none;border-radius:6px;}
+  .hex{width:88px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;text-transform:uppercase;border:2px solid var(--ice);border-radius:9px;padding:7px 9px;background:var(--white);color:var(--navy);}
 
-  .field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-  .field label{font-size:13px;font-weight:700;}
-  input[type=text],input[type=number]{font-family:inherit;font-size:13.5px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface-2);color:var(--ink);}
-  input[type=number]{width:78px;}
+  .field{display:flex;align-items:center;gap:11px;flex-wrap:wrap;}
+  .field label{font-size:13px;font-weight:700;color:var(--navy);}
+  input[type=text],input[type=number]{font-family:inherit;font-size:14px;border:2px solid var(--ice);border-radius:10px;padding:9px 11px;background:var(--white);color:var(--navy);}
+  input[type=number]{width:82px;}
+  input:focus,select:focus,.hex:focus{outline:none;border-color:var(--blue);}
 
-  table{width:100%;border-collapse:collapse;font-size:13.5px;}
-  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800;padding:6px 8px;border-bottom:1px solid var(--line);}
-  td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;padding:10px 10px;border-bottom:2px solid var(--ice);}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
   tr:last-child td{border-bottom:none;}
-  td.name{font-weight:700;}
-  td .sz{width:70px;}
-  td .ent{width:70px;}
-  select{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:var(--surface-2);color:var(--ink);}
+  td.name{font-weight:700;color:var(--navy);}
+  td .sz{width:72px;}
+  td .ent{width:72px;}
+  select{font-family:inherit;font-size:13px;border:2px solid var(--ice);border-radius:9px;padding:7px 9px;background:var(--white);color:var(--navy);cursor:pointer;}
   .chip{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;border:1px solid rgba(0,0,0,.08);}
 
-  .bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);}
-  .bar .wrap{display:flex;align-items:center;gap:14px;height:78px;}
-  .btn{display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-weight:700;font-size:14px;padding:12px 20px;border-radius:11px;border:1px solid transparent;cursor:pointer;}
-  .btn-primary{background:var(--azul);color:#fff;}
-  .btn-primary:hover{background:var(--azul-d);}
-  .btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line);}
+  /* barra fixa navy */
+  .bar{position:fixed;left:0;right:0;bottom:0;background:var(--navy);padding-bottom:env(safe-area-inset-bottom);}
+  .bar .wrap{display:flex;align-items:center;gap:14px;height:80px;}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-weight:700;font-size:15px;padding:14px 30px;border-radius:40px;border:none;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+  .btn-primary{background:var(--coral-btn);color:#fff;}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(251,62,80,.32);}
+  .btn-ghost{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.4);}
+  .btn-ghost:hover{background:rgba(255,255,255,.12);}
   .out{flex:1;min-width:0;}
-  .out textarea{width:100%;height:42px;resize:none;font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--surface-2);color:var(--muted);}
-  .ok{color:#1f7a4d;font-weight:800;font-size:13px;white-space:nowrap;opacity:0;transition:opacity .2s;}
+  .out textarea{width:100%;height:44px;resize:none;font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:9px 11px;background:rgba(255,255,255,.08);color:#B9C3DE;}
+  .ok{color:#7ee0a8;font-weight:700;font-size:13px;white-space:nowrap;opacity:0;transition:opacity .2s;}
   .ok.show{opacity:1;}
-  .hint{font-size:12.5px;color:var(--muted);margin-top:8px;}
-  @media(max-width:680px){ .bar .wrap{height:auto;flex-wrap:wrap;padding-top:12px;padding-bottom:12px;} .out{order:3;width:100%;} }
+  .hint{font-size:13px;color:var(--muted);margin-top:12px;}
+  @media(max-width:680px){ .bar .wrap{height:auto;flex-wrap:wrap;padding:12px 0;} .out{order:3;width:100%;} }
 </style>
 </head>
 <body>
-  <header><div class="wrap nav">
-    <div class="logo">CB</div>
-    <b>CBA Studio<span>Brand Standards</span></b>
-  </div></header>
+  <div class="topbar">
+    <div class="wrap">
+      <img class="logo-img" src="/assets/logo-cba.png" alt="CBA B+G" />
+      <a href="/">← Voltar</a>
+    </div>
+  </div>
 
-  <div class="wrap">
-    <div class="hero">
+  <div class="hero">
+    <div class="wrap">
       <span class="eyebrow">Padrões da marca</span>
-      <h1>Ajuste os padrões<span style="color:var(--rosa)">.</span></h1>
+      <h1>Os padrões da <em>marca</em>, num lugar só.</h1>
       <p>Defina paleta, cores de tipo, a escala de tamanhos, a entrelinha e o raio do rounded. Ao terminar, clique em <b>Copiar configuração</b> e cole no PowerPoint em <b>CBA Studio → Padrões → Aplicar config</b>.</p>
     </div>
+  </div>
 
+  <div class="wrap">
     <section>
       <div class="sec-head"><h2>Paleta</h2><p>As cores da marca. Rosa e Azul também são as cores que os estilos de texto aplicam.</p></div>
       <div class="card"><div class="palette" id="palette"></div></div>
