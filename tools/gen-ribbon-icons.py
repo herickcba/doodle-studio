@@ -670,6 +670,23 @@ def draw_crop():
 draw_crop().save(os.path.join(OUT, "cropPic.png"))
 
 
+# ---- Alinhar texto: 4 linhas (2a em rosa) alinhadas à esquerda / ao centro ----
+def _text_lines(centered):
+    img = Image.new("RGBA", (CSIZE, CSIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    ys = (16, 26, 36, 46)
+    widths = (34, 22, 30, 20)   # linhas de comprimentos variados
+    for i, (y, w) in enumerate(zip(ys, widths)):
+        x0 = (CSIZE - w) / 2 if centered else 14
+        col = ROSA if i == 1 else AZUL
+        d.rounded_rectangle((x0, y, x0 + w, y + 5), radius=2, fill=col)
+    return img
+
+
+_text_lines(False).save(os.path.join(OUT, "alignTextLeft.png"))
+_text_lines(True).save(os.path.join(OUT, "alignTextCenter.png"))
+
+
 print("Icones gerados em", os.path.normpath(OUT))
 for fn in sorted(os.listdir(OUT)):
     print("  ", fn)

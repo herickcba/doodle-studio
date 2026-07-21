@@ -41,6 +41,10 @@
         <group id="dsGrpTexto" label="Texto">
           <button id="dsBold"   label="Negrito"     image="dsBold"   size="large" onAction="ToggleBold"
             screentip="Negrito" supertip="Liga/desliga o negrito do texto selecionado."/>
+          <button id="dsAlignL" label="Esquerda"    image="alignTextLeft"   size="large" onAction="AlignTextLeft"
+            screentip="Alinhar o texto à esquerda" supertip="Alinha à esquerda os parágrafos do texto selecionado (ou de todas as caixas de texto selecionadas)."/>
+          <button id="dsAlignC" label="Centro"      image="alignTextCenter" size="large" onAction="AlignTextCenter"
+            screentip="Centralizar o texto" supertip="Centraliza os parágrafos do texto selecionado (ou de todas as caixas de texto selecionadas)."/>
           <button id="dsCaps"   label="Caps"        image="dsCaps"   size="large" onAction="CapsLoose"
             screentip="Caps + loose" supertip="Deixa o texto selecionado em MAIÚSCULAS e com o espaçamento entre letras solto (loose)."/>
           <button id="dsExpand" label="Expandir"    image="dsExpand" size="large" onAction="ExpandContent"

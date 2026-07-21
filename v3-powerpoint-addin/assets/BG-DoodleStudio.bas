@@ -999,6 +999,32 @@ Public Sub ToggleBold(control As IRibbonControl)
     On Error GoTo 0
 End Sub
 
+' Alinhamento do PARAGRAFO do texto selecionado (ou de todas as caixas
+' selecionadas). Mesmo padrao de selecao do ToggleBold.
+Public Sub AlignTextLeft(control As IRibbonControl)
+    SetParaAlign ppAlignLeft
+End Sub
+Public Sub AlignTextCenter(control As IRibbonControl)
+    SetParaAlign ppAlignCenter
+End Sub
+
+Private Sub SetParaAlign(ByVal al As Long)
+    Dim sel As Object, shp As Object
+    Set sel = ActiveWindow.Selection
+    On Error Resume Next
+    If sel.Type = ppSelectionText Then
+        sel.TextRange.ParagraphFormat.Alignment = al
+    ElseIf sel.Type = ppSelectionShapes Then
+        For Each shp In sel.ShapeRange
+            If shp.HasTextFrame Then
+                If shp.TextFrame.HasText Then _
+                    shp.TextFrame.TextRange.ParagraphFormat.Alignment = al
+            End If
+        Next shp
+    End If
+    On Error GoTo 0
+End Sub
+
 Public Sub PasteTextOnly(control As IRibbonControl)
     ' Mac: View.PasteSpecial nao existe; ExecuteMso (late-bound p/ evitar compile-check)
     Dim cb As Object

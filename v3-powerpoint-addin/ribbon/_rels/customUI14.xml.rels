@@ -104,4 +104,6 @@
   <Relationship Id="ancItem500" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/ancItem500.png"/>
   <Relationship Id="about" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/about.png"/>
   <Relationship Id="cropPic" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/cropPic.png"/>
+  <Relationship Id="alignTextLeft" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/alignTextLeft.png"/>
+  <Relationship Id="alignTextCenter" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="images/alignTextCenter.png"/>
 </Relationships>
