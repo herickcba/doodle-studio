@@ -37,7 +37,9 @@ extrema (altura primeiro), `.ppam` não mostra macros na caixa de Macros.
 
 ## Docs
 
-- `tools/BUILD.md` — build/release/deploy (fonte da verdade)
-- `HANDOFF.md` — arquitetura do motor de desenho (V1/V2)
+- **`HANDOFF.md` — LEIA PRIMEIRO** numa sessão nova: estado atual, arquitetura
+  das 3 partes, ciclo de build, quirks do Mac e decisões já tomadas.
+- `tools/BUILD.md` — build/release/deploy (fonte da verdade do processo)
 - `FEATURES.md` — mapa de features
 - `download/LEIA-ME.txt` — instruções pro usuário final
+- `HANDOFF-v1-v2-legacy.md` — handoff antigo da ferramenta web V1/V2 (legado)

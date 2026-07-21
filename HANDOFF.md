@@ -1,322 +1,251 @@
-# CBA Studio — Handoff Document
+# CBA Studio — Handoff
 
-> **Para a próxima IA:** este documento cobre 100% do projeto. Leia antes de tocar em qualquer arquivo.
-
----
-
-## O que é este projeto
-
-**CBA Studio** é uma ferramenta de desenho vetorial animado 100% offline, em arquivo único HTML/CSS/JS — sem build, sem dependências externas, sem CDN. Tudo roda no browser diretamente abrindo o arquivo.
-
-Existem **duas versões**:
-- `index.html` — **V1 (NUNCA MODIFICAR).** Versão estável de referência.
-- `v2.html` — **V2 (versão ativa).** Redesign de UX mantendo 100% da lógica da V1.
+> **Para a próxima sessão:** leia este documento inteiro antes de tocar em
+> qualquer arquivo. Ele reflete o estado real do projeto em **21/07/2026**,
+> versão **v1.5.0**, último commit `d568aa9`.
+> Complementos: `tools/BUILD.md` (build/deploy, fonte da verdade do processo),
+> `CLAUDE.md` (regras críticas), `FEATURES.md` (mapa de features).
+> O handoff antigo (ferramenta web V1/V2, hoje legado) está em
+> `HANDOFF-v1-v2-legacy.md`.
 
 ---
 
-## Arquitetura geral
+## 1. O que é o produto
 
-### Canvas e desenho
-- Canvas HTML5 2D, resolução interna **1920×1080**
-- O usuário desenha com mouse/touch; os pontos brutos ficam em `state.strokes[i].raw`
-- Após soltar o mouse (`finishStroke`), os pontos passam por pipeline de vetorização:
-  1. **Gaussian smoothing** (estabilizador de movimento, slider `mouseSmooth`)
-  2. **RDP simplification** (remove pontos redundantes)
-  3. **Chaikin subdivision** (suavização vetorial, slider `vectorSmooth`)
-- O resultado vetorizado é cacheado em `stroke._cache` para não reprocessar a cada render
+Toolkit de PowerPoint para a marca **CBA B+G**, distribuído em **3 partes**
+que compartilham uma versão única:
 
-### Texturas de traço
-Implementadas em `drawStroke(ctx, stroke, ptsOverride)`. Cada textura usa `rand(x, y)` baseado em **posição** (não em tempo), então o traço é estável entre frames da animação.
+| Parte | O que é | Fonte | Servido em |
+|---|---|---|---|
+| **Faixa** | Add-in VBA `.ppam` — aba "CBA Studio" no ribbon | `v3-powerpoint-addin/assets/BG-DoodleStudio.bas` + `ribbon/` | `doodle-studio-sigma.vercel.app/download/` |
+| **Extensão** | Painel lateral Office.js (abas Doodle / Imagem / Otimização) | `v3-powerpoint-addin/src/` | `doodle-studio-app.vercel.app` |
+| **Landing** | Site de instalação + página de padrões da marca | `index.html`, `config.html`, `download/` | `doodle-studio-sigma.vercel.app` |
 
-| Textura | data-tex | Técnica |
-|---------|----------|---------|
-| Giz | `giz` | Múltiplas linhas com jitter de posição e opacidade |
-| Sólido | `solido` | Linha simples com globalAlpha |
-| Marcador | `marcador` | Linha grossa semi-transparente |
-| Lápis | `lapis` | Ruído de grão fino |
-| Aquarela | `aquarela` | Blobs de cor com blur |
-| Spray | `spray` | Pontos aleatórios em raio variável |
-| Nanquim | `nanquim` | Linha fina com variação de espessura |
-| Pontilhado | `pontilhado` | Série de pontos ao longo do traço |
-| Patinhas | `patinhas` | Elipses simulando patas de cachorro (palma + 4 dedos), orientadas pela direção do traço |
-
-Podem ser combinadas **até 2 texturas simultâneas** (primeira = primária, segunda = `.secondary`).
-
-### Falhas na tinta
-Controladas por `state.fault` (`none` | `quebra` | `falha` | `respingo`) + sliders `faultLvl` (intensidade) e `gapSize` (tamanho da quebra). Aplicadas sobre os pontos vetorizados antes de renderizar o traço.
-
-> **Nota:** Os sliders `faultLvl` e `gapSize` também controlam os parâmetros da textura **Patinhas** (distância e tamanho das marcas).
+**Usuários:** o próprio usuário (Herick) e o time/sócios da CBA B+G. Rodam em
+**Mac** (principal) e Windows (beta, não validado a fundo).
 
 ---
 
-## Estado global (`state`)
+## 2. ⚠️ Regras críticas (nunca violar)
 
-```js
-state = {
-  strokes: [],          // array de traços na ordem temporal
-  selectedStrokeIdx: null,
-  currentColor: '#FD5E6D',
-  currentOpacity: 100,
-  brushSize: 8,
-  textures: ['giz'],    // até 2
-  mouseSmooth: 50,
-  vectorSmooth: 0,
-  fault: 'none',
-  faultLvl: 16,
-  gapSize: 54,
-  refImage: null,
-  refOpacity: 0.4,
-  zoom: 1,              // V2 only
-  redo: [],             // V2 only
-  anim: {
-    playing: false,
-    duration: 4,
-    easing: 'linear',
-    loop: true,
-    holdMs: 600,
-    fps: 15,
-    animScale: '640x360',
-    webmBg: '#FFFFFF',
-    _raf: null,
-    _t0: 0,
-  }
-}
-```
+1. **Segredos:** a chave Gemini (`AIzaSy…`) NUNCA pode ser commitada.
+   Rode `git diff | grep -iE "AIza|api[_-]?key|secret|token"` antes de TODO commit.
+   A chave vive só no ambiente do Vercel.
 
-### Estrutura de um traço (`stroke`)
+2. **Decks reais do usuário:** ele deixa decks de trabalho abertos no PowerPoint
+   (ex.: `ITAU_IGA_BRANDING`, `1.CBABG_XP`, `RGM2_Conceito`, `2 [Autosaved]`).
+   - Em diálogos de fechar/quit desses decks: **SEMPRE Salvar**, nunca descartar.
+   - **NUNCA rode macros que escrevem** (FixPageSize, Padronizar*, etc.) pelo
+     Immediate window sem antes conferir `ActivePresentation.Name` — o VBA age
+     na apresentação ATIVA, que pode ser um deck real.
+   - Para testar: crie um deck descartável (`Cmd+N`), ative-o explicitamente
+     (`Presentations("Presentation4").Windows(1).Activate`), teste, feche com
+     "Don't Save". Decks de teste = descartáveis; decks reais = intocáveis.
 
-```js
-{
-  raw: [{x, y}, ...],     // pontos brutos na ordem do mouse
-  color: '#FD5E6D',
-  opacity: 100,
-  size: 8,
-  textures: ['giz'],
-  fault: 'none',
-  faultLvl: 16,
-  gapSize: 54,
-  animStart: 0,           // instante de início na timeline (em unidades de arco)
-  _cache: null,           // pontos vetorizados cacheados
-  _arc: null,             // comprimento de arco cacheado
-}
-```
+3. **Git e Vercel são separados.** `git push` não publica nada. Publicar exige
+   `vercel --prod --yes` (ver §5). Os dois projetos Vercel NÃO são git-connected.
+
+4. **Push para `master`** pode ser bloqueado pelo classificador de segurança
+   (push direto na branch padrão). Se bloquear, peça autorização ao usuário.
 
 ---
 
-## Sistema de animação
+## 3. Arquitetura
 
-### Motor de revelação progressiva
+### 3.1 Faixa (VBA)
+- **Arquivo único:** `BG-DoodleStudio.bas` (~2.250 linhas, ~47 subs/functions públicas).
+- **Ribbon:** `ribbon/customUI14.xml` (RibbonX) + `ribbon/_rels/customUI14.xml.rels`
+  (todo ícone precisa de entry no rels!) + `ribbon/images/*.png` (83 ícones,
+  gerados por `tools/gen-ribbon-icons.py`).
+- **Grupos da aba:** Inserir · Tipografia (11 estilos) · Entrelinha · Texto ·
+  Fonte · Preench. · Contorno · Formas · Alinhar · Auditoria · Padrões.
 
-```js
-strokeArcLen(stroke)        // comprimento de arco do traço vetorizado
-strokeDur(stroke)           // Math.max(arcLen, 4) — duração proporcional
-strokeReveals(progress, easing) // → array com quanto revelar de cada traço em [0, dur]
-```
+**Constantes no topo do módulo** (nunca hard-code de novo):
+`CBA_VERSION`, `PT_PER_CM` (28.3465), `ANCHOR_DEFAULT_CM` (1.27),
+`GUIDE_MARGIN_CM` (3.15), `MAX_DEPTH` (12), `STYLE_INSERT` ("dsH5"),
+`SAMPLE_MAX` (24).
+> VBA exige que TODA declaração de nível de módulo (`Const`/`Dim`/`Private`)
+> fique no topo, antes de qualquer procedimento. Const no meio do arquivo =
+> erro de compilação "Only comments may appear after End Sub".
 
-A timeline mapeia `progress ∈ [0,1]` → tempo real `tc` usando `T = max(animStart + dur)` para todos os traços. Cada traço revela `clamp(tc - animStart, 0, dur)` de seu comprimento de arco.
+**Escopo das operações** (decisão do usuário, leva 6):
+- `TargetSlides()` é a regra única para Padronizar tipografia/entrelinha/cores:
+  slides selecionados no painel → slide dos objetos selecionados → slide atual.
+  **Nunca a apresentação inteira** (era destrutivo demais).
+- Rounded/Unround também operam por seleção.
 
-### Timeline arrastável
+### 3.2 Extensão (Office.js)
+- `src/office/office-bridge.js` (~1.200 linhas) — "god module": leitura do .pptx
+  por slices de ZIP, parsing XML, inserção de shapes, otimização de imagem,
+  diálogos. **Refatorar em 3 módulos está fora de escopo** (risco de regressão no Mac).
+- `src/engine/doodle-engine.js` — motor de desenho vetorial (vetorização
+  gaussiana + RDP + Chaikin, texturas, encoder GIF89a próprio).
+- `src/taskpane/` — UI; `src/dialog/` — tela grande e editor de imagem;
+  `src/modules/` — image-gen (Gemini) e img-audit (otimização);
+  `src/shared/presets.js` — biblioteca de doodles embarcada (`window.DoodlePresets`).
 
-- Cada traço tem `animStart` (em unidades de comprimento de arco)
-- **Sequencial** (default): `animStart` cumulativo — um começa quando o anterior termina
-- **Juntos**: todos `animStart = 0`
-- Arrastar blocos na timeline muda `animStart` com snap automático
-- O playhead reflete o progresso durante o preview
-
-### Curvas de easing disponíveis
-
-```js
-EASING = {
-  linear:    t => t,
-  easeIn:    t => t * t,
-  easeOut:   t => 1 - (1-t)*(1-t),
-  easeInOut: t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2
-}
-```
-
----
-
-## Export
-
-### PNG (`exportBtn`)
-- Modal com paleta de cores selecionável
-- Checkbox "Exportar com cores originais" (default marcado)
-- Se cores selecionadas: exporta um PNG por cor substituindo todas as cores pelo tom escolhido
-- Se original: exporta o canvas como está
-
-### SVG (`svgBtn`)
-- Converte os traços vetorizados para `<path>` SVG
-- Preserva todas as cores e opacidades
-
-### GIF (`gifBtn`)
-- Encoder LZW GIF89a **embutido** (100% offline, sem bibliotecas)
-- Fundo transparente (GIF com canal alpha via índice transparente)
-- Transparência binária: `alpha < 128` → transparente
-- Quadros revelam progressivamente usando `strokeReveals()`
-- **Timing canônico Weiner/giflib**: o incremento de code-size acontece DENTRO de `output()`, DEPOIS de emitir, quando `freeEnt > maxcode` — isso é crítico, off-by-one causa corrupção total
-- Disposal method = 1 ("do not dispose") — necessário porque frames são cumulativos
-- `_gifBusy` flag para evitar exports concorrentes corrompendo o `LZW_DICT` (Int32Array global)
-- Loop infinito via `NETSCAPE2.0`
-
-### WebM (`webmBtn`)
-- Usa `MediaRecorder` nativo do browser
-- Fundo sólido (sem transparência — WebM com alpha não é suportado amplamente)
-- `canvas.captureStream(0)` + `track.requestFrame()` para controle determinístico de frames
+### 3.3 Landing
+- `index.html` e `config.html` usam o **design system CBA/RGM**
+  (mesmos tokens dos protótipos em `~/Desktop/CBA/RGM/RGM 2.0/prototipos/assets/cba.css`).
+- Tokens: `--blue:#436AE1`, `--navy:#264BB9`, `--coral:#FC5E6D`,
+  `--coral-btn:#FB3E50`, `--ice:#E4EBFF`. Fonte Avenir Next, **só pesos 400 e 700**.
+- Logo oficial em `assets/logo-cba.png`.
+- `v1.html` / `v2.html` são a ferramenta web antiga (mantidas; v1 é referência histórica).
 
 ---
 
-## Layout V2 (v2.html)
+## 4. Ciclo de build da faixa (o passo manual que dói)
 
-### CSS Grid structure
+O `.bas` do repo é a FONTE, mas **o VBA precisa ser compilado dentro do
+PowerPoint** — não há compilador headless no Mac. Ciclo completo em
+`tools/BUILD.md`; resumo:
 
-```
-body { grid-template-rows: auto 1fr auto }
-  ├── header.topbar        (auto)
-  ├── main                 (1fr, grid-template-columns: 312px 1fr)
-  │   ├── aside.tools      (sidebar colapsável)
-  │   └── .canvas-area     (área do canvas com barra de ações)
-  └── .dock                (286px, grid-template-columns: 312px 1fr 188px)
-      ├── col 1: transporte de animação
-      ├── col 2: timeline com régua
-      └── col 3: exports
-```
+1. Se mexeu em ícone: `python3 tools/gen-ribbon-icons.py` **+ adicionar
+   `<Relationship>` no `.rels`** (o build valida e aborta se faltar).
+2. `open ~/Downloads/BG-DoodleStudio.pptm` → Ativar Macros.
+3. `Tools > Macro > Visual Basic Editor`.
+4. No projeto **BG-DoodleStudio** (cuidado: há outros projetos na lista!):
+   clique-direito no módulo `BG_DoodleStudio` → Remove → **No** (não exportar).
+5. Clique-direito no projeto → **Import File…** → o `.bas` do repo.
+   (No diálogo de arquivo, `Cmd+Shift+G` e colar o caminho é mais confiável
+   que clicar na lista.)
+6. Focar a janela do VBE (clicar na barra de título) → `Debug > Compile VBAProject`.
+   Sem dialog de erro = compilou.
+7. Salvar direcionado pelo Immediate window (evita salvar o deck errado):
+   `Presentations("BG-DoodleStudio.pptm").Save`
+8. `bash tools/build-ribbon-ppam.sh` → gera `~/Downloads/BG-DoodleStudio.ppam`.
+9. Instalar + empacotar:
+   ```bash
+   cp ~/Downloads/BG-DoodleStudio.ppam \
+     "$HOME/Library/Group Containers/UBF8T346G9.Office/User Content.localized/Add-Ins.localized/DoodleStudio/"
+   cp ~/Downloads/BG-DoodleStudio.ppam download/BG-DoodleStudio.ppam
+   (cd download && zip -X CBA-Studio-instalador.zip BG-DoodleStudio.ppam)
+   ```
+10. Recarregar no PowerPoint: `Tools > PowerPoint Add-ins…` → desmarcar
+    DoodleStudio → OK → reabrir → marcar → OK. **Sem isso a sessão continua
+    com o .ppam antigo em memória.**
+11. Conferir que o código novo entrou:
+    ```bash
+    cd /tmp && rm -rf pk && mkdir pk && cd pk && unzip -q <ppam> \
+      && strings ppt/vbaProject.bin | grep -i "MinhaFuncaoNova"
+    ```
 
-A variável `--sidebar-w: 312px` é usada tanto no `main` quanto no `.dock` para garantir alinhamento perfeito entre sidebar e coluna de transporte.
-
-### Tokens de design
-
-```css
---bg: #EEECE6           /* fundo geral — beige quente */
---surface: #F5F3ED      /* cards e painéis */
---surface-2: #E6E4DC    /* inputs e hover */
---surface-3: #DAD8CF    /* destaque leve */
---border: #C8C5BC
---border-2: #D6D3CA
---text: #1C1A17         /* quase-preto quente */
---muted: #7A776E
---muted-2: #524E47
---accent: #C8185C       /* magenta — cor de marca principal */
---accent-2: #E0226E     /* magenta brilhante */
---accent-soft: rgba(200,24,92,0.10)
---danger: #C03040
-```
-
-### Paleta de cores do usuário (5 fixas)
-```
-#FD5E6D  (coral)
-#436AE1  (azul)
-#EEECE6  (creme — igual ao fundo)
-#FFFFFF  (branco)
-#000000  (preto)
-```
-
-### Sidebar — Acordeão
-
-5 seções colapsáveis via `.acc` / `.acc-head` / `.acc-body`:
-- **Cor** — paleta, hex, color picker, opacidade
-- **Pincel** — tamanho + sub-acordeão de Textura (colapsado por default)
-- **Suavização** — estabilizador do movimento, suavização vetorial
-- **Falhas na Tinta** — tipo de falha + intensidade + tamanho da quebra
-- **Referência** — imagem de referência (carregar/remover/opacidade)
-
-Estado do acordeão: classe `.collapsed` no `.acc`. Sub-acordeão de textura: `.sub-acc.collapsed`.
-
-### Barra de ações do canvas (V2)
-
-Botões: Desfazer | Refazer | Limpar | Zoom − | 100% | Zoom + | Ajustar
-
-**Redo stack**: `state.redo = []`. Ao desfazer: `redo.push(strokes.pop())`. Ao refazer: `strokes.push(redo.pop())`. Limpar o redo ao desenhar um novo traço (`finishStroke`).
-
-**Zoom**: aplicado via `transform: scale(state.zoom)` no `#canvasWrap`. O `getPos()` usa `getBoundingClientRect()` então as coordenadas de desenho continuam corretas com qualquer zoom.
-
-### Indicador de pincel ativo (header)
-
-Chip no header mostrando textura + cor + tamanho atual. Atualiza via `updateBrushChip()` que é injetado com wrapper nas funções `selectColor`, `updateTextureUI`, e no `input` do slider de tamanho.
-
-### Atalhos de teclado (V2)
-
-| Tecla | Ação |
-|-------|------|
-| `Space` | Play/Pause |
-| `Ctrl+Z` | Desfazer |
-| `Ctrl+Shift+Z` | Refazer |
-| `Esc` | Deselecionar traço |
+**Extensão e landing:** só editar e deployar — nada de compilar.
 
 ---
 
-## IDs críticos (o script referencia todos estes)
+## 5. Deploy (dois projetos Vercel)
 
-```
-hexInput, hexSw, colorPicker, pickBtn, palette, opacity, opacityVal
-size, sizeVal, textureGrid (.tex-btn[data-tex]), texHint
-mouseSmooth, mouseSmoothVal, vectorSmooth, vectorSmoothVal
-faultGrid (.fault-btn[data-fault]), faultLvl, faultLvlVal, gapSize, gapSizeVal
-refOp, loadImgBtn, removeImgBtn, imgInput, refImg
-strokeSelectedInfo, deselectBtn
-playBtn, resetAnimBtn, animDur, animDurVal, animHold, animHoldVal
-animEasing, animLoop, animFps, animScale, webmBg, webmBgPick
-gifBtn, webmBtn, svgBtn, exportBtn
-undoBtn, redoBtn (V2), clearBtn
-drawCanvas, canvasWrap, statChip, status, resLabel, toast
-exportModal (+ filhos: exportOriginal, modalColors, exportConfirmBtn, modalCloseBtn)
-tlWrap, tlLanes, tlPlayhead, tlEmpty, tlSeqBtn, tlTogetherBtn
-zoomLabel, brushChip (V2), bcSw, bcTex, bcSize
-```
-
----
-
-## Bugs conhecidos e correções aplicadas
-
-### GIF — timing LZW canônico (RESOLVIDO)
-Sintoma: GIF abre rosa no Windows / branco no browser / `truncated` no PIL.
-Causa: o incremento de `codeSize` ocorria 1 código antes do esperado pelos decodificadores.
-Correção: mover o `if (nextCode > (1<<codeSize)-1) codeSize++` para DENTRO de `output()`, APÓS emitir os bits. Nunca reverter isso.
-
-### GIF — índice de transparência
-O `bgColorIndex` no header GIF deve apontar para o índice transparente, não para `palette[0]`.
-
-### GIF — disposal method
-`disposalMethod = 1` (do not dispose). Com `disposalMethod = 2` os frames anteriores são apagados, quebrando a animação cumulativa.
-
-### GIF — exports concorrentes
-`LZW_DICT` é um `Int32Array` global compartilhado. Flag `_gifBusy` previne dois exports simultâneos corrompendo o dicionário.
-
----
-
-## O que está pendente / próximas ideias
-
-- [ ] Persistência em `localStorage` (abas abertas, última cor, etc.)
-- [ ] Arrastar para redimensionar duração de um traço na timeline
-- [ ] Tema claro/escuro toggle (a V2 já é tema claro)
-- [ ] Export de frame único (PNG do momento atual da timeline)
-- [ ] Numeração de traços na timeline com hover highlight no canvas
-- [ ] Subir para GitHub + deploy no Vercel (próximo passo imediato)
-
----
-
-## Estrutura de arquivos
-
-```
-Doodle Maker/
-├── index.html      ← V1 — NUNCA MODIFICAR
-├── v2.html         ← V2 — versão ativa
-├── HANDOFF.md      ← este arquivo
-└── .claude/
-    └── launch.json ← config do servidor local (npx http-server porta 5173)
-```
-
-Para rodar localmente:
 ```bash
-npx http-server . -p 5173 -c-1
-# Abre: http://localhost:5173/v2.html
+# secret-scan primeiro!
+git add -A && git commit -m "..." && git push origin master
+
+vercel --prod --yes                              # RAIZ  → sigma (landing, downloads, config, APIs)
+(cd v3-powerpoint-addin && vercel --prod --yes)   # → app (painel/extensão + install-mac.sh)
 ```
+Regra prática: mexeu em `index.html`/`config.html`/`download/` → deploy da raiz.
+Mexeu em `v3-powerpoint-addin/src/` ou `manifest.xml` → deploy da pasta do addin.
+Mexeu no `.ppam` → deploy da raiz (é servido de `download/`).
+
+**Versão** (`v1.5.0`) vive em 5 lugares — atualizar todos ao lançar:
+`CBA_VERSION` no `.bas`, `CBA_VERSION` em `taskpane.js`, `<Version>` nos dois
+`manifest.xml`, `download/version.json`, e o badge/textos em `index.html`.
 
 ---
 
-## Contexto do usuário
+## 6. Quirks do Mac (não redescobrir — custaram caro)
 
-- **Nome da conta GitHub:** `herickcba`
-- **Email:** herickmf@gmail.com
-- O usuário trabalha no Windows 11 com PowerShell
-- Prefere respostas diretas e sem enrolação
-- A V1 é sagrada — nunca toque nela
+**PowerPoint / VBA**
+- `.ppam` **não** expõe macros na caixa de Macros. Callbacks só via ribbon.
+- **PageSetup rejeita silenciosamente** mudar uma dimensão se a proporção
+  intermediária ficar extrema (1583×540 = 2,9:1 é bloqueado). Solução:
+  **altura primeiro**, em 4 passadas.
+- O PowerPoint **escala a geometria** ao mudar o tamanho do slide, mas o corpo
+  da fonte **não aparece alterado em `Font.Size`** (ele usa autoajuste interno).
+  **Nunca multiplique `Font.Size`** — foi o que quebrou layouts inteiros.
+- Placeholders/objetos especiais retornam dimensões-sentinela absurdas que
+  estouram na multiplicação (**erro 6 Overflow**). Sempre validar faixa antes
+  de gravar e proteger com `On Error`.
+- `On Error Resume Next` é local ao procedimento — o erro pode escapar no
+  código do CHAMADOR. Envolva blocos de risco em função própria com handler.
+- `View.PasteSpecial` não existe; usar `Application.CommandBars.ExecuteMso`
+  late-bound (`Dim cb As Object`) — padrão validado em `PasteTextOnly` e `CropPicture`.
+- Strings do VBA: **evite acentos e travessões (—)** em MsgBox/InputBox. O VBE
+  do Mac interpreta o UTF-8 do `.bas` como MacRoman e vira mojibake (`‚Äî`).
+  Use hífen simples.
+
+**Office.js**
+- `getActiveSlide()` e `shapes.addImage()` **não são confiáveis**; usar
+  `slides.getItemAt(index)` + `setSelectedDataAsync`.
+- `shapes.load('items')` → `sync` → `item.load('name')` → `sync` (dois passos;
+  o atalho `'items/name'` não popula).
+- `window.confirm()` **não funciona** no webview do taskpane → confirmação em 2 cliques.
+- Ler o .pptx custa caro: há cache de fatias compartilhado (TTL ~2 min) e LRU
+  de 5 imagens decodificadas em `office-bridge.js`.
+
+**GIF (motor de doodle)**
+- GIF só tem transparência **binária**; a textura de giz é semi-transparente.
+  Tentativas de "melhorar" (dithering Bayer, matte branco) foram **rejeitadas
+  pelo usuário** e revertidas. O render é o original (CAP 720 + corte alpha 128),
+  com o traço gerado a **70% do peso** (`GIF_STROKE_WEIGHT`) para ficar arejado
+  como o pincel. **Não mexa nisso sem comparativo visual aprovado.**
+
+**Ferramentas / computer-use**
+- O VBE às vezes rouba/perde o foco do menu: se o menu bar mostrar os menus do
+  PowerPoint (Arrange, Slide Show) em vez dos do VBE (Debug, Run), clique na
+  janela do VBE antes.
+- Diálogos do sistema podem bloquear cliques ("SecurityAgent"). Teclado
+  (`Return`, `Tab`) costuma funcionar quando o clique não.
+
+---
+
+## 7. Estado atual e decisões recentes
+
+**Últimas levas entregues (todas commitadas, publicadas e testadas ao vivo):**
+
+- **Leva 4** — versionamento v1.5.0 (`version.json`, botão "Sobre" na faixa,
+  aviso de update no painel), constantes VBA, âncoras esq/topo unificadas,
+  cache de .pptx, validação de ícones no build, `tools/BUILD.md` + `CLAUDE.md`,
+  cache HTTP dos estáticos (abertura do painel deixou de fazer 13 round-trips).
+- **Leva 5** — GIF vai pra biblioteca e o slide recebe **sempre o PNG estático**;
+  badges PNG/GIF nos cards; preview com fundo azul para traço branco/cinza;
+  presets embarcados + botão ⧉ que copia o JSON do doodle.
+- **Leva 6** — Padronizar tipografia/entrelinha/cores passam a agir **só nos
+  slides selecionados**.
+- **Leva 7** — Page Size refeito (confia no resize nativo, detecta por
+  amostragem, oferece ajuste só se o PPT não mexeu, **nunca gera erro**);
+  caixa de texto e rounded box nascem no estilo **Texto 24**; botão **Crop**;
+  landing e `config.html` redesenhadas no design system CBA/RGM.
+- **Último commit** — botões **Esquerda/Centro** (alinhamento de parágrafo) no
+  grupo Texto, à direita do Negrito.
+
+**Fora de escopo (decidido, não refazer sem pedir):**
+- Quebrar `office-bridge.js` em 3 módulos.
+- Git LFS / GitHub Releases para os binários (repo tem ~11 MB).
+- Consolidar os dois domínios Vercel (funciona; documentar em vez de mexer).
+- Testes automatizados de Office.js.
+- Refatorar os ~10 loops de seleção do VBA num helper genérico (sem delegates
+  em VBA vira gambiarra; custo > ganho).
+
+**Pendências conhecidas:**
+- `presets.js` está **vazio** — o usuário vai desenhar os doodles e mandar os
+  JSONs (copiados pelo botão ⧉) para colar lá.
+- Instalador Windows continua **beta** (checklist em `download/WINDOWS-TEST.md`).
+- O caminho "PowerPoint não escala nada" do Page Size não pôde ser reproduzido
+  em deck sintético — se o usuário relatar de novo, pedir para ele contar o que
+  a mensagem final disse (ela informa qual caminho foi usado).
+
+---
+
+## 8. Como o usuário trabalha (preferências observadas)
+
+- Fala **português**; responda em português.
+- Quer **direto ao ponto** — pediu explicitamente menos preâmbulo.
+- Prefere **UI direta e integrada**, poucos cards, cinza neutro + azul.
+- Em mudança de render/visual: **mostre um comparativo e peça aprovação antes
+  de publicar** (aprendido no episódio da textura do GIF).
+- Fluxo padrão ao pedir uma feature: implementar → build → **testar ao vivo no
+  PowerPoint** → commit → push → deploy. Ele valoriza a verificação real, não
+  só "o código está certo".
+- Ao terminar, ele costuma pedir o resumo do que mudou **em termos de benefício
+  para o usuário**, não em termos técnicos.
