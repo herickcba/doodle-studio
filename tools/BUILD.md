@@ -128,6 +128,10 @@ Notas:
 - O gate 5 **exige árvore limpa**: o `build-manifest.json` declara um commit, e
   com o repo sujo esse vínculo seria falso. Para teste local, `--allow-dirty`
   (o manifesto sai marcado como `sourceDirty: true`).
+- Rode o gate 5 **uma vez** e commite o manifesto junto no commit do release. Ele
+  sempre aponta para o commit anterior ao que o contém (é a natureza da coisa:
+  o hash do commit não existe antes do commit). Rodar o verify de novo depois só
+  reescreve `buildDate`/`sourceCommit` — não persiga isso.
 - Os "fantasmas de P-code" do gate 5 **avisam, não bloqueiam** (existe `--strict`
   para bloquear, mas não use na rotina: todo build produz ~5 tokens de lixo
   binário aleatório, que mudariam a cada release). O que importa é a **forma**
