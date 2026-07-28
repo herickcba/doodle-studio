@@ -207,8 +207,14 @@ print()
 # ---------------------------------------------------------------
 # 4. Manifesto do build
 # ---------------------------------------------------------------
-owner = subprocess.run(['git', 'config', 'user.email'], capture_output=True,
-                       text=True).stdout.strip() or 'desconhecido'
+def _git(*args):
+    return subprocess.run(['git'] + list(args), capture_output=True,
+                          text=True).stdout.strip()
+
+
+# responsavel pelo build: git config, senao o autor do commit publicado.
+owner = _git('config', 'user.email') or _git('log', '-1', '--format=%an <%ae>') \
+        or 'desconhecido'
 build_date = subprocess.run(['date', '-u', '+%Y-%m-%dT%H:%M:%SZ'],
                             capture_output=True, text=True).stdout.strip()
 data = {
