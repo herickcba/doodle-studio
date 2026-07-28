@@ -1,0 +1,13 @@
+{
+  "productName": "BG-DoodleStudio",
+  "version": "1.5.0B",
+  "buildDate": "2026-07-28T00:38:12Z",
+  "sourceCommit": "ce354bea47444a7714007aac1f1bd2a76b33a1d9",
+  "sourceDirty": false,
+  "sha256": "da059f22ce19ccb57d28c0b6bce3f324204bb01d6348a4b1ab20417bbe74832b",
+  "buildOwner": "desconhecido",
+  "signatureStatus": "not-signed",
+  "certificateSubject": null,
+  "certificateThumbprint": null,
+  "signatureNote": "Projeto VBA nao assinado: o VBE do macOS nao oferece assinatura de projeto e a CBA nao possui certificado corporativo de code signing. Decisao e justificativa em docs/SECURITY-REVIEW-v1.5.0B.md."
+}
