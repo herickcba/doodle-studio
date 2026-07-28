@@ -45,9 +45,11 @@ command -v python3 >/dev/null || { echo "Erro: python3 nao encontrado."; exit 1;
 [ -f "$BAS" ]    || { echo "Erro: nao achei o .bas: $BAS"; exit 1; }
 [ -f "$RIBBON" ] || { echo "Erro: nao achei o customUI14.xml: $RIBBON"; exit 1; }
 
-# --- estado do git: o manifesto declara um commit, entao ele tem de ser verdade
+# --- estado do git: o manifesto declara um commit, entao ele tem de ser verdade.
+#     O proprio build-manifest.json fica de fora da conta: ele e' a SAIDA deste
+#     script, entao contaria sempre como sujeira e bloquearia todo build.
 DIRTY=0
-if [ -n "$(git -C "$REPO" status --porcelain 2>/dev/null)" ]; then
+if [ -n "$(git -C "$REPO" status --porcelain 2>/dev/null | grep -v 'download/build-manifest.json')" ]; then
   DIRTY=1
   if [ "$ALLOW_DIRTY" -eq 0 ]; then
     echo "BLOQUEIO: a arvore de trabalho tem alteracoes nao commitadas."
