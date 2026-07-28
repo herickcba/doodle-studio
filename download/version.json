@@ -1,5 +1,5 @@
 {
-  "version": "1.5.0",
-  "date": "2026-07-09",
-  "notes": "Page Size corrigido (não deixa mais slide quadrado); versão visível na faixa (Sobre), no painel e no site."
+  "version": "1.5.0B",
+  "date": "2026-07-27",
+  "notes": "Revisão de segurança da faixa: código morto removido, análise estática e verificação de integridade automatizadas no build (hash SHA-256 + manifesto vinculado ao commit). Nenhuma mudança de comportamento nos botões."
 }

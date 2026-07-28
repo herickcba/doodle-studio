@@ -12,14 +12,16 @@ Attribute VB_Name = "BG_DoodleStudio"
 '    ApplyStyle(control)    -> aplica o estilo do botao (control.id)
 '    Entrelinha(control)    -> entrelinha B+G na SELECAO
 '    EntrelinhaSlides(ctrl) -> entrelinha B+G nos SLIDES SELECIONADOS
-'  Tambem expostos sem args p/ Option+F8 (fallback):
-'    BG_AplicarEntrelinha / BG_AplicarEntrelinhaSlides
+'
+'  Todo procedimento Public deste modulo e' um callback do ribbon:
+'  um .ppam nao expoe macros na caixa de Macros (Mac), entao nao ha'
+'  ponto de entrada alem da faixa. Public sem callback = codigo morto.
 ' ============================================================
 Option Explicit
 
 ' Versao do produto (faixa + extensao + landing andam juntas).
 ' Ao lancar: atualizar tambem download/version.json, manifest.xml e index.html.
-Public Const CBA_VERSION As String = "1.5.0"
+Public Const CBA_VERSION As String = "1.5.0B"
 
 ' ---- Constantes de layout (fonte unica destes numeros) ----
 Private Const PT_PER_CM As Single = 28.3465    ' pontos por cm (72 pt/in / 2,54 cm/in)
@@ -284,11 +286,6 @@ Public Sub ApplyStyle(control As IRibbonControl)
     ApplyStyleById control.id
 End Sub
 
-' Galeria de estilos: o item clicado traz o id (= chave de SpecFor).
-Public Sub ApplyStyleGallery(control As IRibbonControl, id As String, index As Integer)
-    ApplyStyleById id
-End Sub
-
 Private Sub ApplyStyleById(ByVal styleId As String)
     Dim spec As StyleSpec, sel As Object, shp As Object, n As Long
     spec = SpecFor(styleId)
@@ -436,14 +433,6 @@ Private Function SetSpacingOnShape(ByVal shp As Object, ByVal mult As Single, Op
     SetSpacingOnShape = cnt
 End Function
 
-' Fallback p/ Option+F8 (subs sem argumentos aparecem na caixa de Macros)
-Public Sub BG_AplicarEntrelinha()
-    DoEntrelinhaSelecao
-End Sub
-Public Sub BG_AplicarEntrelinhaSlides()
-    DoEntrelinhaSlides
-End Sub
-
 ' ============================================================
 '  ALINHAR a's ancoras ESQUERDA e TOPO (medida via dropdown, em cm)
 '  Nucleo compartilhado; os callbacks publicos so' delegam.
@@ -483,16 +472,6 @@ Private Sub AnchorAlign(ByVal cm As Single, ByVal topAxis As Boolean)
         On Error GoTo 0
     End If
     If n = 0 Then MsgBox "Selecione um ou mais objetos para ancorar.", vbInformation, "CBA Studio"
-End Sub
-
-Public Sub GetAnchorText(control As IRibbonControl, ByRef text As Variant)
-    text = Format(AnchorCm, "0.0#")
-End Sub
-
-Public Sub SetAnchorText(control As IRibbonControl, text As String)
-    Dim v As Single
-    v = Val(Replace(text, ",", "."))
-    If v > 0 Then gAnchorCm = v
 End Sub
 
 ' Dropdown de medida (gallery). Label mostra o valor atual; cada item seta
@@ -1254,21 +1233,6 @@ Private Function NormalizeRounded(ByVal shp As Object, Optional ByVal depth As L
     On Error GoTo 0
     NormalizeRounded = cnt
 End Function
-
-' TUDO rounded: arredonda TODOS os objetos elegiveis (retangulos,
-' caixas de texto e imagens) de toda a apresentacao. Formas nao
-' retangulares (oval, seta, linha) ficam como estao.
-Public Sub RoundEverything(control As IRibbonControl)
-    If Not ConfirmBigDeck("arredondar as formas") Then Exit Sub
-    Dim sld As Object, shp As Object, n As Long
-    n = 0
-    For Each sld In ActivePresentation.Slides
-        For Each shp In sld.Shapes
-            n = n + MakeRounded(shp)
-        Next shp
-    Next sld
-    MsgBox "Arredondados " & n & " objetos na apresentacao.", vbInformation, "CBA Studio"
-End Sub
 
 ' TIRAR rounded pela SELECAO: objetos selecionados, ou os slides selecionados
 ' no painel; sem selecao de formas usa o slide atual. Nunca a apresentacao toda.

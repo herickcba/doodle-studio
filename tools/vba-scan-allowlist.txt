@@ -1,0 +1,48 @@
+# ============================================================
+#  vba-scan-allowlist.txt
+#  Ocorrencias de termos sensiveis que o vba-static-scan.sh
+#  encontra no .bas e que estao TECNICAMENTE JUSTIFICADAS.
+#
+#  Formato (3 campos separados por "|"):
+#     TERMO | PROCEDIMENTO | justificativa
+#
+#  Regra: toda ocorrencia tem de estar removida do codigo OU
+#  listada aqui com justificativa. Se um procedimento for
+#  renomeado ou um termo novo aparecer, o scan FALHA ate' que
+#  alguem revise e adicione a entrada -- e' isso que garante
+#  que nada entra sem passar por revisao humana.
+#
+#  Cada entrada aqui tem contrapartida detalhada em
+#  docs/SECURITY-REVIEW-v1.5.0B.md (secao "Pontos de fronteira").
+# ============================================================
+
+# --- Caminho do proprio arquivo de configuracao ---------------
+# Environ e' usado SO' para montar o caminho do cba-config.txt do
+# proprio suplemento. Nao ha' enumeracao de pastas nem leitura de
+# variaveis de ambiente do usuario para outro fim.
+Environ | ConfigPath        | monta o caminho do proprio cba-config.txt (HOME na sandbox do Office no Mac; APPDATA no Windows)
+Environ | EnsureConfigDir   | detecta a plataforma (HOME vazio = Windows) para decidir se precisa criar a pasta
+MkDir   | EnsureConfigDir   | cria %APPDATA%\CBAStudio no Windows; caminho fixo, nao derivado de entrada do usuario
+Dir     | EnsureConfigDir   | testa a existencia da propria pasta de config; nao enumera nem pesquisa arquivos
+Open    | LoadConfig        | le o proprio arquivo de configuracao (permitido no item 3 da analise)
+Open    | WriteConfig       | grava o proprio arquivo de configuracao (permitido no item 3 da analise)
+
+# --- Abertura da pagina de Brand Standards --------------------
+# URL fixa no codigo, aberta somente apos clique explicito do
+# usuario no botao "Padroes > Abrir pagina". Nao recebe URL por
+# configuracao, nao anexa dados da apresentacao nem identificador
+# do usuario, e nao abre nada automaticamente na carga do add-in.
+FollowHyperlink | ConfigOpen | abre https://doodle-studio-sigma.vercel.app/config.html; URL hard-coded, so' por acao explicita do usuario
+
+# Allowlist de URLs. ATENCAO: aqui a chave e' a URL LITERAL, nao o
+# procedimento -- qualquer endereco novo no modulo bloqueia o build,
+# mesmo dentro de um procedimento que ja' tem outra URL liberada.
+URL | https://doodle-studio-sigma.vercel.app/config.html | pagina de Brand Standards; sem query string, sem dados da apresentacao, sem identificador do usuario
+
+# --- ExecuteMso (API do proprio Office) -----------------------
+# NAO e' execucao de comando do sistema: e' o mesmo botao da
+# faixa nativa do PowerPoint, disparado pela API do Office.
+# Late-bound (Dim cb As Object) apenas porque o Mac nao expoe
+# View.PasteSpecial nem PictureFormat.Crop em tempo de compilacao.
+Execute | CropPicture   | Application.CommandBars.ExecuteMso "PictureCrop"/"Crop" - comando nativo do PowerPoint, nao do SO
+Execute | PasteTextOnly | Application.CommandBars.ExecuteMso "PasteTextOnly" - comando nativo do PowerPoint, nao do SO

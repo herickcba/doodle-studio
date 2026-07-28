@@ -284,7 +284,7 @@
   // O painel sempre roda a versão publicada (web); quem fica pra trás é a
   // FAIXA (.ppam instalado). O version.json diz a última versão lançada —
   // se este painel for mais antigo (webview cacheado), avisa pra recarregar.
-  const CBA_VERSION = '1.5.0';
+  const CBA_VERSION = '1.5.0B';
   (function versionLine() {
     const el = $('verLine');
     if (!el) return;
@@ -294,7 +294,8 @@
       .then((v) => {
         if (!v || !v.version || v.version === CBA_VERSION) return;
         el.classList.add('warn');
-        el.innerHTML = 'CBA Studio v' + CBA_VERSION + ' · <b>v' + String(v.version).replace(/[^0-9.]/g, '') +
+        // letras entram no filtro: versões como "1.5.0B" apareceriam como "1.5.0"
+        el.innerHTML = 'CBA Studio v' + CBA_VERSION + ' · <b>v' + String(v.version).replace(/[^0-9A-Za-z.]/g, '') +
           ' disponível</b> — rode o instalador do site de novo.';
       })
       .catch(() => { /* offline/CORS: fica só a versão local */ });

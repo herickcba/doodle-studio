@@ -1,0 +1,17 @@
+# ============================================================
+#  pcode-ghosts-allowlist.txt
+#  Identificadores que o verify-ppam.sh pode encontrar no P-code
+#  sem correspondencia no fonte e que sao RUIDO conhecido, nao
+#  residuo de codigo removido.
+#
+#  Um por linha; "#" comeca comentario.
+#
+#  ATENCAO: nao use este arquivo para calar fantasmas de verdade.
+#  Identificador de procedimento ou variavel que existiu no codigo
+#  e foi removido NAO entra aqui -- some sozinho quando o build
+#  roda a partir de um arquivo-base limpo (tools/BUILD.md).
+#  Silenciar aqui destruiria justamente a evidencia que o item 2
+#  da analise de risco pede.
+# ============================================================
+
+# (vazio de proposito - preencher so' com ruido comprovado)
