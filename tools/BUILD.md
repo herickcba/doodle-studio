@@ -150,11 +150,17 @@ Gerado em `config.html` → colado em `Padrões > Aplicar config`. Formato
 
 | Chave | Exemplo | Significado |
 |---|---|---|
-| `fonte` | `Avenir Next` | fonte única da marca |
-| `pal0…pal4` | `FD5E6D` | paleta: 0 rosa/magenta, 1 azul, 2 bege, 3 branco, 4 preto (hex sem #) |
-| `radius` | `25` | raio padrão em px @ altura 1080 |
-| `s_<id>` | `s_dsHero=120,1,0` | estilo: tamanho, negrito (0/1), papel de cor (0=rosa 1=azul) |
-| `e_<size>` | `e_44=1.0` | entrelinha (múltiplo) por tamanho |
+| `fonte` | `fonte=Avenir Next` | fonte única da marca |
+| `pal0…pal4` | `pal0=FD5E6D` | paleta: 0 rosa/magenta, 1 azul, 2 bege, 3 branco, 4 preto (hex sem #) |
+| `radiusPx` | `radiusPx=25` | raio padrão em px @ altura 1080 |
+| `s_<id>` | `s_dsHero=120\|1\|0` | estilo: tamanho **\|** negrito (0/1) **\|** papel de cor (0=rosa 1=azul) |
+| `ent_<size>` | `ent_44=1.0` | entrelinha (múltiplo) por tamanho |
+
+> Os nomes acima são os que `ApplyKV` (no `.bas`) realmente reconhece, e são os
+> que `config.html` gera — conferido nos dois lados. **Chave desconhecida é
+> ignorada em silêncio**, sem erro: se você montar uma config à mão e ela não
+> surtir efeito, quase sempre é nome de chave errado. Note o separador do
+> `s_<id>`: barra vertical, não vírgula.
 
 Persistido em `~/Library/Containers/com.microsoft.Powerpoint/Data/cba-config.txt`
 (Mac) / `%APPDATA%` (Windows). `SetDefaults` no .bas é a verdade de fábrica.

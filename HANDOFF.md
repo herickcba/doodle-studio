@@ -1,10 +1,11 @@
 # CBA Studio — Handoff
 
 > **Para a próxima sessão:** leia este documento inteiro antes de tocar em
-> qualquer arquivo. Ele reflete o estado real do projeto em **21/07/2026**,
-> versão **v1.5.0**, último commit `d568aa9`.
+> qualquer arquivo. Ele reflete o estado real do projeto em **27/07/2026**,
+> versão **v1.5.0B**, último commit `6ac49e9`.
 > Complementos: `tools/BUILD.md` (build/deploy, fonte da verdade do processo),
-> `CLAUDE.md` (regras críticas), `FEATURES.md` (mapa de features).
+> `CLAUDE.md` (regras críticas), `FEATURES.md` (mapa de features),
+> `docs/SECURITY-REVIEW-v1.5.0B.md` (resposta à análise de risco do sócio).
 > O handoff antigo (ferramenta web V1/V2, hoje legado) está em
 > `HANDOFF-v1-v2-legacy.md`.
 
@@ -48,12 +49,25 @@ que compartilham uma versão única:
 4. **Push para `master`** pode ser bloqueado pelo classificador de segurança
    (push direto na branch padrão). Se bloquear, peça autorização ao usuário.
 
+5. **Gates de publicação** (desde a v1.5.0B): `tools/vba-static-scan.sh` e
+   `tools/verify-ppam.sh` têm de passar antes de publicar a faixa. Lista
+   completa e ordem em `tools/BUILD.md` §4.1. Não contorne com `--allow-dirty`
+   fora de teste local: esse flag marca o manifesto como mentiroso de propósito.
+
+6. **Credenciais:** `gh` está logado como `herickcba` e o `vercel` como
+   `herickmf-2060`. Se faltar login, **peça ao usuário que rode o `login` ele
+   mesmo** — nunca aceite senha, token ou chave colada no chat.
+
 ---
 
 ## 3. Arquitetura
 
 ### 3.1 Faixa (VBA)
-- **Arquivo único:** `BG-DoodleStudio.bas` (~2.250 linhas, ~47 subs/functions públicas).
+- **Arquivo único:** `BG-DoodleStudio.bas` (~2.215 linhas, 41 callbacks públicos).
+- **Regra:** todo procedimento `Public` do módulo é um callback do ribbon. Um
+  `.ppam` não expõe macros na caixa de Macros no Mac, então não há outro ponto
+  de entrada — `Public` sem callback é código inalcançável. O `verify-ppam.sh`
+  avisa quando aparece um.
 - **Ribbon:** `ribbon/customUI14.xml` (RibbonX) + `ribbon/_rels/customUI14.xml.rels`
   (todo ícone precisa de entry no rels!) + `ribbon/images/*.png` (83 ícones,
   gerados por `tools/gen-ribbon-icons.py`).
@@ -100,13 +114,18 @@ O `.bas` do repo é a FONTE, mas **o VBA precisa ser compilado dentro do
 PowerPoint** — não há compilador headless no Mac. Ciclo completo em
 `tools/BUILD.md`; resumo:
 
+0. `bash tools/vba-static-scan.sh` — tem de passar antes de compilar.
 1. Se mexeu em ícone: `python3 tools/gen-ribbon-icons.py` **+ adicionar
    `<Relationship>` no `.rels`** (o build valida e aborta se faltar).
-2. `open ~/Downloads/BG-DoodleStudio.pptm` → Ativar Macros.
+2. **Arquivo-base LIMPO** (a cada release): `Cmd+N` no PowerPoint → salvar por
+   cima de `~/Downloads/BG-DoodleStudio.pptm` como **Macro-Enabled (.pptm)**.
+   Reaproveitar o `.pptm` antigo faz o projeto acumular nomes de procedimentos
+   já removidos — ver §6 "Fantasmas de P-code".
 3. `Tools > Macro > Visual Basic Editor`.
-4. No projeto **BG-DoodleStudio** (cuidado: há outros projetos na lista!):
-   clique-direito no módulo `BG_DoodleStudio` → Remove → **No** (não exportar).
-5. Clique-direito no projeto → **Import File…** → o `.bas` do repo.
+4. Num arquivo-base limpo não há módulo para remover. (Se estiver reaproveitando
+   um `.pptm`: clique-direito no módulo `BG_DoodleStudio` → Remove → **No**.
+   Cuidado, há outros projetos na lista!)
+5. Selecione o projeto → **File > Import File…** → o `.bas` do repo.
    (No diálogo de arquivo, `Cmd+Shift+G` e colar o caminho é mais confiável
    que clicar na lista.)
 6. Focar a janela do VBE (clicar na barra de título) → `Debug > Compile VBAProject`.
@@ -114,6 +133,9 @@ PowerPoint** — não há compilador headless no Mac. Ciclo completo em
 7. Salvar direcionado pelo Immediate window (evita salvar o deck errado):
    `Presentations("BG-DoodleStudio.pptm").Save`
 8. `bash tools/build-ribbon-ppam.sh` → gera `~/Downloads/BG-DoodleStudio.ppam`.
+8b. `bash tools/verify-ppam.sh` → compara o fonte de dentro do binário com o
+    `.bas` do repo, confere os callbacks e gera `download/build-manifest.json`
+    (SHA-256 + commit). **Falhou = não publique.**
 9. Instalar + empacotar:
    ```bash
    cp ~/Downloads/BG-DoodleStudio.ppam \
@@ -124,10 +146,10 @@ PowerPoint** — não há compilador headless no Mac. Ciclo completo em
 10. Recarregar no PowerPoint: `Tools > PowerPoint Add-ins…` → desmarcar
     DoodleStudio → OK → reabrir → marcar → OK. **Sem isso a sessão continua
     com o .ppam antigo em memória.**
-11. Conferir que o código novo entrou:
+11. Conferir que o código novo entrou (o passo 8b já garante isso; este é o
+    atalho manual para checar um símbolo específico):
     ```bash
-    cd /tmp && rm -rf pk && mkdir pk && cd pk && unzip -q <ppam> \
-      && strings ppt/vbaProject.bin | grep -i "MinhaFuncaoNova"
+    python3 tools/vba_extract.py download/BG-DoodleStudio.ppam
     ```
 
 **Extensão e landing:** só editar e deployar — nada de compilar.
@@ -173,6 +195,22 @@ Mexeu no `.ppam` → deploy da raiz (é servido de `download/`).
 - Strings do VBA: **evite acentos e travessões (—)** em MsgBox/InputBox. O VBE
   do Mac interpreta o UTF-8 do `.bas` como MacRoman e vira mojibake (`‚Äî`).
   Use hífen simples.
+- **O VBE normaliza a caixa dos identificadores** ao compilar (VBA é
+  case-insensitive). O fonte extraído do `.ppam` nunca bate byte a byte com o
+  `.bas` — na v1.5.0B eram 40 bytes, todos a mesma letra em caixa diferente
+  (`Bold`→`bold`). Por isso o `verify-ppam.sh` compara ignorando caixa;
+  divergência **além** de caixa é bloqueio de verdade.
+- **Fantasmas de P-code:** o projeto VBA guarda uma tabela de nomes que NÃO é
+  limpa quando você remove código. Compilar sempre no mesmo `.pptm` faz o
+  binário carregar nomes de procedimentos deletados meses antes (a v1.5.0 tinha
+  23: `ScaleAllSlides`, `C_AZUL`, `temBackup`…). É inofensivo, mas é a assinatura
+  exata de VBA stomping numa auditoria externa. **Remédio: arquivo-base limpo a
+  cada release.** Sobram ~5 tokens curtos e aleatórios (`sMZfMz`) por build —
+  esses são lixo binário e mudam sempre; ignore.
+- **Assinatura digital de projeto VBA não existe no Mac.** O diálogo
+  *Tools > Digital Signature* é exclusivo do Office para Windows. Decisão de não
+  assinar está registrada em `docs/SECURITY-REVIEW-v1.5.0B.md` §6 — não é um
+  passo esquecido, não reabra sem certificado corporativo em mãos.
 
 **Office.js**
 - `getActiveSlide()` e `shapes.addImage()` **não são confiáveis**; usar
@@ -215,9 +253,27 @@ Mexeu no `.ppam` → deploy da raiz (é servido de `download/`).
 - **Leva 7** — Page Size refeito (confia no resize nativo, detecta por
   amostragem, oferece ajuste só se o PPT não mexeu, **nunca gera erro**);
   caixa de texto e rounded box nascem no estilo **Texto 24**; botão **Crop**;
-  landing e `config.html` redesenhadas no design system CBA/RGM.
-- **Último commit** — botões **Esquerda/Centro** (alinhamento de parágrafo) no
-  grupo Texto, à direita do Negrito.
+  landing e `config.html` redesenhadas no design system CBA/RGM. Fechou com os
+  botões **Esquerda/Centro** (alinhamento de parágrafo) no grupo Texto, à
+  direita do Negrito.
+- **Leva 8 (v1.5.0B, 27/07/2026)** — resposta à análise de risco do sócio.
+  Ver `docs/SECURITY-REVIEW-v1.5.0B.md`. Em resumo:
+  - A auditoria confirmou que a faixa **já** cumpria os controles de
+    comportamento: zero `Shell`/`CreateObject`/`XMLHTTP`/`Declare`/registro/
+    `VBProject`, nenhuma chamada de rede. Faltava evidência, não segurança.
+  - Dois gates novos e bloqueantes: `tools/vba-static-scan.sh` (termos proibidos,
+    com allowlist justificada em `tools/vba-scan-allowlist.txt`) e
+    `tools/verify-ppam.sh` (fonte do binário × repo, callbacks, SHA-256,
+    `build-manifest.json` vinculado ao commit).
+  - `tools/vba_extract.py` lê o `vbaProject.bin` **só com a stdlib do Python**
+    (parser CFB + descompressão MS-OVBA) — de propósito: o gate não pode
+    depender de `pip install` para rodar em outra máquina.
+  - Removidos 6 procedimentos `Public` inalcançáveis (`ApplyStyleGallery`,
+    `GetAnchorText`, `SetAnchorText`, `RoundEverything`,
+    `BG_AplicarEntrelinha[Slides]`). Nenhuma mudança de comportamento.
+  - Assinatura digital **recusada** com justificativa (ver §6 dos quirks).
+  - `docs/EXTENSAO-FLUXO-DE-DADOS.md`: a Extensão envia imagem ao Gemini —
+    fora do escopo da análise dele, sem alteração de código.
 
 **Fora de escopo (decidido, não refazer sem pedir):**
 - Quebrar `office-bridge.js` em 3 módulos.
@@ -234,6 +290,13 @@ Mexeu no `.ppam` → deploy da raiz (é servido de `download/`).
 - O caminho "PowerPoint não escala nada" do Page Size não pôde ser reproduzido
   em deck sintético — se o usuário relatar de novo, pedir para ele contar o que
   a mensagem final disse (ela informa qual caminho foi usado).
+- `git config user.email` está **vazio** na máquina do usuário: o `buildOwner`
+  do `build-manifest.json` cai no autor do commit
+  (`Dia a Dia <diaadia@Hericks-MacBook-Air.local>`). Funciona, mas o campo é o
+  "responsável pelo build" que a análise de risco pede — vale setar de verdade.
+- A **assinatura digital** fica pendente até a CBA ter certificado corporativo de
+  code signing + uma máquina Windows. Quando tiver: assinar **antes** de calcular
+  o hash (a ordem já está no checklist de `tools/BUILD.md` §4.1).
 
 ---
 

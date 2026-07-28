@@ -23,10 +23,15 @@ Toolkit de PowerPoint pra marca CBA B+G, em 3 partes:
 
 Ciclo completo (incl. o passo manual do VBE pro .ppam, os DOIS projetos
 Vercel e o schema do `cba-config.txt`): **`tools/BUILD.md`**.
-Resumo: `.bas`/`ribbon/` mudou → compilar no VBE → `tools/build-ribbon-ppam.sh`
-→ copiar pro caminho instalado + `download/` → re-zipar instalador → reload
-add-in → smoke test. Extensão/landing: só editar e `vercel --prod` (raiz =
-sigma/landing; `v3-powerpoint-addin/` = app/painel — NÃO são git-connected).
+Resumo: `.bas`/`ribbon/` mudou → `tools/vba-static-scan.sh` → compilar no VBE
+(**arquivo-base .pptm limpo a cada release**) → `tools/build-ribbon-ppam.sh` →
+`tools/verify-ppam.sh` → copiar pro caminho instalado + `download/` → re-zipar
+instalador → reload add-in → smoke test. Extensão/landing: só editar e
+`vercel --prod` (raiz = sigma/landing; `v3-powerpoint-addin/` = app/painel —
+NÃO são git-connected).
+
+**Gates bloqueantes** (`tools/BUILD.md` §4.1): scan estático e verificação de
+integridade do `.ppam` têm de passar antes de publicar. Falhou = não publica.
 
 ## Quirks Mac (não redescobrir)
 
@@ -40,6 +45,10 @@ extrema (altura primeiro), `.ppam` não mostra macros na caixa de Macros.
 - **`HANDOFF.md` — LEIA PRIMEIRO** numa sessão nova: estado atual, arquitetura
   das 3 partes, ciclo de build, quirks do Mac e decisões já tomadas.
 - `tools/BUILD.md` — build/release/deploy (fonte da verdade do processo)
+- `docs/SECURITY-REVIEW-v1.5.0B.md` — resposta à análise de risco do sócio:
+  o que a faixa faz e não faz, os 5 pontos de fronteira justificados, e por que
+  a assinatura digital foi recusada. **Leia antes de mexer no `.bas`.**
+- `docs/EXTENSAO-FLUXO-DE-DADOS.md` — o que a Extensão envia ao Gemini
 - `FEATURES.md` — mapa de features
 - `download/LEIA-ME.txt` — instruções pro usuário final
 - `HANDOFF-v1-v2-legacy.md` — handoff antigo da ferramenta web V1/V2 (legado)
