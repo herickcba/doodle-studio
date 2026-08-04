@@ -15,17 +15,19 @@
             screentip="Linhas-guia (liga/desliga em todos os slides)" supertip="Liga/desliga linhas-guia em TODOS os slides: margem de 3,15 cm em todos os lados + 4 colunas com gutter de 2× o raio padrão. A cor adapta ao fundo de cada slide (vermelha em fundo claro, branca em fundo escuro ou colorido). São linhas no slide — desligue antes de exportar."/>
         </group>
         <group id="dsGrpTipografia" label="Tipografia">
+          <button id="dsBigNumber"  label="Big Number 250" image="sqBigNumber" onAction="ApplyStyle" screentip="Big Number · 250pt" supertip="Número-destaque da página. Avenir Next Bold · 250pt · 1.0x · magenta."/>
           <button id="dsHero"       label="Statement 120" image="sqHero"       onAction="ApplyStyle" screentip="Statement · 120pt" supertip="A frase-manifesto da página. Avenir Next Bold · 120pt · 0.8x · magenta, ponto azul."/>
           <button id="dsMega"       label="Manchete 80"   image="sqMega"       onAction="ApplyStyle" screentip="Manchete · 80pt"  supertip="Título de abertura grande. Avenir Next Bold · 80pt · 0.9x · azul."/>
           <button id="dsH1"         label="Título 60"     image="sqH1"         onAction="ApplyStyle" screentip="Título · 60pt"    supertip="Título de página. Avenir Next Bold · 60pt · 0.9x · magenta."/>
-          <button id="dsLabelSec"   label="Rótulo 60"     image="sqLabelSec"   onAction="ApplyStyle" screentip="Rótulo · 60pt" supertip="Rótulo de seção. Avenir Next Bold · 60pt · 0.9x · magenta."/>
           <button id="dsCorpo"      label="Destaque 44"   image="sqCorpo"      onAction="ApplyStyle" screentip="Destaque · 44pt" supertip="Corpo de destaque. Avenir Next Regular · 44pt · 1.15x · azul."/>
           <button id="dsH3"         label="Subtítulo 34"  image="sqH3"         onAction="ApplyStyle" screentip="Subtítulo · 34pt"    supertip="Subtítulo / descritivo. Avenir Next Bold · 34pt · 0.95x · magenta."/>
           <button id="dsH4"         label="Tópico 28"     image="sqH4"         onAction="ApplyStyle" screentip="Tópico · 28pt"    supertip="Título de tópico ou card. Avenir Next Bold · 28pt · azul."/>
           <button id="dsH5"         label="Texto 24"      image="sqH5"         onAction="ApplyStyle" screentip="Texto · 24pt"    supertip="Texto corrido. Avenir Next Regular · 24pt · azul."/>
           <button id="dsCorpoPilar" label="Apoio 20"      image="sqCorpoPilar" onAction="ApplyStyle" screentip="Apoio · 20pt" supertip="Texto de apoio (pilares, colunas). Avenir Next Regular · 20pt · azul."/>
           <button id="dsEyebrow"    label="Chapéu 18"     image="sqEyebrow"    onAction="ApplyStyle" screentip="Chapéu · 18pt" supertip="Chapéu / eyebrow acima do título. Avenir Next Bold · 18pt · magenta."/>
-          <button id="dsCaption"    label="Legenda 16"    image="sqCaption"    onAction="ApplyStyle" screentip="Legenda · 16pt" supertip="Legendas e notas. Avenir Next Regular · 16pt · azul."/>
+          <button id="dsTexto15"    label="Texto 15"      image="sqTexto15"    onAction="ApplyStyle" screentip="Texto · 15pt" supertip="Texto corrido pequeno. Avenir Next Regular · 15pt · 1.3x · azul."/>
+          <button id="dsLegenda12"  label="Legenda 12"    image="sqLegenda12"  onAction="ApplyStyle" screentip="Legenda · 12pt" supertip="Legendas e notas. Avenir Next Bold · 12pt · 1.3x · azul."/>
+          <button id="dsCaps12"     label="CAPS 12"       image="sqCaps12"     onAction="ApplyStyle" screentip="CAPS · 12pt" supertip="Rótulo em caixa alta. Avenir Next Bold · 12pt · 1.0x · azul · 3pt entre letras."/>
         </group>
         <group id="dsGrpEntrelinha" label="Entrelinha">
           <button id="entreSel" label="Aplicar" image="entreSel" size="large" onAction="Entrelinha"

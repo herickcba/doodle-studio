@@ -141,17 +141,19 @@
   ];
   // role: 0 = rosa(pal0), 1 = azul(pal1)
   var STYLES = [
+    {id:"dsBigNumber",  name:"Big Number", size:250, bold:1, role:0, ent:1.0},
     {id:"dsHero",       name:"Statement",  size:120, bold:1, role:0, ent:0.8},
     {id:"dsMega",       name:"Manchete",   size:80,  bold:1, role:1, ent:0.9},
     {id:"dsH1",         name:"Título",     size:60,  bold:1, role:0, ent:0.9},
-    {id:"dsLabelSec",   name:"Rótulo",     size:60,  bold:1, role:0, ent:0.9},
     {id:"dsCorpo",      name:"Destaque",   size:44,  bold:0, role:1, ent:1.15},
     {id:"dsH3",         name:"Subtítulo",  size:34,  bold:1, role:0, ent:0.95},
     {id:"dsH4",         name:"Tópico",     size:28,  bold:1, role:1, ent:1.0},
     {id:"dsH5",         name:"Texto",      size:24,  bold:0, role:1, ent:1.0},
     {id:"dsCorpoPilar", name:"Apoio",      size:20,  bold:0, role:1, ent:1.3},
     {id:"dsEyebrow",    name:"Chapéu",     size:18,  bold:1, role:0, ent:1.0},
-    {id:"dsCaption",    name:"Legenda",    size:16,  bold:0, role:1, ent:1.3}
+    {id:"dsTexto15",    name:"Texto 15",   size:15,  bold:0, role:1, ent:1.3},
+    {id:"dsLegenda12",  name:"Legenda",    size:12,  bold:1, role:1, ent:1.3},
+    {id:"dsCaps12",     name:"CAPS",       size:12,  bold:1, role:1, ent:1.0}
   ];
   var DEFAULTS = JSON.parse(JSON.stringify({PAL:PAL, STYLES:STYLES, fonte:"Avenir Next", radius:25}));
 
@@ -197,7 +199,14 @@
     parts.push("fonte="+document.getElementById("fonte").value.replace(/[;=]/g,"").trim());
     PAL.forEach(function(p,i){ parts.push("pal"+i+"="+hex6(p.hex)); });
     parts.push("radiusPx="+(parseFloat(document.getElementById("radius").value)||25));
-    STYLES.forEach(function(s){ parts.push("s_"+s.id+"="+s.size+"|"+(s.bold?1:0)+"|"+s.role); });
+    // 4o campo = entrelinha DO ESTILO. Sem ele, dois estilos de mesmo corpo
+    // (Legenda 12 e CAPS 12) colidiriam na tabela por tamanho abaixo.
+    STYLES.forEach(function(s){
+      parts.push("s_"+s.id+"="+s.size+"|"+(s.bold?1:0)+"|"+s.role+"|"+s.ent);
+    });
+    // tabela por tamanho: alimenta os botoes de Entrelinha e o Padronizar
+    // entrelinha, que agem em texto sem estilo associado. Aqui o ultimo vence
+    // de proposito — e' so' um padrao por corpo.
     var ent={};
     STYLES.forEach(function(s){ ent[Math.round(s.size)]=s.ent; });
     Object.keys(ent).forEach(function(sz){ parts.push("ent_"+sz+"="+ent[sz]); });

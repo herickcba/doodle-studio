@@ -45,7 +45,7 @@ Private Const C_TRANSP As Long = 5         ' indice da cor = transparente (nao e
 Private gFonte As String
 Private gPal(0 To 4) As Long
 Private gRadiusPx As Single            ' raio padrao em px @ canvas de 1080 de altura
-Private gStyle As Object               ' Collection: id -> Array(size, bold, role[0=rosa/1=azul])
+Private gStyle As Object               ' Collection: id -> Array(size, bold, role[0=rosa/1=azul], ent)
 Private gEnt As Object                 ' Collection: CStr(size) -> entrelinha (multiplo)
 
 Private Type StyleSpec
@@ -53,6 +53,9 @@ Private Type StyleSpec
     size As Single
     bold As Boolean
     color As Long
+    ent As Single         ' entrelinha DO ESTILO; 0 = cai na tabela por tamanho
+    caps As Boolean       ' ALL CAPS
+    spacingPts As Single  ' espacamento entre letras, em pt; 0 = nao mexe
     periodColor As Long   ' -1 = sem ponto colorido
     bgAware As Boolean
 End Type
@@ -89,18 +92,27 @@ Private Sub SetDefaults()
     gPal(4) = RGB(0, 0, 0)         ' preto
     gRadiusPx = 25
     Set gStyle = New Collection
-    AddStyle "dsHero", 120, True, 0
-    AddStyle "dsMega", 80, True, 1
-    AddStyle "dsH1", 60, True, 0
-    AddStyle "dsLabelSec", 60, True, 0
-    AddStyle "dsCorpo", 44, False, 1
-    AddStyle "dsH3", 34, True, 0
-    AddStyle "dsH4", 28, True, 1
-    AddStyle "dsH5", 24, False, 1
-    AddStyle "dsCorpoPilar", 20, False, 1
-    AddStyle "dsEyebrow", 18, True, 0
-    AddStyle "dsCaption", 16, False, 1
+    '                id             pt   bold  cor  entrelinha
+    AddStyle "dsBigNumber", 250, True, 0, 1#
+    AddStyle "dsHero", 120, True, 0, 0.8
+    AddStyle "dsMega", 80, True, 1, 0.9
+    AddStyle "dsH1", 60, True, 0, 0.9
+    AddStyle "dsCorpo", 44, False, 1, 1.15
+    AddStyle "dsH3", 34, True, 0, 0.95
+    AddStyle "dsH4", 28, True, 1, 1#
+    AddStyle "dsH5", 24, False, 1, 1#
+    AddStyle "dsCorpoPilar", 20, False, 1, 1.3
+    AddStyle "dsEyebrow", 18, True, 0, 1#
+    AddStyle "dsTexto15", 15, False, 1, 1.3
+    AddStyle "dsLegenda12", 12, True, 1, 1.3
+    AddStyle "dsCaps12", 12, True, 1, 1#     ' + ALL CAPS e 3pt entre letras (SpecFor)
+
+    ' Tabela por TAMANHO: alimenta os botoes de Entrelinha e o Padronizar
+    ' entrelinha, que agem em texto qualquer (sem estilo associado). Os estilos
+    ' acima trazem a propria entrelinha e nao dependem desta tabela -- e' o que
+    ' permite Legenda 12 (1,3x) e CAPS 12 (1,0x) coexistirem no mesmo corpo.
     Set gEnt = New Collection
+    AddEnt 250, 1#
     AddEnt 120, 0.8
     AddEnt 80, 0.9
     AddEnt 60, 0.9
@@ -110,14 +122,18 @@ Private Sub SetDefaults()
     AddEnt 24, 1#
     AddEnt 20, 1.3
     AddEnt 18, 1#
-    AddEnt 16, 1.3
+    AddEnt 15, 1.3
+    AddEnt 12, 1.3
 End Sub
 
-Private Sub AddStyle(ByVal id As String, ByVal sz As Single, ByVal b As Boolean, ByVal role As Long)
+' ent opcional: 0 = o estilo nao define entrelinha e cai na tabela por tamanho
+' (mantem compatibilidade com config antiga, que so' tinha 3 campos).
+Private Sub AddStyle(ByVal id As String, ByVal sz As Single, ByVal b As Boolean, _
+                     ByVal role As Long, Optional ByVal ent As Single = 0)
     On Error Resume Next
     gStyle.Remove id
     On Error GoTo 0
-    gStyle.Add Array(sz, b, role), id
+    gStyle.Add Array(sz, b, role, ent), id
 End Sub
 
 Private Sub AddEnt(ByVal sz As Long, ByVal mult As Single)
@@ -202,7 +218,7 @@ Private Sub ApplyConfigString(ByVal s As String)
 End Sub
 
 Private Sub ApplyKV(ByVal k As String, ByVal v As String)
-    Dim pi As Long, id As String, a() As String, sz As Long
+    Dim pi As Long, id As String, a() As String, sz As Long, ent As Single
     If k = "fonte" Then
         If Len(v) > 0 Then gFonte = v
     ElseIf k = "radiusPx" Then
@@ -217,7 +233,11 @@ Private Sub ApplyKV(ByVal k As String, ByVal v As String)
     ElseIf Left$(k, 2) = "s_" Then
         id = Mid$(k, 3)
         a = Split(v, "|")
-        If UBound(a) >= 2 Then AddStyle id, CSng(Val(a(0))), (Trim$(a(1)) = "1"), CLng(Val(a(2)))
+        ' 4o campo (entrelinha) e' opcional: config antiga tem so' 3
+        If UBound(a) >= 2 Then
+            If UBound(a) >= 3 Then ent = CSng(Val(a(3))) Else ent = 0
+            AddStyle id, CSng(Val(a(0))), (Trim$(a(1)) = "1"), CLng(Val(a(2))), ent
+        End If
     ElseIf Left$(k, 4) = "ent_" Then
         sz = CLng(Val(Mid$(k, 5)))
         AddEnt sz, CSng(Val(v))
@@ -287,14 +307,20 @@ Public Sub ApplyStyle(control As IRibbonControl)
 End Sub
 
 Private Sub ApplyStyleById(ByVal styleId As String)
-    Dim spec As StyleSpec, sel As Object, shp As Object, n As Long
+    Dim spec As StyleSpec, sel As Object, shp As Object, n As Long, tr2 As Object
     spec = SpecFor(styleId)
     If Not spec.found Then Exit Sub
     Set sel = ActiveWindow.Selection
     n = 0
     If sel.Type = ppSelectionText Then
         If sel.TextRange.Length > 0 Then
-            ApplyStyleToRange sel.TextRange, spec, False
+            ' mesmo trecho pelo TextFrame2 (mesmo padrao ja' validado no Caps)
+            Set tr2 = Nothing
+            On Error Resume Next
+            Set tr2 = sel.ShapeRange(1).TextFrame2.TextRange _
+                        .Characters(sel.TextRange.Start, sel.TextRange.Length)
+            On Error GoTo 0
+            ApplyStyleToRange sel.TextRange, spec, False, tr2
             n = 1
         Else
             ' so' um cursor (sem selecao): aplica na caixa inteira (com bg-aware)
@@ -309,7 +335,16 @@ Private Sub ApplyStyleById(ByVal styleId As String)
             n = n + ApplyStyleToShape(shp, spec)
         Next shp
     End If
-    If n = 0 Then MsgBox "Selecione um texto ou um objeto com texto.", vbInformation, "CBA Studio"
+    If n = 0 Then
+        ' Sem NADA selecionado, o clique no estilo cria a caixa ja' formatada.
+        ' Com algo selecionado que nao tem texto (uma imagem, p.ex.), continua
+        ' avisando: criar uma caixa ali seria surpresa, nao atalho.
+        If sel.Type = ppSelectionNone Or sel.Type = ppSelectionSlides Then
+            NewStyledTextBox spec
+        Else
+            MsgBox "Selecione um texto ou um objeto com texto.", vbInformation, "CBA Studio"
+        End If
+    End If
 End Sub
 
 Public Sub Entrelinha(control As IRibbonControl)
@@ -832,6 +867,43 @@ End Function
 ' ============================================================
 '  INSERIR formas (caixa de texto / rounded box no padrao)
 ' ============================================================
+' Cria uma caixa ja' no estilo pedido. Usado quando o usuario clica num estilo
+' sem nada selecionado. A cor sai branca se o fundo do slide for exatamente a
+' cor do texto - senao o texto nasceria invisivel.
+' Reusa SlideBgColor, que ja' resolve o caso real: primeiro a forma solida que
+' cobre o slide (fundo "desenhado"), depois o fundo nativo; -1 = desconhecido.
+Private Sub NewStyledTextBox(ByRef spec As StyleSpec)
+    Dim sld As Object, tb As Object, x As Single, y As Single, w As Single
+    Dim bg As Long, s2 As StyleSpec
+
+    Set sld = CurrentSlide()
+    If sld Is Nothing Then Exit Sub
+
+    s2 = spec
+    bg = SlideBgColor(sld)
+    If bg >= 0 Then
+        If bg = s2.color Then
+            s2.color = gPal(3)                  ' branco
+            s2.bgAware = False                  ' ja' resolvido aqui
+            If s2.periodColor = s2.color Then s2.periodColor = gPal(0)
+        End If
+    End If
+
+    x = AnchorCm * PT_PER_CM
+    y = AnchorTopCm * PT_PER_CM
+    w = ActivePresentation.PageSetup.SlideWidth / 3
+
+    On Error Resume Next
+    Set tb = sld.Shapes.AddTextbox(msoTextOrientationHorizontal, x, y, w, s2.size * 1.6)
+    If tb Is Nothing Then Exit Sub
+    tb.TextFrame.WordWrap = msoFalse             ' + autoajuste = a caixa abraca o texto
+    tb.TextFrame.AutoSize = 1                    ' ppAutoSizeShapeToFitText
+    tb.TextFrame.TextRange.Text = "Texto"
+    ApplyStyleToRange tb.TextFrame.TextRange, s2, False, tb.TextFrame2.TextRange
+    tb.Select
+    On Error GoTo 0
+End Sub
+
 Public Sub InsertTextBox(control As IRibbonControl)
     Dim sld As Object, tb As Object, x As Single, w As Single
     Set sld = CurrentSlide()
@@ -861,7 +933,8 @@ Private Sub ApplyInsertStyle(ByVal shp As Object)
         .Bold = IIf(spec.bold, msoTrue, msoFalse)
         .Color.RGB = spec.color
     End With
-    ls = MapSpacing(spec.size)
+    ls = spec.ent                       ' entrelinha do estilo; 0 -> tabela por tamanho
+    If ls <= 0 Then ls = MapSpacing(spec.size)
     If ls > 0 Then
         With shp.TextFrame.TextRange.ParagraphFormat
             .LineRuleWithin = msoTrue
@@ -1038,6 +1111,17 @@ Public Sub CapsLoose(control As IRibbonControl)
     End If
     On Error GoTo 0
     If n = 0 Then MsgBox "Selecione um texto.", vbInformation, "CBA Studio"
+End Sub
+
+' Caixa alta / espacamento entre letras de um estilo. Em funcao propria porque
+' On Error Resume Next e' local ao procedimento: se o Mac recusar Font.Caps num
+' tipo de forma, o erro morre aqui e nao escapa pro chamador.
+Private Sub ApplyCapsSpacing(ByVal tr2 As Object, ByRef spec As StyleSpec)
+    If tr2 Is Nothing Then Exit Sub
+    On Error Resume Next
+    If spec.caps Then tr2.Font.Caps = 2 Else tr2.Font.Caps = 0   ' 2 = msoCapsAll
+    tr2.Font.Spacing = spec.spacingPts                           ' 0 = normal
+    On Error GoTo 0
 End Sub
 
 Private Sub ApplyCapsLoose(ByVal tr2 As Object)
@@ -2051,9 +2135,13 @@ Private Function SpecFor(ByVal id As String) As StyleSpec
     s.size = a(0)
     s.bold = a(1)
     If a(2) = 0 Then s.color = gPal(0) Else s.color = gPal(1)
+    If UBound(a) >= 3 Then s.ent = a(3)    ' config antiga (3 campos) -> 0
     If id = "dsHero" Then           ' Hero: ponto azul + ciente do fundo
         s.periodColor = gPal(1)
         s.bgAware = True
+    ElseIf id = "dsCaps12" Then     ' CAPS: caixa alta + 3pt entre letras
+        s.caps = True
+        s.spacingPts = 3
     End If
     SpecFor = s
 End Function
@@ -2073,7 +2161,7 @@ End Function
 ' ============================================================
 Private Function ApplyStyleToShape(ByVal shp As Object, ByRef spec As StyleSpec, Optional ByVal depth As Long = 0) As Long
     If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
-    Dim cnt As Long, s As Object, isBlue As Boolean
+    Dim cnt As Long, s As Object, isBlue As Boolean, tr2 As Object
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
@@ -2084,7 +2172,9 @@ Private Function ApplyStyleToShape(ByVal shp As Object, ByRef spec As StyleSpec,
         If shp.TextFrame.HasText Then
             isBlue = False
             If spec.bgAware Then isBlue = ShapeFillIsBlue(shp)
-            ApplyStyleToRange shp.TextFrame.TextRange, spec, isBlue
+            Set tr2 = Nothing
+            Set tr2 = shp.TextFrame2.TextRange     ' pode falhar em forma exotica
+            ApplyStyleToRange shp.TextFrame.TextRange, spec, isBlue, tr2
             cnt = 1
         End If
     End If
@@ -2100,7 +2190,11 @@ Private Function ShapeFillIsBlue(ByVal shp As Object) As Boolean
     On Error GoTo 0
 End Function
 
-Private Sub ApplyStyleToRange(ByVal tr As Object, ByRef spec As StyleSpec, ByVal bgBlue As Boolean)
+' tr2 = o MESMO trecho visto pelo TextFrame2 (Font2). So' por ele da' pra setar
+' caixa alta e espacamento entre letras; o TextFrame antigo nao expoe isso.
+' Quem chama passa quando consegue obter; sem ele, esses dois sao ignorados.
+Private Sub ApplyStyleToRange(ByVal tr As Object, ByRef spec As StyleSpec, ByVal bgBlue As Boolean, _
+                              Optional ByVal tr2 As Object = Nothing)
     Dim textColor As Long, periodColor As Long, ls As Single
     Dim p As Long, para As Object, t As String
 
@@ -2117,8 +2211,14 @@ Private Sub ApplyStyleToRange(ByVal tr As Object, ByRef spec As StyleSpec, ByVal
     If spec.bold Then tr.Font.Bold = msoTrue Else tr.Font.Bold = msoFalse
     tr.Font.Color.RGB = textColor
 
-    ' entrelinha exata (todos os paragrafos ficam no tamanho do estilo)
-    ls = MapSpacing(spec.size)
+    ' caixa alta e espacamento entre letras. Sempre gravados (inclusive
+    ' zerados), senao aplicar outro estilo por cima do CAPS 12 deixaria o
+    ' texto em caixa alta para sempre.
+    ApplyCapsSpacing tr2, spec
+
+    ' entrelinha: a do proprio estilo; se ele nao definir, a da tabela por tamanho
+    ls = spec.ent
+    If ls <= 0 Then ls = MapSpacing(spec.size)
     If ls > 0 Then
         For p = 1 To tr.Paragraphs.Count
             Set para = tr.Paragraphs(p, 1)

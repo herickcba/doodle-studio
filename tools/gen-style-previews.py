@@ -31,33 +31,37 @@ def font(px, bold):
     return ImageFont.load_default()
 
 
-# (id, sizePt, bold, cor, ponto_azul)
+# (id, sizePt, bold, cor, ponto_azul, glifo)
+# O glifo diferencia os icones: sem ele, Big Number 250 e Statement 120
+# sairiam identicos (o corpo satura no topo da escala do icone).
 STYLES = [
-    ("prevHero",       120, True,  ROSA, True),
-    ("prevMega",        80, True,  AZUL, False),
-    ("prevH1",          60, True,  ROSA, False),
-    ("prevLabelSec",    60, True,  ROSA, False),
-    ("prevCorpo",       44, False, AZUL, False),
-    ("prevH3",          34, True,  ROSA, False),
-    ("prevH4",          28, True,  AZUL, False),
-    ("prevH5",          24, False, AZUL, False),
-    ("prevCorpoPilar",  20, False, AZUL, False),
-    ("prevEyebrow",     18, True,  ROSA, False),
-    ("prevCaption",     16, False, AZUL, False),
+    ("prevBigNumber",  250, True,  ROSA, False, "42"),
+    ("prevHero",       120, True,  ROSA, True,  "Aa"),
+    ("prevMega",        80, True,  AZUL, False, "Aa"),
+    ("prevH1",          60, True,  ROSA, False, "Aa"),
+    ("prevCorpo",       44, False, AZUL, False, "Aa"),
+    ("prevH3",          34, True,  ROSA, False, "Aa"),
+    ("prevH4",          28, True,  AZUL, False, "Aa"),
+    ("prevH5",          24, False, AZUL, False, "Aa"),
+    ("prevCorpoPilar",  20, False, AZUL, False, "Aa"),
+    ("prevEyebrow",     18, True,  ROSA, False, "Aa"),
+    ("prevTexto15",     15, False, AZUL, False, "Aa"),
+    ("prevLegenda12",   12, True,  AZUL, False, "Aa"),
+    ("prevCaps12",      12, True,  AZUL, False, "AA"),
 ]
 
 # pt (16..120) -> px legivel dentro da thumb (18..40), preservando a hierarquia
 def px_for(pt):
     lo_pt, hi_pt, lo_px, hi_px = 16, 120, 18, 40
     t = (pt - lo_pt) / (hi_pt - lo_pt)
+    t = max(0.0, min(1.0, t))     # 250pt e 12pt saturam nas pontas da escala
     return int(round(lo_px + t * (hi_px - lo_px)))
 
 
-for name, pt, bold, col, blue_dot in STYLES:
+for name, pt, bold, col, blue_dot, txt in STYLES:
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     f = font(px_for(pt), bold)
-    txt = "Aa"
     bb = d.textbbox((0, 0), txt, font=f)
     tw, th = bb[2] - bb[0], bb[3] - bb[1]
     x = (W - tw) / 2 - bb[0]
@@ -82,6 +86,7 @@ def target_px_sq(pt):
     # alvo de tamanho por hierarquia (piso alto p/ ler grande)
     lo_pt, hi_pt, lo_px, hi_px = 16, 120, 44, 62
     t = (pt - lo_pt) / (hi_pt - lo_pt)
+    t = max(0.0, min(1.0, t))     # 250pt e 12pt saturam nas pontas da escala
     return int(round(lo_px + t * (hi_px - lo_px)))
 
 
@@ -98,10 +103,9 @@ def fit_font(d, txt, pt, bold, extra):
     return f, px, d.textbbox((0, 0), txt, font=f)
 
 
-for name, pt, bold, col, blue_dot in STYLES:
+for name, pt, bold, col, blue_dot, txt in STYLES:
     img = Image.new("RGBA", (SQ, SQ), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    txt = "Aa"
     extra = 0
     f, px, bb = fit_font(d, txt, pt, bold, extra)
     tw, th = bb[2] - bb[0], bb[3] - bb[1]
