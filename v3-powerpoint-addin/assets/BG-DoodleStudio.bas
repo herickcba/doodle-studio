@@ -308,31 +308,41 @@ End Sub
 
 Private Sub ApplyStyleById(ByVal styleId As String)
     Dim spec As StyleSpec, sel As Object, shp As Object, n As Long, tr2 As Object
+    Dim sld As Object, slideBg As Long, bg As Long
     spec = SpecFor(styleId)
     If Not spec.found Then Exit Sub
     Set sel = ActiveWindow.Selection
     n = 0
+
+    ' fundo do slide, calculado UMA vez: e' o fallback de toda forma que nao
+    ' tenha preenchimento proprio.
+    slideBg = -1
+    Set sld = CurrentSlide()
+    If Not sld Is Nothing Then slideBg = SlideBgColor(sld)
+
     If sel.Type = ppSelectionText Then
         If sel.TextRange.Length > 0 Then
             ' mesmo trecho pelo TextFrame2 (mesmo padrao ja' validado no Caps)
             Set tr2 = Nothing
+            bg = slideBg
             On Error Resume Next
             Set tr2 = sel.ShapeRange(1).TextFrame2.TextRange _
                         .Characters(sel.TextRange.Start, sel.TextRange.Length)
+            bg = BgBehindShape(sel.ShapeRange(1), slideBg)
             On Error GoTo 0
-            ApplyStyleToRange sel.TextRange, spec, False, tr2
+            ApplyStyleToRange sel.TextRange, spec, bg, tr2
             n = 1
         Else
             ' so' um cursor (sem selecao): aplica na caixa inteira (com bg-aware)
             On Error Resume Next
             For Each shp In sel.ShapeRange
-                n = n + ApplyStyleToShape(shp, spec)
+                n = n + ApplyStyleToShape(shp, spec, slideBg)
             Next shp
             On Error GoTo 0
         End If
     ElseIf sel.Type = ppSelectionShapes Then
         For Each shp In sel.ShapeRange
-            n = n + ApplyStyleToShape(shp, spec)
+            n = n + ApplyStyleToShape(shp, spec, slideBg)
         Next shp
     End If
     If n = 0 Then
@@ -873,33 +883,27 @@ End Function
 ' Reusa SlideBgColor, que ja' resolve o caso real: primeiro a forma solida que
 ' cobre o slide (fundo "desenhado"), depois o fundo nativo; -1 = desconhecido.
 Private Sub NewStyledTextBox(ByRef spec As StyleSpec)
-    Dim sld As Object, tb As Object, x As Single, y As Single, w As Single
-    Dim bg As Long, s2 As StyleSpec
+    Dim sld As Object, tb As Object, x As Single, y As Single, w As Single, bg As Long
 
     Set sld = CurrentSlide()
     If sld Is Nothing Then Exit Sub
 
-    s2 = spec
+    ' a caixa nasce sem preenchimento, entao o fundo dela e' o do slide.
+    ' Quem decide a cor final e' o ApplyStyleToRange (mesma regra da aplicacao
+    ' em objeto ja' existente) - aqui so' informamos o fundo.
     bg = SlideBgColor(sld)
-    If bg >= 0 Then
-        If bg = s2.color Then
-            s2.color = gPal(3)                  ' branco
-            s2.bgAware = False                  ' ja' resolvido aqui
-            If s2.periodColor = s2.color Then s2.periodColor = gPal(0)
-        End If
-    End If
 
     x = AnchorCm * PT_PER_CM
     y = AnchorTopCm * PT_PER_CM
     w = ActivePresentation.PageSetup.SlideWidth / 3
 
     On Error Resume Next
-    Set tb = sld.Shapes.AddTextbox(msoTextOrientationHorizontal, x, y, w, s2.size * 1.6)
+    Set tb = sld.Shapes.AddTextbox(msoTextOrientationHorizontal, x, y, w, spec.size * 1.6)
     If tb Is Nothing Then Exit Sub
     tb.TextFrame.WordWrap = msoFalse             ' + autoajuste = a caixa abraca o texto
     tb.TextFrame.AutoSize = 1                    ' ppAutoSizeShapeToFitText
     tb.TextFrame.TextRange.Text = "Texto"
-    ApplyStyleToRange tb.TextFrame.TextRange, s2, False, tb.TextFrame2.TextRange
+    ApplyStyleToRange tb.TextFrame.TextRange, spec, bg, tb.TextFrame2.TextRange
     tb.Select
     On Error GoTo 0
 End Sub
@@ -2159,22 +2163,47 @@ End Function
 ' ============================================================
 '  Aplicacao de ESTILO (fonte+tamanho+cor+ponto+entrelinha)
 ' ============================================================
-Private Function ApplyStyleToShape(ByVal shp As Object, ByRef spec As StyleSpec, Optional ByVal depth As Long = 0) As Long
+' Cor de preenchimento da forma, ou -1 se ela nao tem cor chapada.
+' Em funcao propria: o On Error morre aqui, nao no chamador.
+Private Function ShapeFillColor(ByVal shp As Object) As Long
+    Dim c As Long
+    c = -1
+    On Error Resume Next
+    If shp.Fill.Visible = msoTrue Then
+        If shp.Fill.Type = msoFillSolid Then c = shp.Fill.ForeColor.RGB
+    End If
+    On Error GoTo 0
+    ShapeFillColor = c
+End Function
+
+' O fundo que vale para o texto DESTA forma: o preenchimento dela, se tiver;
+' senao o fundo do slide (que o chamador calcula uma vez so').
+Private Function BgBehindShape(ByVal shp As Object, ByVal slideBg As Long) As Long
+    Dim c As Long
+    c = ShapeFillColor(shp)
+    If c < 0 Then c = slideBg
+    BgBehindShape = c
+End Function
+
+Private Function ApplyStyleToShape(ByVal shp As Object, ByRef spec As StyleSpec, _
+                                   Optional ByVal slideBg As Long = -1, _
+                                   Optional ByVal depth As Long = 0) As Long
     If depth > MAX_DEPTH Then Exit Function      ' guarda contra grupos aninhados demais
-    Dim cnt As Long, s As Object, isBlue As Boolean, tr2 As Object
+    Dim cnt As Long, s As Object, tr2 As Object, bg As Long
     cnt = 0
     On Error Resume Next
     If shp.Type = msoGroup Then
+        ' dentro de um grupo, o preenchimento do grupo vale como fundo dos filhos
+        bg = BgBehindShape(shp, slideBg)
         For Each s In shp.GroupItems
-            cnt = cnt + ApplyStyleToShape(s, spec, depth + 1)
+            cnt = cnt + ApplyStyleToShape(s, spec, bg, depth + 1)
         Next s
     ElseIf shp.HasTextFrame Then
         If shp.TextFrame.HasText Then
-            isBlue = False
-            If spec.bgAware Then isBlue = ShapeFillIsBlue(shp)
+            bg = BgBehindShape(shp, slideBg)
             Set tr2 = Nothing
             Set tr2 = shp.TextFrame2.TextRange     ' pode falhar em forma exotica
-            ApplyStyleToRange shp.TextFrame.TextRange, spec, isBlue, tr2
+            ApplyStyleToRange shp.TextFrame.TextRange, spec, bg, tr2
             cnt = 1
         End If
     End If
@@ -2182,27 +2211,28 @@ Private Function ApplyStyleToShape(ByVal shp As Object, ByRef spec As StyleSpec,
     ApplyStyleToShape = cnt
 End Function
 
-Private Function ShapeFillIsBlue(ByVal shp As Object) As Boolean
-    On Error Resume Next
-    If shp.Fill.Type = msoFillSolid Then
-        ShapeFillIsBlue = (shp.Fill.ForeColor.RGB = gPal(1))
-    End If
-    On Error GoTo 0
-End Function
-
 ' tr2 = o MESMO trecho visto pelo TextFrame2 (Font2). So' por ele da' pra setar
 ' caixa alta e espacamento entre letras; o TextFrame antigo nao expoe isso.
 ' Quem chama passa quando consegue obter; sem ele, esses dois sao ignorados.
-Private Sub ApplyStyleToRange(ByVal tr As Object, ByRef spec As StyleSpec, ByVal bgBlue As Boolean, _
+' bgColor = cor do fundo ATRAS deste texto (-1 = desconhecida). Duas regras:
+'   1) Statement: sobre fundo azul da marca vira branco com ponto rosa
+'      (regra de marca, nao de legibilidade).
+'   2) Qualquer estilo: se a cor do texto for exatamente a do fundo, o texto
+'      vira branco - senao nasceria/ficaria invisivel.
+Private Sub ApplyStyleToRange(ByVal tr As Object, ByRef spec As StyleSpec, ByVal bgColor As Long, _
                               Optional ByVal tr2 As Object = Nothing)
     Dim textColor As Long, periodColor As Long, ls As Single
     Dim p As Long, para As Object, t As String
 
     textColor = spec.color
     periodColor = spec.periodColor
-    If spec.bgAware And bgBlue Then
+    If spec.bgAware And bgColor = gPal(1) Then
         textColor = gPal(3)        ' branco
         periodColor = gPal(0)      ' rosa
+    End If
+    If bgColor >= 0 And textColor = bgColor Then
+        textColor = gPal(3)                                  ' branco
+        If periodColor = textColor Then periodColor = gPal(0) ' ponto volta ao rosa
     End If
 
     ' fonte / tamanho / negrito / cor
