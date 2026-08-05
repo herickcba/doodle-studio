@@ -1,10 +1,10 @@
 {
   "productName": "BG-DoodleStudio",
   "version": "1.5.0B",
-  "buildDate": "2026-08-04T19:39:57Z",
-  "sourceCommit": "938086fb0144215d82bb41bfc2a3b8fcd8439161",
+  "buildDate": "2026-08-05T17:30:01Z",
+  "sourceCommit": "972367980768d2d64cb05e627eed533a10854da9",
   "sourceDirty": false,
-  "sha256": "7d70a7c331f3fd28682a0b355f91efc3b4db257e3241e3834d325c38359c13ce",
+  "sha256": "f75d5c36c774263cb91e8106d534bb2b2427312e29e43e96be30cc8c420857c1",
   "buildOwner": "Dia a Dia <diaadia@Hericks-MacBook-Air.local>",
   "signatureStatus": "not-signed",
   "certificateSubject": null,
