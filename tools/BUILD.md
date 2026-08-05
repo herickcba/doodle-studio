@@ -119,6 +119,7 @@ que a análise de risco do sócio exige (resposta completa em
 | 3 | Compilação | `Debug > Compile VBAProject` no VBE (§1, arquivo-base **limpo**) | erro de compilação |
 | 4 | Empacotamento | `bash tools/build-ribbon-ppam.sh` | ícone sem PNG ou sem `<Relationship>` |
 | 5 | Integridade + manifesto | `bash tools/verify-ppam.sh` | fonte do binário ≠ `.bas` do repo, callback sem procedimento, ou repo sujo |
+| 5b | Documentação em dia | `python3 tools/design-system/check-tokens.py` | mexeu num estilo, cor ou constante e esqueceu o `design.md` / `tokens.py` |
 | 6 | Smoke test ao vivo | percorrer os grupos da faixa **num deck descartável** | regressão funcional |
 | 7 | Commit + push | `git add -A && git commit && git push` | — |
 | 8 | Deploy | `vercel --prod --yes` (§4) | — |
@@ -137,6 +138,10 @@ Notas:
   binário aleatório, que mudariam a cada release). O que importa é a **forma**
   do token: nome que parece identificador (`ScaleAllSlides`, `C_AZUL`) = resíduo
   real, investigue; sequência curta sem sentido (`sMZfMz`) = ruído, ignore.
+- O gate 5b compara o `SetDefaults` do `.bas` com `tools/design-system/tokens.py`
+  (estilos, paleta, entrelinhas, raio, âncora) e com os rótulos do
+  `customUI14.xml`. Se falhar, atualize `tokens.py` + `design.md` e regenere o
+  deck: `python3 tools/design-system/build_deck.py`.
 - **O projeto VBA não é assinado digitalmente.** Não é um passo esquecido: é uma
   decisão registrada (o VBE do macOS não assina e não há certificado corporativo).
   Justificativa em `docs/SECURITY-REVIEW-v1.5.0B.md` §6. Se um dia houver
