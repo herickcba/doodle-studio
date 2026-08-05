@@ -21,7 +21,7 @@ Option Explicit
 
 ' Versao do produto (faixa + extensao + landing andam juntas).
 ' Ao lancar: atualizar tambem download/version.json, manifest.xml e index.html.
-Public Const CBA_VERSION As String = "1.5.0B"
+Public Const CBA_VERSION As String = "1.5.1"
 
 ' ---- Constantes de layout (fonte unica destes numeros) ----
 Private Const PT_PER_CM As Single = 28.3465    ' pontos por cm (72 pt/in / 2,54 cm/in)
