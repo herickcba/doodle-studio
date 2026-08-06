@@ -26,7 +26,7 @@ import spec as spec_mod  # noqa: E402
 import tokens as T  # noqa: E402
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-    REPO, "docs", "CBA-Studio-Design-System-2.0.pptx")
+    REPO, "docs", "CBA-Studio-Design-System-2.1.pptx")
 
 
 def generate(path):
@@ -67,7 +67,28 @@ def validate(path):
     runs = 0
     for n, slide in enumerate(prs.slides, 1):
         content_bottom = 0.0
+        try:
+            slide_bg = str(slide.background.fill.fore_color.rgb).upper()
+        except Exception:
+            slide_bg = None
         for shape in slide.shapes:
+            # ---- card da cor do fundo nao e' card. So' vale com contorno,
+            # que e' o caso da amostra de cor da propria cor do fundo.
+            if slide_bg and not (shape.has_text_frame
+                                 and shape.text_frame.text.strip()):
+                try:
+                    fill_hex = str(shape.fill.fore_color.rgb).upper()
+                except Exception:
+                    fill_hex = None
+                if fill_hex == slide_bg:
+                    outlined = False
+                    try:
+                        outlined = shape.line.color.rgb is not None
+                    except Exception:
+                        pass
+                    if not outlined:
+                        errs.append("slide %d: forma da mesma cor do fundo (%s) "
+                                    "e sem contorno" % (n, fill_hex))
             # ---- caixa esticada: forma com muito mais altura que conteudo.
             # Era o vicio de puxar o card ate' o rodape (item 7 da revisao).
             if (not shape.has_text_frame or not shape.text_frame.text.strip()) \
@@ -88,6 +109,12 @@ def validate(path):
                 if tallest > 0 and bh > tallest * T.BOX_STRETCH_MAX + T.BOX_PAD_PT:
                     errs.append("slide %d: caixa esticada (%.0fpt de altura para "
                                 "%.0fpt de conteudo)" % (n, bh, tallest))
+                # a caixa tambem respeita a margem: so' checar texto deixava
+                # o card passar do rodape com o texto dentro dele
+                bbot = (shape.top + shape.height) / 12700
+                if bbot > T.CONTENT_BOTTOM_PT + 1:
+                    errs.append("slide %d: caixa passa %.0fpt da margem inferior"
+                                % (n, bbot - T.CONTENT_BOTTOM_PT))
 
             if not shape.has_text_frame:
                 continue

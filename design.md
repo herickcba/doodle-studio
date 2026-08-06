@@ -1,4 +1,4 @@
-# Design System CBA B+G: regras · 2.0
+# Design System CBA B+G: regras · 2.1
 
 > **Fonte da verdade:** o `SetDefaults` de
 > [`BG-DoodleStudio.bas`](v3-powerpoint-addin/assets/BG-DoodleStudio.bas). Este
@@ -16,7 +16,7 @@
 
 O sistema tem **dois eixos** e o resto é consequência.
 
-**Eixo 1: a escala tipográfica é fechada.** Treze estilos, nada entre eles. Não
+**Eixo 1: a escala tipográfica é fechada.** Catorze estilos, nada entre eles. Não
 existe "um pouquinho maior": se o corpo não está na tabela, não é do sistema.
 Cada estilo já traz peso, cor e entrelinha juntos. Escolher "Título 60" decide
 as quatro coisas de uma vez, e é por isso que a faixa aplica tudo num clique.
@@ -80,10 +80,12 @@ Gap entre blocos escolhe um degrau, e o degrau tem significado:
 | Degrau | pt | Quando |
 |---|---|---|
 | 1× | 20 | Amarra rótulo ao valor, título ao subtítulo |
-| 2× | 40 | Separa itens de uma lista |
-| 3× | 60 | Separa blocos irmãos |
-| 4× | 80 | Separa blocos |
-| 6× | 120 | Separa **zonas** do slide |
+| 2× | 40 | Entre itens de uma lista e **entre linhas de uma grade** |
+| 3× | 60 | Depois do cabeçalho, antes do conteúdo |
+| 4× | 80 | Entre blocos de assunto diferente |
+
+Estes são os únicos quatro. O degrau é escolhido pela **relação** entre os
+blocos, nunca pelo espaço que sobrou na página.
 
 **Raio** é um valor **visual constante**, não uma proporção: um card grande e um
 botão pequeno têm o mesmo arredondamento de 20pt. Em OOXML isso vira
@@ -117,7 +119,7 @@ escolha, mas pela regra de contraste abaixo.
 
 ## 5. Escala tipográfica
 
-Uma família: **Avenir Next**, Regular e Bold. Nada mais.
+Uma família: **Avenir Next**, Regular e Bold. Nada mais. Catorze estilos.
 
 | Estilo | pt | px | Peso | Cor | Entrelinha | Quando usar |
 |---|---|---|---|---|---|---|
@@ -127,6 +129,7 @@ Uma família: **Avenir Next**, Regular e Bold. Nada mais.
 | Título 60 | 60 | 73 | Bold | rosa | 0,90× | Título de página |
 | Destaque 44 | 44 | 53 | Regular | azul | 1,15× | Corpo de destaque, manifesto |
 | Subtítulo 34 | 34 | 41 | Bold | rosa | 0,95× | Subtítulo, descritivo |
+| Texto 34 | 34 | 41 | Regular | azul | 1,30× | **Parágrafo de argumento**, intro de página |
 | Tópico 28 | 28 | 34 | Bold | azul | 1,00× | Título de tópico ou card |
 | Texto 24 | 24 | 29 | Regular | azul | 1,00× | Texto corrido: **o padrão** |
 | Apoio 20 | 20 | 24 | Regular | azul | 1,30× | Apoio em pilares e colunas |
@@ -145,9 +148,19 @@ inverso: a linha precisa de ar para o olho achar a próxima (1,30×).
 A entrelinha é **exata** (múltiplo do corpo), nunca "simples" ou "duplo", que
 variam com a fonte e quebram a consistência entre máquinas.
 
-**Legenda 12 e CAPS 12 dividem o corpo e divergem na entrelinha** (1,30× contra
-1,00×). Por isso a entrelinha pertence ao **estilo**, não ao tamanho. Uma tabela
-indexada por corpo não conseguiria descrever os dois.
+**Dois pares dividem o corpo e divergem no resto:** Legenda 12 e CAPS 12 (1,30×
+contra 1,00×), e Subtítulo 34 e Texto 34 (Bold rosa 0,95× contra Regular azul
+1,30×). Por isso peso, cor e entrelinha pertencem ao **estilo**, não ao tamanho.
+
+### Qual usar para texto corrido
+
+| Corpo | Quando |
+|---|---|
+| **Destaque 44** | Frase curta de destaque. Uma linha, duas no máximo |
+| **Texto 34** | Parágrafo de argumento e intro de página. O padrão de texto longo |
+| **Texto 24** | Texto corrido dentro de bloco estreito |
+| **Apoio 20** | Apoio em coluna, card e legenda de diagrama |
+| **Texto 15** | Conteúdo micro: grade densa, ficha técnica |
 
 > Existe uma segunda tabela, indexada por corpo, que alimenta os botões de
 > Entrelinha e o Padronizar. Ela age em texto **sem estilo associado** e é só um
@@ -213,14 +226,33 @@ e desalinha na primeira mudança de conteúdo.
 
 ### Texto que não cabe
 
-Nesta ordem:
+**Edite o texto, não a escala.** Se a intenção era Destaque 44, o slide continua
+em Destaque 44 e a frase encurta. Descer de degrau quebra a comparação com os
+outros slides do mesmo arquétipo, que é justamente o que o sistema existe para
+garantir.
 
-1. **Primeira frase no estilo pedido, o resto um degrau abaixo.** Dá ritmo
-   editorial e mantém a hierarquia.
-2. Se ainda não couber, o bloco inteiro desce um degrau.
-3. Se ainda não couber, o texto é longo demais para o slide. Corte conteúdo.
+Se depois de encurtar ainda não couber, o conteúdo pede outro arquétipo ou dois
+slides. Nunca corpo fora da escala, nunca entrelinha apertada.
 
-Nunca encolher para um corpo fora da escala, nunca apertar a entrelinha.
+### O vão vertical é igual ao horizontal
+
+Numa grade, a distância entre linhas é a **mesma** do gutter entre colunas: 40pt.
+Grade com 40 na horizontal e 120 na vertical não lê como grade.
+
+### Não esticar para preencher
+
+Se o grupo é menor que o espaço disponível, ele **centraliza** no que sobra. Não
+se aumenta o vão entre blocos para chegar ao rodapé: gap grande demais desconecta
+os blocos em vez de dar ritmo.
+
+### Card nunca é da cor do fundo
+
+Sobre bege, o card é branco ou colorido. Sobre branco, bege ou colorido. Sobre
+cor, branco. Card da cor do fundo é um retângulo invisível.
+
+Card colorido não pede decisão de tipografia: a **regra de contraste** resolve
+sozinha. A única exceção é a amostra de cor da própria cor do fundo, que existe
+para mostrar a cor e por isso ganha contorno.
 
 ### Texto corrido é Apoio 20
 
@@ -327,13 +359,16 @@ release, e o `check-tokens.py` avisa sobre elas a cada execução.
    no canvas de 1080. Ajustar para `24` (19,79pt, o inteiro mais próximo). O
    ideal seria a config guardar pt em vez de px, mas isso muda o schema do
    `cba-config.txt` e quebra configurações salvas.
-3. **A grade de colunas não existe na faixa.** As linhas-guia já desenham 4
+3. **Texto 34 ainda não está na faixa.** Existe neste documento e no deck.
+   Próxima leva: `AddStyle "dsTexto34", 34, False, 1, 1.3`, mais o botão no
+   ribbon e a entrada no `config.html`.
+4. **A grade de colunas não existe na faixa.** As linhas-guia já desenham 4
    colunas com gutter de 2 raios, o que bate com o 2.0. Depois de ajustar margem
    e raio, a grade da faixa e a do sistema passam a ser a mesma.
-4. **O rosa em outras mídias.** A landing (`--coral: #FC5E6D`) e a skill
+5. **O rosa em outras mídias.** A landing (`--coral: #FC5E6D`) e a skill
    `cba-bg-design-system-v3` usam `FC5E6D`; o padrão é **`FD5E6D`**. Um dígito de
    diferença, invisível a olho nu e detectável em auditoria.
-5. **Corpos herdados do v3.** 55, 36, 32, 22, 16 e 14pt aparecem em decks
+6. **Corpos herdados do v3.** 55, 36, 32, 22, 16 e 14pt aparecem em decks
    antigos. A tabela de migração acima resolve.
 
 ---

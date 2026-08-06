@@ -17,6 +17,8 @@ SAMPLES = {
     "dsH1": "Título de página",
     "dsCorpo": "O corpo de destaque carrega a ideia principal\nsem virar título.",
     "dsH3": "Subtítulo que explica o título",
+    "dsTexto34": "Texto corrido grande. É o parágrafo de argumento: entra onde o\n"
+                 "Destaque 44 pesaria demais e o Texto 24 ficaria miúdo.",
     "dsH4": "Título de tópico ou de card",
     "dsH5": "Texto corrido. É o estilo que toda caixa nova recebe ao nascer,\n"
             "porque é o que mais aparece num deck de verdade.",
@@ -204,7 +206,7 @@ def build_spec():
          "sub": "Uma família, treze estilos. Cada um já traz peso, cor e "
                 "entrelinha: escolher o estilo decide as quatro coisas."})
 
-    add({"kind": "card_grid_5", "section": "TIPOGRAFIA", "cols": 5,
+    add({"kind": "grid_plain", "section": "TIPOGRAFIA", "cols": 5,
          "title": "A escala",
          "intro": "Treze corpos, nada entre eles. Se não está aqui, não é do sistema.",
          "items": [{"kicker": "%gPT" % s["size"],

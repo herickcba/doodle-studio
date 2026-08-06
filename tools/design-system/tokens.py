@@ -94,6 +94,13 @@ STYLES = [
      "use": "Corpo de destaque e manifesto. O maior corpo que ainda é texto, não título."},
     {"id": "dsH3",         "label": "Subtítulo 34",   "size": 34,  "bold": True,  "role": 0, "ent": 0.95,
      "use": "Subtítulo e descritivo abaixo do título."},
+    # PENDENTE no .bas: existe aqui e no deck, ainda nao na faixa. Divide o
+    # corpo com o Subtitulo 34 e diverge em peso, cor e entrelinha -- o mesmo
+    # arranjo de Legenda 12 x CAPS 12, que a arquitetura ja' suporta.
+    {"id": "dsTexto34",    "label": "Texto 34",       "size": 34,  "bold": False, "role": 1, "ent": 1.3,
+     "pending_bas": True,
+     "use": "Texto corrido grande: intro de pagina e paragrafo de argumento. "
+            "Entre o Destaque 44, que e' statement curto, e o Texto 24."},
     {"id": "dsH4",         "label": "Tópico 28",      "size": 28,  "bold": True,  "role": 1, "ent": 1.0,
      "use": "Título de tópico ou de card."},
     {"id": "dsH5",         "label": "Texto 24",       "size": 24,  "bold": False, "role": 1, "ent": 1.0,

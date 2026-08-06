@@ -36,6 +36,19 @@ TIGHT, ITEM, BLOCK, SECTION, ZONE = (T.V_TIGHT, T.V_ITEM, T.V_BLOCK,
 
 SATURATED = (T.AZUL, T.ROSA)   # fundos que exigem tipo branco
 
+# Card da mesma cor do fundo nao e' card, e' um retangulo invisivel.
+# Sobre bege o card e' branco; sobre branco, bege; sobre cor, branco.
+CARD_ON = {T.BEGE: T.BRANCO, T.BRANCO: T.BEGE, T.AZUL: T.BRANCO, T.ROSA: T.BRANCO}
+
+
+def card_bg_for(bg, wanted=None):
+    """Cor de card valida sobre este fundo. Se pedirem a cor do proprio fundo,
+    devolve a alternativa: quem quer card colorido pede azul ou rosa, e ai' a
+    tipografia entra na regra de contraste sozinha."""
+    if wanted and wanted.upper() != (bg or T.BEGE).upper():
+        return wanted
+    return CARD_ON.get((bg or T.BEGE).upper(), T.BRANCO)
+
 
 def rgb(hex6: str) -> RGBColor:
     if hex6.upper() not in T.ALLOWED_HEX:
@@ -236,26 +249,21 @@ def footer(slide, section, number, bg=None):
              16, bg=bg, align="right")
 
 
-def distribute(top, bottom, count, block_h, min_gap=None):
-    """Passo entre `count` blocos de altura `block_h` para que o ULTIMO termine
-    em `bottom`. Nunca aperta abaixo de min_gap.
+def place_group(top, bottom, group_h):
+    """Onde comeca um grupo de altura group_h no espaco de top a bottom.
 
-    Sem descontar a altura do ultimo bloco, o passo empurra o final para fora da
-    pagina: foi o que gerou 41 transbordos na primeira versao do 2.0.
+    Sem esticar. Se sobra espaco, o grupo CENTRALIZA no que sobrou; se nao
+    sobra, comeca no topo. Esticar o gap para encher a pagina foi o erro do
+    2.0: virava 120pt entre linhas de uma grade cujo gutter e' 40.
     """
-    min_gap = ITEM if min_gap is None else min_gap
-    if count <= 1:
-        return block_h + min_gap
-    span = bottom - top - block_h
-    ideal = span / (count - 1)
-    return max(block_h + min_gap, min(ideal, block_h + ZONE))
+    room = bottom - top - group_h
+    if room <= 0:
+        return top
+    return top + room / 2
 
 
-def anchor_bottom(top, bottom, count, pitch, block_h):
-    """Se o grupo nao preenche o espaco, desce inteiro em vez de esticar.
-    Espalhar alem de 120pt desconecta os blocos em vez de dar ritmo."""
-    used = (count - 1) * pitch + block_h
-    return max(top, bottom - used)
+def grid_height(rows, block_h, gap):
+    return rows * block_h + (rows - 1) * gap
 
 
 def _card_heights(cards, cw, pad, blocks):
@@ -287,13 +295,9 @@ def hero_cover(prs, spec):
     w = T.col_span(3)
     s = Stack(sl, T.MARGIN_LEFT_PT, T.MARGIN_TOP_PT, w, bg)
     s.add("dsLegenda12", spec.get("eyebrow"))
-    s.fit(spec.get("style", "dsHero"), spec["title"],
-          T.CONTENT_BOTTOM_PT - 160, gap=SECTION)
-    if spec.get("sub"):
-        sw = T.col_span(2)
-        sh = needed("dsCorpoPilar", spec["sub"], sw)
-        add_text(sl, "dsCorpoPilar", spec["sub"], T.MARGIN_LEFT_PT,
-                 T.CONTENT_BOTTOM_PT - sh, sw, sh, bg=bg)
+    s.add(spec.get("style", "dsHero"), spec["title"], gap=SECTION)
+    # linha de apoio da capa e' curta e de destaque: Destaque 44 e' o papel dele
+    s.add("dsCorpo", spec.get("sub"), gap=SECTION, w=T.col_span(2))
     return sl
 
 
@@ -304,11 +308,7 @@ def chapter_divider(prs, spec):
     s = Stack(sl, T.MARGIN_LEFT_PT, T.MARGIN_TOP_PT, T.col_span(3), bg)
     s.add("dsBigNumber", spec.get("number"))
     s.add("dsMega", spec["title"], gap=SECTION)
-    if spec.get("sub"):
-        sw = T.col_span(2)
-        sh = needed("dsCorpoPilar", spec["sub"], sw)
-        add_text(sl, "dsCorpoPilar", spec["sub"], T.MARGIN_LEFT_PT,
-                 T.CONTENT_BOTTOM_PT - sh, sw, sh, bg=bg)
+    s.add("dsTexto34", spec.get("sub"), gap=SECTION, w=T.col_span(2))
     return sl
 
 
@@ -320,8 +320,7 @@ def spec_page(prs, spec):
     s.add("dsCaps12", spec.get("eyebrow"))
     s.add("dsH1", spec["title"], gap=ITEM if spec.get("eyebrow") else 0)
     if spec.get("intro"):
-        s.fit("dsCorpo", spec["intro"], T.CONTENT_BOTTOM_PT * 0.55,
-              gap=BLOCK, w=T.col_span(3))
+        s.add("dsTexto34", spec["intro"], gap=BLOCK, w=T.col_span(3))
 
     rows = spec.get("rows", [])
     if rows:
@@ -336,10 +335,10 @@ def spec_page(prs, spec):
         val_h = max(needed("dsH4", v, col_w) for _, v in rows)
         row_h = lab_h + TIGHT + val_h
         # distribui as linhas ate' a base da area util
-        top = s.y + ZONE
+        top = s.y + BLOCK
         bottom = T.CONTENT_BOTTOM_PT - SECTION
-        pitch = distribute(top, bottom, per_col, row_h)
-        top = anchor_bottom(top, bottom, per_col, pitch, row_h)
+        pitch = row_h + ITEM
+        top = place_group(top, bottom, grid_height(per_col, row_h, ITEM))
         for i, (label, value) in enumerate(rows):
             col, row = divmod(i, per_col)
             rx = T.col_x(col * span)
@@ -395,8 +394,10 @@ def swatch_page(prs, spec):
     sw_y = s.y + BLOCK
     sw_w = T.col_span(2)
     sw_h = T.CONTENT_BOTTOM_PT - 40 - sw_y
+    # amostra igual ao fundo some: ganha contorno para ter borda visivel
+    same = pal["hex"].upper() == (bg or T.BEGE).upper()
     add_box(sl, T.MARGIN_LEFT_PT, sw_y, sw_w, sw_h, fill=pal["hex"],
-            line=T.AZUL if pal["hex"] == T.BRANCO else None)
+            line=T.AZUL if (pal["hex"] == T.BRANCO or same) else None)
 
     tx = T.col_x(2)
     tw = T.col_span(2)
@@ -427,7 +428,7 @@ def multi_card_grid(prs, spec):
     blocks = [("dsH4", "title", 0), ("dsCorpoPilar", "body", ITEM)]
     ch = _card_heights(cards, cw, pad, blocks)
     cy = s.y + BLOCK
-    card_bg = spec.get("card_bg", T.BRANCO)
+    card_bg = card_bg_for(bg, spec.get("card_bg"))
     for i, c in enumerate(cards):
         cx = (T.col_x(i * span) if T.COLUMNS % n == 0
               else T.MARGIN_LEFT_PT + i * (cw + T.GUTTER_PT))
@@ -475,9 +476,11 @@ def _grid(prs, spec, cards):
         body_style = candidate
         if top + rows * ch + (rows - 1) * T.GUTTER_PT <= bottom:
             break
-    pitch = distribute(top, bottom, rows, ch, T.GUTTER_PT)
-    top = anchor_bottom(top, bottom, rows, pitch, ch)
-    card_bg = spec.get("card_bg", T.BRANCO)
+    # o vao vertical e' o MESMO do horizontal. Grade com gutter 40 na
+    # horizontal e 120 na vertical nao le' como grade.
+    pitch = ch + T.GUTTER_PT
+    top = place_group(top, bottom, grid_height(rows, ch, T.GUTTER_PT))
+    card_bg = card_bg_for(bg, spec.get("card_bg"))
     for i, it in enumerate(items):
         r, c = divmod(i, cols)
         cx = (T.col_x(c * span) if cols <= T.COLUMNS
@@ -524,7 +527,7 @@ def zoned_content(prs, spec):
     s = Stack(sl, T.MARGIN_LEFT_PT, T.MARGIN_TOP_PT, T.col_span(3), bg)
     s.add("dsEyebrow", spec.get("eyebrow"))
     s.add("dsH1", spec["title"], gap=ITEM)
-    s.fit("dsH5", spec.get("body", ""), band_y - ZONE, gap=BLOCK)
+    s.add("dsTexto34", spec.get("body", ""), gap=BLOCK)
     return sl
 
 
@@ -550,7 +553,7 @@ def stat_band(prs, spec):
     s = Stack(sl, T.MARGIN_LEFT_PT, T.MARGIN_TOP_PT, T.col_span(3), bg)
     s.add("dsCaps12", spec.get("eyebrow"))
     s.add("dsH1", spec["title"], gap=ITEM)
-    s.fit("dsH5", spec.get("body", ""), band_y - ZONE, gap=BLOCK)
+    s.add("dsTexto34", spec.get("body", ""), gap=BLOCK)
     return sl
 
 
@@ -562,7 +565,7 @@ def quote_side_image(prs, spec):
     px = T.col_x(2)
     pw = T.col_span(2)
     ph = T.CONTENT_H_PT
-    panel_bg = spec.get("panel_bg", T.AZUL)
+    panel_bg = card_bg_for(bg, spec.get("panel_bg", T.AZUL))
     add_box(sl, px, T.MARGIN_TOP_PT, pw, ph, fill=panel_bg)
     if spec.get("panel_text"):
         pstyle = spec.get("panel_style", "dsH3")
@@ -575,7 +578,7 @@ def quote_side_image(prs, spec):
     s = Stack(sl, T.MARGIN_LEFT_PT, T.MARGIN_TOP_PT, tw, bg)
     s.add("dsEyebrow", spec.get("eyebrow"))
     s.add("dsH1", spec["title"], gap=ITEM)
-    s.fit("dsH3", spec["body"], T.CONTENT_BOTTOM_PT - 40, gap=BLOCK)
+    s.add("dsTexto34", spec["body"], gap=BLOCK)
     return sl
 
 
@@ -592,14 +595,15 @@ def do_dont(prs, spec):
     inner = cw - pad * 2
     cols = [(spec.get("do_title", "Sim"), spec["do"], T.AZUL),
             (spec.get("dont_title", "Nunca"), spec["dont"], T.ROSA)]
+    card_bg = card_bg_for(bg, spec.get("card_bg"))
     ch = pad * 2 + max(needed("dsH3", h, inner) + BLOCK
                        + list_height("dsCorpoPilar", it, inner)
                        for h, it, _ in cols)
     cy = s.y + BLOCK
     for i, (head, items, tone) in enumerate(cols):
         cx = T.col_x(i * 2)
-        add_box(sl, cx, cy, cw, ch, fill=T.BRANCO)
-        cs = Stack(sl, cx + pad, cy + pad, inner, T.BRANCO)
+        add_box(sl, cx, cy, cw, ch, fill=card_bg)
+        cs = Stack(sl, cx + pad, cy + pad, inner, card_bg)
         cs.add("dsH3", head, color=tone)
         cs.add_list("dsCorpoPilar", items, gap=BLOCK)
     return sl
@@ -612,8 +616,7 @@ def diagram_page(prs, spec):
     lw = T.col_span(2)     # 1 coluna quebrava titulo de 60pt no meio da palavra
     s = Stack(sl, T.MARGIN_LEFT_PT, T.MARGIN_TOP_PT, lw, bg)
     s.add("dsH1", spec["title"])
-    s.fit("dsCorpoPilar", spec.get("intro", ""), T.CONTENT_BOTTOM_PT - 200,
-          gap=BLOCK)
+    s.add("dsCorpoPilar", spec.get("intro", ""), gap=BLOCK)
 
     legend = spec.get("legend", [])
     leg_h = (len(legend) * (12 + TIGHT + 24) + ITEM * max(0, len(legend) - 1)

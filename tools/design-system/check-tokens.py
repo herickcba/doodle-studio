@@ -111,8 +111,15 @@ def main():
                     % (len(bas["palette"]), len(T.PALETTE)))
 
     # ---- estilos
+    pending = {s["id"] for s in T.STYLES if s.get("pending_bas")}
     bas_ids = [s["id"] for s in bas["styles"]]
-    tok_ids = [s["id"] for s in T.STYLES]
+    tok_ids = [s["id"] for s in T.STYLES if s["id"] not in pending]
+    for pid in sorted(pending):
+        st = T.STYLE_BY_ID[pid]
+        warns.append("estilo %r (%s) existe na documentacao e ainda nao na faixa.\n"
+                     "       Proxima leva do .bas: AddStyle \"%s\", %g, %s, %d, %s"
+                     % (st["label"], pid, pid, st["size"],
+                        "True" if st["bold"] else "False", st["role"], st["ent"]))
     if bas_ids != tok_ids:
         so_bas = [i for i in bas_ids if i not in tok_ids]
         so_tok = [i for i in tok_ids if i not in bas_ids]
