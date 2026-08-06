@@ -180,9 +180,10 @@ BOX_PAD_PT = SPACING[2]
 # disto o build avisa -- era o vicio de esticar o card ate' o rodape.
 BOX_STRETCH_MAX = 1.6
 
-# O conteudo tem de ocupar o canvas. Se terminar antes disto, o layout deve
-# distribuir em zonas em vez de deixar tudo empilhado no topo.
-CANVAS_FILL_MIN = 0.60
+# Ocupacao saudavel do canvas. Nem tudo vazio, nem tudo cheio: espaco negativo
+# e' parte do desenho, e slide lotado nao respira. Fora desta faixa, aviso.
+CANVAS_FILL_MIN = 0.35
+CANVAS_FILL_MAX = 0.95
 
 # ---- divida com a extensao (ver design.md) -------------------------------
 # O .bas ainda guarda o raio em px e as guias em 3,15 cm. Os dois numeros

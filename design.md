@@ -1,4 +1,4 @@
-# Design System CBA B+G: regras · 2.1
+# Design System CBA B+G: regras · 2.2
 
 > **Fonte da verdade:** o `SetDefaults` de
 > [`BG-DoodleStudio.bas`](v3-powerpoint-addin/assets/BG-DoodleStudio.bas). Este
@@ -170,7 +170,15 @@ contra 1,00×), e Subtítulo 34 e Texto 34 (Bold rosa 0,95× contra Regular azul
 
 ## 6. Comportamento do tipo
 
-### Contraste automático
+### Sobre fundo saturado, todo tipo é branco
+
+Azul e rosa levam **todo** o tipo a branco. Não é só o caso em que a cor
+coincide: azul sobre rosa é legível e mesmo assim não é o que a marca faz.
+
+A única exceção é o ponto final do Statement, que continua colorido para não
+perder o detalhe: sobre azul ele é rosa, sobre rosa é azul.
+
+### Contraste automático em fundo claro
 
 **Se a cor do texto for exatamente a cor do fundo, o texto vira branco.**
 
@@ -245,14 +253,42 @@ Se o grupo é menor que o espaço disponível, ele **centraliza** no que sobra. 
 se aumenta o vão entre blocos para chegar ao rodapé: gap grande demais desconecta
 os blocos em vez de dar ritmo.
 
+### O texto mora dentro da forma
+
+Card é **uma forma só**, com parágrafos de estilos diferentes dentro. Caixa de
+texto sobreposta ao retângulo obriga quem edita a mexer em dois objetos e a
+manter os dois alinhados na mão.
+
+Dentro do card, o título e o texto de apoio ficam a **1 módulo** um do outro:
+são o mesmo bloco de leitura, e gap maior desmancha o par.
+
+### Número de item é informação, não etiqueta
+
+Numa grade numerada, o número entra em **Título 60**, não em CAPS 12. Rótulo de
+texto (`VARIAÇÃO`, `PAL0`) continua em CAPS 12.
+
+Grade numerada dispensa card: o número já organiza a leitura.
+
+### Folga do rodapé
+
+A etiqueta de seção e o número de página moram na última linha da área útil.
+Nenhum conteúdo chega a menos de **3 módulos** deles.
+
+### Ocupação saudável
+
+Entre **35% e 95%** da altura útil. Abaixo disso o slide está vazio; acima, está
+lotado e pede corte de texto ou divisão em dois. Espaço negativo é parte do
+desenho, não sobra.
+
 ### Card nunca é da cor do fundo
 
 Sobre bege, o card é branco ou colorido. Sobre branco, bege ou colorido. Sobre
 cor, branco. Card da cor do fundo é um retângulo invisível.
 
 Card colorido não pede decisão de tipografia: a **regra de contraste** resolve
-sozinha. A única exceção é a amostra de cor da própria cor do fundo, que existe
-para mostrar a cor e por isso ganha contorno.
+sozinha. Contorno só existe num caso: a amostra de cor **da própria cor do
+fundo**, que sem borda não existiria. Branco sobre bege já se distingue e não
+leva contorno.
 
 ### Texto corrido é Apoio 20
 
@@ -350,25 +386,30 @@ automático.
 Divergências reais entre o que este documento diz e o que existe hoje. Estão
 aqui para não virarem surpresa:
 
-As três primeiras são a **próxima leva do `.bas`**: exigem ciclo do VBE e novo
-release, e o `check-tokens.py` avisa sobre elas a cada execução.
+### As três da próxima leva do `.bas`
 
-1. **Margem × linhas-guia.** O 2.0 usa 60pt (2,12cm); a faixa desenha as guias em
-   3,15cm (89,3pt). Ajustar `GUIDE_MARGIN_CM` para `2.12`.
-2. **Raio.** O 2.0 usa 20pt; a faixa aplica 20,62pt, porque guarda `radiusPx = 25`
-   no canvas de 1080. Ajustar para `24` (19,79pt, o inteiro mais próximo). O
-   ideal seria a config guardar pt em vez de px, mas isso muda o schema do
-   `cba-config.txt` e quebra configurações salvas.
-3. **Texto 34 ainda não está na faixa.** Existe neste documento e no deck.
-   Próxima leva: `AddStyle "dsTexto34", 34, False, 1, 1.3`, mais o botão no
-   ribbon e a entrada no `config.html`.
-4. **A grade de colunas não existe na faixa.** As linhas-guia já desenham 4
-   colunas com gutter de 2 raios, o que bate com o 2.0. Depois de ajustar margem
-   e raio, a grade da faixa e a do sistema passam a ser a mesma.
-5. **O rosa em outras mídias.** A landing (`--coral: #FC5E6D`) e a skill
+Exigem ciclo do VBE e novo release. O `check-tokens.py` avisa sobre as três a
+cada execução e já imprime o valor a aplicar.
+
+| # | O que | Hoje na faixa | Deve virar |
+|---|---|---|---|
+| 1 | Margem das linhas-guia | `GUIDE_MARGIN_CM = 3.15` (89,3pt) | `2.12` (60pt) |
+| 2 | Raio | `gRadiusPx = 25` (20,62pt) | `24` (19,79pt) |
+| 3 | Estilo Texto 34 | não existe | `AddStyle "dsTexto34", 34, False, 1, 1.3` |
+
+O Texto 34 também pede botão no `customUI14.xml`, ícone em
+`gen-style-previews.py`, entrada na lista `STYLES` do `config.html` e a
+`<Relationship>` do ícone no `.rels`.
+
+### As demais
+
+1. **A grade de colunas já existe na faixa.** As linhas-guia desenham 4 colunas
+   com gutter de 2 raios, que é a mesma regra daqui. Depois de ajustar margem e
+   raio, as duas grades passam a coincidir exatamente.
+2. **O rosa em outras mídias.** A landing (`--coral: #FC5E6D`) e a skill
    `cba-bg-design-system-v3` usam `FC5E6D`; o padrão é **`FD5E6D`**. Um dígito de
    diferença, invisível a olho nu e detectável em auditoria.
-6. **Corpos herdados do v3.** 55, 36, 32, 22, 16 e 14pt aparecem em decks
+3. **Corpos herdados do v3.** 55, 36, 32, 22, 16 e 14pt aparecem em decks
    antigos. A tabela de migração acima resolve.
 
 ---

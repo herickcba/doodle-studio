@@ -22,11 +22,14 @@ from pptx import Presentation  # noqa: E402
 from pptx.util import Pt  # noqa: E402
 
 import layouts  # noqa: E402
+from layouts import CONTENT_END, FOOTER_H  # noqa: E402
 import spec as spec_mod  # noqa: E402
 import tokens as T  # noqa: E402
 
+FOOTER_Y = T.CONTENT_BOTTOM_PT - FOOTER_H
+
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-    REPO, "docs", "CBA-Studio-Design-System-2.1.pptx")
+    REPO, "docs", "CBA-Studio-Design-System-2.2.pptx")
 
 
 def generate(path):
@@ -94,7 +97,6 @@ def validate(path):
             if (not shape.has_text_frame or not shape.text_frame.text.strip()) \
                     and shape.height and shape.width:
                 bh = shape.height / 12700
-                inner = shape.width / 12700 - 2 * T.BOX_PAD_PT
                 tallest = 0.0
                 for other in slide.shapes:
                     if other is shape or not other.has_text_frame:
@@ -118,30 +120,69 @@ def validate(path):
 
             if not shape.has_text_frame:
                 continue
-            # transbordo: reconstroi o estilo a partir do que esta' no arquivo
+            # Transbordo: mede PARAGRAFO A PARAGRAFO, cada um com o proprio
+            # estilo. Medir a forma inteira com o estilo do primeiro run
+            # superestimava grosseiramente os cards de estilos mistos.
             txt = shape.text_frame.text
             if txt.strip() and shape.width and shape.height:
-                p0 = shape.text_frame.paragraphs[0]
-                r0 = p0.runs[0] if p0.runs else None
-                if r0 is not None and r0.font.size and p0.line_spacing:
-                    key = (r0.font.size.pt, bool(r0.font.bold),
-                           round(float(p0.line_spacing), 3))
-                    st = by_size.get(key)
-                    if st:
-                        need = measure.block_height(txt, st, shape.width / 12700)
-                        have = shape.height / 12700
-                        if need > have + 2:
-                            errs.append(
-                                "slide %d: texto transborda %.0fpt (precisa %.0f, "
-                                "caixa %.0f) em %r"
-                                % (n, need - have, need, have, txt[:32].replace("\n", " ")))
-            # ---- nada de conteudo abaixo da margem inferior (item 8)
+                tf = shape.text_frame
+                inner_w = shape.width / 12700
+                inner_h = shape.height / 12700
+                try:
+                    inner_w -= (tf.margin_left + tf.margin_right) / 12700
+                    inner_h -= (tf.margin_top + tf.margin_bottom) / 12700
+                except Exception:
+                    pass
+                # altura = soma de (linhas x entrelinha) de cada paragrafo,
+                # mais a correcao da PRIMEIRA linha do quadro quando a
+                # entrelinha e' menor que o corpo (Statement usa 0,8x).
+                need, known, first = 0.0, True, None
+                for para in tf.paragraphs:
+                    r0 = para.runs[0] if para.runs else None
+                    if r0 is None or not r0.font.size or not para.line_spacing:
+                        continue
+                    st = by_size.get((r0.font.size.pt, bool(r0.font.bold),
+                                      round(float(para.line_spacing), 3)))
+                    if not st:
+                        known = False
+                        break
+                    ptxt = "".join(r.text for r in para.runs)
+                    lines = measure.wrap_lines(
+                        ptxt, st["size"], bool(st["bold"]), inner_w,
+                        caps=bool(st.get("caps")),
+                        spacing_pt=float(st.get("spacing") or 0))
+                    lead = st["size"] * st["ent"]
+                    need += lines * lead
+                    if first is None:
+                        first = st
+                    if para.space_before:
+                        need += para.space_before.pt
+                    if para.space_after:
+                        need += para.space_after.pt
+                if first is not None:
+                    need += max(0.0, first["size"] - first["size"] * first["ent"])
+                if known and need > inner_h + 2:
+                    errs.append(
+                        "slide %d: texto transborda %.0fpt (precisa %.0f, "
+                        "caixa %.0f) em %r"
+                        % (n, need - inner_h, need, inner_h,
+                           txt[:32].replace("\n", " ")))
+            # ---- nada de conteudo abaixo da margem inferior, e nada
+            # encostado na tag do rodape: 2 modulos de folga.
             if txt.strip():
                 bottom = (shape.top + shape.height) / 12700
-                content_bottom = max(content_bottom, bottom)
+                is_footer = abs(shape.top / 12700 - FOOTER_Y) < 2
+                if not is_footer:
+                    content_bottom = max(content_bottom, bottom)
                 if bottom > T.CONTENT_BOTTOM_PT + 1:
                     errs.append("slide %d: passa %.0fpt da margem inferior: %r"
                                 % (n, bottom - T.CONTENT_BOTTOM_PT,
+                                   txt[:34].replace("\n", " ")))
+                elif not is_footer and bottom > CONTENT_END + 1:
+                    errs.append("slide %d: encosta na tag do rodape (%.0fpt de "
+                                "folga, minimo %.0f): %r"
+                                % (n, T.CONTENT_BOTTOM_PT - FOOTER_H - bottom,
+                                   layouts.FOOTER_CLEARANCE,
                                    txt[:34].replace("\n", " ")))
 
             for p in shape.text_frame.paragraphs:
@@ -176,9 +217,12 @@ def validate(path):
         # Aviso, nao erro: alguns arquetipos sao legitimamente curtos.
         used = (content_bottom - T.MARGIN_TOP_PT) / T.CONTENT_H_PT
         if 0 < used < T.CANVAS_FILL_MIN:
-            warns.append("slide %d: conteudo ocupa so' %.0f%% da altura util "
-                         "(minimo %.0f%%). Distribuir em zonas."
-                         % (n, used * 100, T.CANVAS_FILL_MIN * 100))
+            warns.append("slide %d: conteudo ocupa so' %.0f%% da altura util. "
+                         "Vazio demais." % (n, used * 100))
+        elif used > T.CANVAS_FILL_MAX:
+            warns.append("slide %d: conteudo ocupa %.0f%% da altura util. "
+                         "Lotado: cortar texto ou dividir em dois slides."
+                         % (n, used * 100))
     return len(prs.slides), runs, errs, warns
 
 

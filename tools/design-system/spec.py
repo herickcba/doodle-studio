@@ -58,7 +58,7 @@ def build_spec():
                   ("REGRAS EM TEXTO", "design.md"),
                   ("GATE ANTI-DERIVA", "check-tokens.py")]})
 
-    add({"kind": "card_grid_5", "section": "ABERTURA", "cols": 4,
+    add({"kind": "grid_plain", "section": "ABERTURA", "cols": 4,
          "title": "O caminho",
          "intro": "Sete blocos, do que é invariável para o que é aplicado.",
          "items": [
@@ -261,7 +261,7 @@ def build_spec():
     add({"kind": "quote_side_image", "section": "TIPOGRAFIA",
          "eyebrow": "COMPORTAMENTO PROPRIO",
          "title": "Caixa alta",
-         "body": "O CAPS 12 aplica caixa alta e 3pt de espaçamento entre letras. "
+         "body": "Aplica caixa alta e 3pt de espaçamento entre letras. "
                  "Caixa alta sem espaçamento fecha demais em Avenir Next Bold.\n\n"
                  "É reversível: aplicar outro estilo por cima desfaz a caixa alta "
                  "e zera o espaçamento. Nenhum estilo deixa resíduo.",
@@ -322,36 +322,36 @@ def build_spec():
          "sub": "Os layouts que o sistema aceita. Fora deles, é composição nova "
                 "e composição nova pede revisão."})
 
-    add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 4,
+    add({"kind": "grid_plain", "section": "ARQUÉTIPOS", "cols": 4,
          "title": "O catálogo, 1 de 2",
-         "intro": "Os arquétipos de abertura, especificação e grade.",
+         "intro": "Abertura, especificação e amostra.",
          "items": [
-             {"kicker": "1.", "title": "Hero cover", "body": "Statement que abre. Fundo sempre saturado."},
-             {"kicker": "2.", "title": "Chapter divider", "body": "Número e título de bloco."},
-             {"kicker": "3.", "title": "Spec page", "body": "Título, intro e pares rótulo/valor."},
-             {"kicker": "4.", "title": "Type specimen", "body": "Amostra no corpo real e ficha técnica."},
-             {"kicker": "5.", "title": "Swatch", "body": "Uma cor com hex, RGB e papel."},
-             {"kicker": "6.", "title": "Multi card", "body": "2 a 4 cards de mesma altura."},
-             {"kicker": "7.", "title": "Card grid", "body": "Grade densa, com caixa."},
+             {"kicker": "1", "title": "Hero cover", "body": "Capa. Fundo saturado."},
+             {"kicker": "2", "title": "Chapter divider", "body": "Abertura de bloco."},
+             {"kicker": "3", "title": "Spec page", "body": "Título, intro e pares."},
+             {"kicker": "4", "title": "Type specimen", "body": "Amostra e ficha. Bloco 3."},
+             {"kicker": "5", "title": "Swatch", "body": "Uma cor. Bloco 2."},
+             {"kicker": "6", "title": "Multi card", "body": "2 a 4 cards."},
+             {"kicker": "7", "title": "Card grid", "body": "Grade com caixa."},
          ]})
 
-    add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 4,
+    add({"kind": "grid_plain", "section": "ARQUÉTIPOS", "cols": 4,
          "title": "O catálogo, 2 de 2",
-         "intro": "Os arquétipos de composição, regra e fecho.",
+         "intro": "Composição, regra e fecho.",
          "items": [
-             {"kicker": "8.", "title": "Grid plain", "body": "A mesma grade, sem caixa."},
-             {"kicker": "9.", "title": "Zoned content", "body": "Zona superior e faixa inferior."},
-             {"kicker": "10.", "title": "Stat band", "body": "Faixa inferior de números."},
-             {"kicker": "11.", "title": "Quote side", "body": "Texto e painel de cor."},
-             {"kicker": "12.", "title": "Do e nunca", "body": "Duas colunas de regra."},
-             {"kicker": "13.", "title": "Diagram", "body": "Esquema desenhado em escala."},
-             {"kicker": "14.", "title": "Closing", "body": "Fecho do documento."},
+             {"kicker": "8", "title": "Grid plain", "body": "Grade sem caixa."},
+             {"kicker": "9", "title": "Zoned content", "body": "Zona e faixa."},
+             {"kicker": "10", "title": "Stat band", "body": "Faixa de números."},
+             {"kicker": "11", "title": "Quote side", "body": "Texto e painel."},
+             {"kicker": "12", "title": "Do e nunca", "body": "Duas colunas. Bloco 6."},
+             {"kicker": "13", "title": "Diagram", "body": "Esquema em escala. Bloco 1."},
+             {"kicker": "14", "title": "Closing", "body": "Fecho. Último slide."},
          ]})
 
     add({"kind": "hero_cover", "bg": T.ROSA, "section": "ARQUÉTIPOS",
          "eyebrow": "ARQUÉTIPO 01  ·  HERO COVER",
          "title": "Uma frase que\nmarca a página.",
-         "sub": "Statement 120 sobre fundo saturado: o texto vira branco e o ponto, rosa."})
+         "sub": "Statement 120 sobre fundo saturado:\no texto vira branco e o ponto, rosa."})
 
     add({"kind": "chapter_divider", "bg": T.BEGE, "number": "2.",
          "title": "Chapter divider\nsobre bege", "section": "ARQUÉTIPOS",
@@ -454,7 +454,7 @@ def build_spec():
                   "Cor ou corpo fora da tabela",
                   "Icone inventado"]})
 
-    add({"kind": "card_grid_5", "section": "REGRAS", "cols": 3,
+    add({"kind": "grid_plain", "section": "REGRAS", "cols": 3,
          "title": "Checklist de auditoria",
          "intro": "O que olhar antes de mandar um deck para fora.",
          "items": [
