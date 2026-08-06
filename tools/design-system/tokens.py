@@ -125,18 +125,63 @@ ALLOWED_SIZES = frozenset(s["size"] for s in STYLES)
 ALLOWED_HEX = frozenset(c["hex"] for c in PALETTE.values())
 
 # ---------------------------------------------------------------- forma e grid
-RADIUS_PX = 25                      # como a config guarda (canvas 1080)
-RADIUS_PT = round(px_to_pt(RADIUS_PX), 2)   # 20.62 pt
+#
+#  DESIGN SYSTEM 2.0 -- 60 / 20 / 20
+#  Margem, modulo e raio sao todos multiplos de 20. Era o problema do 1.0:
+#  76 de margem com modulo 20 e raio 20,62 nao fechava com nada.
+#
+SPACING_UNIT_PT = 20                # o modulo. Tudo deriva dele.
+RADIUS_PT = 20.0                    # raio canonico (visual constante)
+GUTTER_PT = 2 * RADIUS_PT           # 40 pt -- o vao entre colunas e' 2 raios
+MARGIN_PT = 3 * SPACING_UNIT_PT     # 60 pt, nos QUATRO lados
 
-SPACING_UNIT_PT = 20                # modulo de espacamento
-SPACING = {n: SPACING_UNIT_PT * n for n in (1, 2, 3, 4)}
+# Escala vertical. Cada degrau tem significado; gap fora dela e' acidente.
+#   1x amarra rotulo ao valor      3x separa blocos irmaos
+#   2x separa itens de uma lista   4x separa blocos
+#   6x separa ZONAS do slide (topo x faixa inferior)
+SPACING = {n: SPACING_UNIT_PT * n for n in (1, 2, 3, 4, 6)}
+V_TIGHT, V_ITEM, V_BLOCK, V_SECTION, V_ZONE = (SPACING[n] for n in (1, 2, 3, 4, 6))
 
-MARGIN_PT = 76.0                    # margem de seguranca (area util)
 MARGIN_LEFT_PT = MARGIN_PT
 MARGIN_RIGHT_PT = PAGE_W_PT - MARGIN_PT
-CONTENT_W_PT = MARGIN_RIGHT_PT - MARGIN_LEFT_PT
-MARGIN_TOP_PT = 76.0
-MARGIN_BOTTOM_PT = 50.0
+MARGIN_TOP_PT = MARGIN_PT
+MARGIN_BOTTOM_PT = MARGIN_PT
+CONTENT_W_PT = MARGIN_RIGHT_PT - MARGIN_LEFT_PT          # 1463.13
+CONTENT_H_PT = PAGE_H_PT - MARGIN_TOP_PT - MARGIN_BOTTOM_PT  # 770.63
+CONTENT_BOTTOM_PT = PAGE_H_PT - MARGIN_BOTTOM_PT         # 830.63
+
+# Grade de 4 colunas. Bloco de conteudo ocupa 1, 2, 3 ou 4 colunas -- nunca
+# uma largura escolhida no olho.
+COLUMNS = 4
+COL_W_PT = (CONTENT_W_PT - (COLUMNS - 1) * GUTTER_PT) / COLUMNS   # 335.78
+
+
+def col_x(i: int) -> float:
+    """x da borda esquerda da coluna i (0-based)."""
+    return MARGIN_LEFT_PT + i * (COL_W_PT + GUTTER_PT)
+
+
+def col_span(n: int) -> float:
+    """Largura de um bloco de n colunas, gutters incluidos."""
+    return n * COL_W_PT + (n - 1) * GUTTER_PT
+
+
+# Padding interno de card/box: 2 modulos.
+BOX_PAD_PT = SPACING[2]
+
+# Uma caixa nao pode ser muito mais alta que o conteudo que carrega. Acima
+# disto o build avisa -- era o vicio de esticar o card ate' o rodape.
+BOX_STRETCH_MAX = 1.6
+
+# O conteudo tem de ocupar o canvas. Se terminar antes disto, o layout deve
+# distribuir em zonas em vez de deixar tudo empilhado no topo.
+CANVAS_FILL_MIN = 0.60
+
+# ---- divida com a extensao (ver design.md) -------------------------------
+# O .bas ainda guarda o raio em px e as guias em 3,15 cm. Os dois numeros
+# abaixo existem so' para o check-tokens.py medir a distancia e avisar.
+RADIUS_PX_BAS = 25                  # = 20.62 pt
+RADIUS_PT_BAS = round(px_to_pt(RADIUS_PX_BAS), 2)
 
 ANCHOR_DEFAULT_CM = 1.27            # ancora de encaixe padrao (esq. e topo)
 ANCHOR_DEFAULT_PT = round(cm_to_pt(ANCHOR_DEFAULT_CM), 2)   # 36.0 pt

@@ -155,8 +155,12 @@ def main():
                 errs.append("entrelinha do corpo %s: .bas=%r tokens=%r" % (sz, a, c))
 
     # ---- raio e constantes de layout
-    if bas["radius_px"] != T.RADIUS_PX:
-        errs.append("raio: .bas=%rpx tokens=%rpx" % (bas["radius_px"], T.RADIUS_PX))
+    # O raio canonico do 2.0 e' 20pt; o .bas ainda guarda 25px (20,62pt).
+    # Divida registrada no design.md -- avisa, nao bloqueia. So' bloqueia se o
+    # .bas sair do valor que a documentacao DIZ que ele tem hoje.
+    if bas["radius_px"] != T.RADIUS_PX_BAS:
+        errs.append("raio no .bas mudou: agora %rpx, documentado %rpx"
+                    % (bas["radius_px"], T.RADIUS_PX_BAS))
     if consts.get("ANCHOR_DEFAULT_CM") != T.ANCHOR_DEFAULT_CM:
         errs.append("ancora padrao: .bas=%rcm tokens=%rcm"
                     % (consts.get("ANCHOR_DEFAULT_CM"), T.ANCHOR_DEFAULT_CM))
@@ -172,10 +176,16 @@ def main():
     #      design.md e depende de um ciclo do VBE.
     if abs(T.GUIDE_MARGIN_PT - T.MARGIN_PT) > 0.5:
         warns.append(
-            "linhas-guia em %.1fpt (%.2fcm) x margem documentada de %.0fpt (%.2fcm).\n"
-            "       Divida conhecida (design.md): ajustar GUIDE_MARGIN_CM para %.2f."
-            % (T.GUIDE_MARGIN_PT, T.GUIDE_MARGIN_CM, T.MARGIN_PT,
-               T.MARGIN_PT / T.PT_PER_CM, T.MARGIN_PT / T.PT_PER_CM))
+            "margem: design 2.0 usa %.0fpt (%.2fcm), a faixa desenha as guias em "
+            "%.1fpt (%.2fcm).\n       Proxima leva do .bas: GUIDE_MARGIN_CM = %.2f."
+            % (T.MARGIN_PT, T.MARGIN_PT / T.PT_PER_CM,
+               T.GUIDE_MARGIN_PT, T.GUIDE_MARGIN_CM, T.MARGIN_PT / T.PT_PER_CM))
+    if abs(T.RADIUS_PT - T.RADIUS_PT_BAS) > 0.05:
+        warns.append(
+            "raio: design 2.0 usa %.0fpt, a faixa aplica %.2fpt (%dpx no canvas 1080).\n"
+            "       Proxima leva do .bas: gRadiusPx = %d (= %.2fpt)."
+            % (T.RADIUS_PT, T.RADIUS_PT_BAS, T.RADIUS_PX_BAS,
+               round(T.pt_to_px(T.RADIUS_PT)), T.px_to_pt(round(T.pt_to_px(T.RADIUS_PT)))))
 
     if warns:
         print("AVISOS (nao bloqueiam):")
@@ -194,8 +204,10 @@ def main():
 
     print("OK: %d estilos, %d cores e as constantes de layout batem." %
           (len(T.STYLES), len(T.PALETTE)))
-    print("    Font %s | raio %.2fpt (%dpx) | margem %.0fpt | modulo %dpt"
-          % (T.FONT, T.RADIUS_PT, T.RADIUS_PX, T.MARGIN_PT, T.SPACING_UNIT_PT))
+    print("    Font %s | design 2.0: margem %.0fpt, modulo %dpt, raio %.0fpt, "
+          "gutter %.0fpt, %d colunas de %.2fpt"
+          % (T.FONT, T.MARGIN_PT, T.SPACING_UNIT_PT, T.RADIUS_PT, T.GUTTER_PT,
+             T.COLUMNS, T.COL_W_PT))
     return 0
 
 

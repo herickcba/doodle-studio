@@ -26,7 +26,7 @@ import spec as spec_mod  # noqa: E402
 import tokens as T  # noqa: E402
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-    REPO, "docs", "CBA-Studio-Design-System.pptx")
+    REPO, "docs", "CBA-Studio-Design-System-2.0.pptx")
 
 
 def generate(path):
@@ -63,10 +63,32 @@ def validate(path):
     for st in T.STYLES:
         by_size.setdefault((st["size"], bool(st["bold"]), round(st["ent"], 3)), st)
 
-    errs = []
+    errs, warns = [], []
     runs = 0
     for n, slide in enumerate(prs.slides, 1):
+        content_bottom = 0.0
         for shape in slide.shapes:
+            # ---- caixa esticada: forma com muito mais altura que conteudo.
+            # Era o vicio de puxar o card ate' o rodape (item 7 da revisao).
+            if (not shape.has_text_frame or not shape.text_frame.text.strip()) \
+                    and shape.height and shape.width:
+                bh = shape.height / 12700
+                inner = shape.width / 12700 - 2 * T.BOX_PAD_PT
+                tallest = 0.0
+                for other in slide.shapes:
+                    if other is shape or not other.has_text_frame:
+                        continue
+                    if not other.text_frame.text.strip():
+                        continue
+                    ox, oy = other.left / 12700, other.top / 12700
+                    if (shape.left / 12700 <= ox <= shape.left / 12700 + shape.width / 12700
+                            and shape.top / 12700 <= oy <= shape.top / 12700 + bh):
+                        tallest = max(tallest, oy + other.height / 12700
+                                      - shape.top / 12700)
+                if tallest > 0 and bh > tallest * T.BOX_STRETCH_MAX + T.BOX_PAD_PT:
+                    errs.append("slide %d: caixa esticada (%.0fpt de altura para "
+                                "%.0fpt de conteudo)" % (n, bh, tallest))
+
             if not shape.has_text_frame:
                 continue
             # transbordo: reconstroi o estilo a partir do que esta' no arquivo
@@ -86,6 +108,15 @@ def validate(path):
                                 "slide %d: texto transborda %.0fpt (precisa %.0f, "
                                 "caixa %.0f) em %r"
                                 % (n, need - have, need, have, txt[:32].replace("\n", " ")))
+            # ---- nada de conteudo abaixo da margem inferior (item 8)
+            if txt.strip():
+                bottom = (shape.top + shape.height) / 12700
+                content_bottom = max(content_bottom, bottom)
+                if bottom > T.CONTENT_BOTTOM_PT + 1:
+                    errs.append("slide %d: passa %.0fpt da margem inferior: %r"
+                                % (n, bottom - T.CONTENT_BOTTOM_PT,
+                                   txt[:34].replace("\n", " ")))
+
             for p in shape.text_frame.paragraphs:
                 if p.line_spacing is not None:
                     ls = round(float(p.line_spacing), 3)
@@ -95,6 +126,11 @@ def validate(path):
                     if not r.text.strip():
                         continue
                     runs += 1
+                    # ---- vicios de escrita (item 3): sem travessao e sem
+                    # hifen duplo. Ninguem escreve com hifen duplo.
+                    if "--" in r.text or "—" in r.text or "–" in r.text:
+                        errs.append("slide %d: travessao ou hifen duplo em %r"
+                                    % (n, r.text[:44]))
                     f = r.font
                     if f.name != T.FONT:
                         errs.append("slide %d: fonte %r em %r" % (n, f.name, r.text[:24]))
@@ -108,7 +144,15 @@ def validate(path):
                     if h and h not in hexes_ok:
                         errs.append("slide %d: cor #%s fora da paleta em %r"
                                     % (n, h, r.text[:24]))
-    return len(prs.slides), runs, errs
+
+        # ---- ocupacao do canvas (item 14): conteudo amontoado no topo.
+        # Aviso, nao erro: alguns arquetipos sao legitimamente curtos.
+        used = (content_bottom - T.MARGIN_TOP_PT) / T.CONTENT_H_PT
+        if 0 < used < T.CANVAS_FILL_MIN:
+            warns.append("slide %d: conteudo ocupa so' %.0f%% da altura util "
+                         "(minimo %.0f%%). Distribuir em zonas."
+                         % (n, used * 100, T.CANVAS_FILL_MIN * 100))
+    return len(prs.slides), runs, errs, warns
 
 
 def main():
@@ -119,9 +163,16 @@ def main():
     print("   %d slides" % n)
     print()
 
-    slides, runs, errs = validate(OUT)
-    print("Validacao estrutural (fonte, corpo, cor, entrelinha):")
+    slides, runs, errs, warns = validate(OUT)
+    print("Validacao estrutural (tokens, transbordo, margem, caixa, escrita):")
     print("   %d slides, %d runs de texto conferidas" % (slides, runs))
+    if warns:
+        print()
+        print("AVISOS (%d):" % len(warns))
+        for w in warns[:20]:
+            print("  - " + w)
+        if len(warns) > 20:
+            print("  ... e mais %d" % (len(warns) - 20))
     if errs:
         print()
         print("FORA DO SISTEMA (%d):" % len(errs))

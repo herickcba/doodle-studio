@@ -1,8 +1,7 @@
 """O conteúdo do deck, como dados.
 
 Os slides são dicts; quem sabe desenhar é o layouts.py. Onde o conteúdo É o
-token (os 13 estilos, as 5 cores), a lista é GERADA a partir do tokens.py --
-assim o deck não pode divergir do sistema que documenta.
+token (os 13 estilos, as 5 cores), a lista é GERADA a partir do tokens.py: assim o deck não pode divergir do sistema que documenta.
 """
 
 from __future__ import annotations
@@ -41,7 +40,7 @@ def build_spec():
     add = S.append
 
     # ---------------------------------------------------------- abertura
-    add({"kind": "hero_cover", "bg": T.BEGE,
+    add({"kind": "hero_cover", "bg": T.AZUL,
          "eyebrow": "CBA B+G  ·  DESIGN SYSTEM",
          "title": "Um sistema\ncabe em treze\nestilos.",
          "sub": "Documentação da tipografia, cor e grid do CBA Studio."})
@@ -55,26 +54,24 @@ def build_spec():
          "rows": [("FONTE DA VERDADE", "SetDefaults, no .bas"),
                   ("ESPELHO EM CÓDIGO", "tools/design-system/tokens.py"),
                   ("REGRAS EM TEXTO", "design.md"),
-                  ("GATE ANTI-DERIVA", "check-tokens.py")],
-         "note": "Se o código e a documentação divergirem, o build quebra até "
-                 "alguém acertar os dois. É o que impede este deck de virar mentira."})
+                  ("GATE ANTI-DERIVA", "check-tokens.py")]})
 
     add({"kind": "card_grid_5", "section": "ABERTURA", "cols": 4,
          "title": "O caminho",
          "intro": "Sete blocos, do que é invariável para o que é aplicado.",
          "items": [
-             {"kicker": "01", "title": "Fundamentos", "body": "Página, margem, módulo, raio."},
-             {"kicker": "02", "title": "Cor", "body": "Cinco slots, dois papéis de tipo."},
-             {"kicker": "03", "title": "Tipografia", "body": "Os treze estilos, um a um."},
-             {"kicker": "04", "title": "Componentes", "body": "Caixas, cards, imagens."},
-             {"kicker": "05", "title": "Arquétipos", "body": "Layouts que o sistema aceita."},
-             {"kicker": "06", "title": "Regras", "body": "Anti-vícios e migração."},
-             {"kicker": "07", "title": "Outras mídias", "body": "Web, impresso, social."},
-             {"kicker": "08", "title": "Aplicação", "body": "A faixa e o Brand Standards."},
+             {"kicker": "1.", "title": "Fundamentos", "body": "Página, margem, módulo, raio."},
+             {"kicker": "2.", "title": "Cor", "body": "Cinco slots, dois papéis de tipo."},
+             {"kicker": "3.", "title": "Tipografia", "body": "Os treze estilos, um a um."},
+             {"kicker": "4.", "title": "Componentes", "body": "Caixas, cards, imagens."},
+             {"kicker": "5.", "title": "Arquétipos", "body": "Layouts que o sistema aceita."},
+             {"kicker": "6.", "title": "Regras", "body": "Anti-vícios e migração."},
+             {"kicker": "7.", "title": "Outras mídias", "body": "Web, impresso, social."},
+             {"kicker": "8.", "title": "Aplicação", "body": "A faixa e o Brand Standards."},
          ]})
 
     # ---------------------------------------------------------- 01 fundamentos
-    add({"kind": "chapter_divider", "bg": T.AZUL, "number": "01",
+    add({"kind": "chapter_divider", "bg": T.AZUL, "number": "1.",
          "title": "Fundamentos", "section": "FUNDAMENTOS",
          "sub": "A página, a margem, o módulo de espaçamento e o raio. "
                 "Todo o resto deriva daqui."})
@@ -82,7 +79,7 @@ def build_spec():
     add({"kind": "diagram_page", "section": "FUNDAMENTOS",
          "title": "A página",
          "intro": "16:9 customizado, não o 16:9 padrão do PowerPoint. Deck em "
-                  "outro formato entra distorcido -- o botão Page Size da faixa "
+                  "outro formato entra distorcido: o botão Page Size da faixa "
                   "converte.\n\nA altura é a ponte entre mídias: 1080px equivale "
                   "a 890,63pt, logo 1pt = 1,2126px.",
          "show_margin": False,
@@ -92,23 +89,23 @@ def build_spec():
 
     add({"kind": "diagram_page", "section": "FUNDAMENTOS",
          "title": "Margem e área útil",
-         "intro": "A margem de segurança delimita onde o conteúdo não entra. "
+         "intro": "A margem tem 60pt, três módulos exatos, nos quatro lados. "
                   "Ela existe para o slide sobreviver a recorte, projeção e "
                   "reaproveitamento em outra mídia.",
          "show_margin": True,
-         "legend": [("MARGEM", "76 pt  ·  92 px  ·  2,68 cm"),
-                    ("ÁREA ÚTIL", "1431 x 765 pt"),
-                    ("BASE", "50 pt (rodapé)")]})
+         "legend": [("MARGEM", "60 pt  ·  73 px  ·  2,12 cm"),
+                    ("ÁREA ÚTIL", "1463 x 771 pt"),
+                    ("COLUNAS", "4 de 335,78 pt")]})
 
     add({"kind": "diagram_page", "section": "FUNDAMENTOS",
          "title": "O módulo de espaçamento",
          "intro": "Toda distância entre colunas, cards e blocos é múltiplo de "
-                  "20pt. Distância que não é múltiplo de 20 é acidente, não "
-                  "decisão.",
+                  "20pt, e o raio e a margem também: 20 e 60. Distância que não é "
+                  "múltiplo de 20 é acidente, não decisão.",
          "show_margin": True, "show_module": True,
          "legend": [("MÓDULO", "20 pt  ·  24 px  ·  0,71 cm"),
                     ("MÚLTIPLOS", "20 · 40 · 60 · 80 pt"),
-                    ("RELAÇÃO", "o raio é ~1 módulo")]})
+                    ("RELAÇÃO", "raio = 1 módulo, gutter = 2")]})
 
     add({"kind": "spec_page", "section": "FUNDAMENTOS",
          "title": "Âncora de encaixe",
@@ -118,21 +115,17 @@ def build_spec():
          "rows": [("PADRÃO", "1,27 cm  ·  36 pt"),
                   ("EM PIXELS", "44 px @1080"),
                   ("PASSOS", "0,5 · 1 · 1,27 · 1,5 cm"),
-                  ("PASSOS (cont.)", "2 · 2,5 · 3 · 4 · 5 cm")],
-         "note": "Na faixa: grupo Alinhar, botões Âncora esq. e Âncora topo, com "
-                 "a medida escolhida no dropdown ao lado."})
+                  ("PASSOS (cont.)", "2 · 2,5 · 3 · 4 · 5 cm")]})
 
     add({"kind": "spec_page", "section": "FUNDAMENTOS",
          "title": "Raio",
          "intro": "O raio é um valor visual constante, não uma proporção: um card "
                   "grande e um botão pequeno tem o mesmo arredondamento. É o que "
                   "faz formas de tamanhos diferentes parecerem da mesma família.",
-         "rows": [("RAIO", "20,62 pt  ·  25 px  ·  0,73 cm"),
+         "rows": [("RAIO", "20 pt  ·  24 px  ·  0,71 cm"),
                   ("EM OOXML", "adj = raio / (menor lado / 2) x 50000"),
                   ("PILL", "adj = 50000"),
-                  ("RETO", "adj = 0")],
-         "note": "Na faixa: Formas > Rounded aplica; Tirar rounded desfaz; o "
-                 "dropdown Raio escolhe outra medida sem sair do sistema."})
+                  ("RETO", "adj = 0")]})
 
     add({"kind": "quote_side_image", "section": "FUNDAMENTOS",
          "eyebrow": "COMO OS TRÊS SE COMBINAM",
@@ -140,14 +133,14 @@ def build_spec():
          "body": "A margem diz onde começa. O módulo diz de quanto em quanto se "
                  "anda. O raio diz como a forma termina.\n\n"
                  "Com os três fixos, dois slides feitos por pessoas diferentes "
-                 "saem parecidos sem combinação prévia -- que é o único teste "
+                 "saem parecidos sem combinação prévia: que é o único teste "
                  "que importa num design system.",
          "panel_bg": T.AZUL, "panel_style": "dsH3",
-         "panel_text": "76 pt de margem.\n20 pt de módulo.\n20,62 pt de raio.\n\n"
-                       "Nada entre eles."})
+         "panel_text": "60 de margem.\n20 de módulo.\n20 de raio.\n\n"
+                       "Tudo múltiplo de 20."})
 
     # ---------------------------------------------------------- 02 cor
-    add({"kind": "chapter_divider", "bg": T.ROSA, "number": "02",
+    add({"kind": "chapter_divider", "bg": T.ROSA, "number": "2.",
          "title": "Cor", "section": "COR",
          "sub": "Cinco slots. Dois carregam tipo. Um resolve contraste sozinho."})
 
@@ -180,7 +173,7 @@ def build_spec():
          "body": "Se a cor do texto for exatamente a cor do fundo, o texto vira "
                  "branco.\n\nO fundo relevante é, nesta ordem: o preenchimento da "
                  "própria forma; senão o do grupo que a contém; senão o do slide "
-                 "-- e isso inclui uma forma sólida cobrindo a página, que é como "
+                 "e isso inclui uma forma sólida cobrindo a página, que é como "
                  "a maioria dos decks reais é montada.",
          "panel_bg": T.ROSA, "panel_style": "dsH1",
          "panel_text": "Título 60 é rosa.\nSobre fundo rosa,\nele nasce branco."})
@@ -206,10 +199,10 @@ def build_spec():
                   "Transparência para 'suavizar' uma cor"]})
 
     # ---------------------------------------------------------- 03 tipografia
-    add({"kind": "chapter_divider", "bg": T.AZUL, "number": "03",
+    add({"kind": "chapter_divider", "bg": T.AZUL, "number": "3.",
          "title": "Tipografia", "section": "TIPOGRAFIA",
          "sub": "Uma família, treze estilos. Cada um já traz peso, cor e "
-                "entrelinha -- escolher o estilo decide as quatro coisas."})
+                "entrelinha: escolher o estilo decide as quatro coisas."})
 
     add({"kind": "card_grid_5", "section": "TIPOGRAFIA", "cols": 5,
          "title": "A escala",
@@ -226,12 +219,12 @@ def build_spec():
         add({"kind": "type_specimen", "section": "TIPOGRAFIA",
              "style_id": s["id"], "sample": SAMPLES[s["id"]]})
 
-    add({"kind": "pillar_card_dense", "section": "TIPOGRAFIA",
+    add({"kind": "zoned_content", "section": "TIPOGRAFIA",
          "eyebrow": "ENTRELINHA",
          "title": "Quanto maior o corpo,\nmais apertada a linha",
          "body": "Não é arbitrario. Em 250 e 120pt o espaço entre linhas já é "
                  "enorme em valor absoluto: o multiplicador comprime para o bloco "
-                 "ler como uma massa só.\n\nEm 12 e 15pt acontece o inverso -- a "
+                 "ler como uma massa só.\n\nEm 12 e 15pt acontece o inverso: a "
                  "linha precisa de ar para o olho achar a proxima.",
          "items": [
              {"title": "Sempre exata",
@@ -257,7 +250,7 @@ def build_spec():
          "title": "O ponto final",
          "body": "O Statement 120 pinta o ponto final de azul. Só o ponto, e só "
                  "se a frase terminar em ponto.\n\nSobre fundo azul, o texto vira "
-                 "branco e o ponto vira rosa -- as duas regras agindo juntas sem "
+                 "branco e o ponto vira rosa: as duas regras agindo juntas sem "
                  "se anular.\n\nÉ o único estilo com comportamento próprio. Os "
                  "outros doze são declarativos.",
          "panel_bg": T.AZUL, "panel_style": "dsHero",
@@ -274,7 +267,7 @@ def build_spec():
          "panel_text": "Rótulo em caixa alta\ncom três pontos\nde espaçamento"})
 
     # ---------------------------------------------------------- 04 componentes
-    add({"kind": "chapter_divider", "bg": T.ROSA, "number": "04",
+    add({"kind": "chapter_divider", "bg": T.ROSA, "number": "4.",
          "title": "Componentes", "section": "COMPONENTES",
          "sub": "Poucas pecas, todas derivadas do raio e do módulo."})
 
@@ -303,9 +296,9 @@ def build_spec():
     add({"kind": "spec_page", "section": "COMPONENTES",
          "title": "Imagens",
          "intro": "Imagem entra com o mesmo raio das formas. Recorte é pelo botão "
-                  "Crop da faixa, que usa o comando nativo do PowerPoint -- nada "
+                  "Crop da faixa, que usa o comando nativo do PowerPoint: nada "
                   "de esticar para caber.",
-         "rows": [("RAIO", "20,62 pt, igual as formas"),
+         "rows": [("RAIO", "20 pt, igual às formas"),
                   ("RECORTE", "Formas > Crop"),
                   ("PROPORÇÃO", "nunca distorcer"),
                   ("LEGENDA", "Legenda 12, abaixo")]})
@@ -322,27 +315,35 @@ def build_spec():
                   "Raio diferente 'porque a forma é menor'"]})
 
     # ---------------------------------------------------------- 05 arquétipos
-    add({"kind": "chapter_divider", "bg": T.AZUL, "number": "05",
+    add({"kind": "chapter_divider", "bg": T.AZUL, "number": "5.",
          "title": "Arquétipos", "section": "ARQUÉTIPOS",
          "sub": "Os layouts que o sistema aceita. Fora deles, é composição nova "
-                "-- e composição nova pede revisão."})
+                "e composição nova pede revisão."})
 
     add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 4,
-         "title": "O catálogo",
-         "intro": "Herdados da modelagem do design system 3.0, com os tokens desta ferramenta.",
+         "title": "O catálogo, 1 de 2",
+         "intro": "Os arquétipos de abertura, especificação e grade.",
          "items": [
-             {"kicker": "01", "title": "Hero cover", "body": "Statement que abre."},
-             {"kicker": "02", "title": "Chapter divider", "body": "Número + título."},
-             {"kicker": "03", "title": "Spec page", "body": "Título + pares."},
-             {"kicker": "04", "title": "Type specimen", "body": "Amostra + ficha."},
-             {"kicker": "05", "title": "Swatch", "body": "Cor + specs."},
-             {"kicker": "06", "title": "Multi card", "body": "2 a 4 cards."},
-             {"kicker": "07", "title": "Card grid", "body": "Grade densa."},
-             {"kicker": "08", "title": "Pillar dense", "body": "Texto + lista."},
-             {"kicker": "09", "title": "Quote side", "body": "Texto + painel."},
-             {"kicker": "10", "title": "Do / dont", "body": "Duas colunas."},
-             {"kicker": "11", "title": "Diagram", "body": "Esquema em escala."},
-             {"kicker": "12", "title": "Closing", "body": "Fecho."},
+             {"kicker": "1.", "title": "Hero cover", "body": "Statement que abre. Fundo sempre saturado."},
+             {"kicker": "2.", "title": "Chapter divider", "body": "Número e título de bloco."},
+             {"kicker": "3.", "title": "Spec page", "body": "Título, intro e pares rótulo/valor."},
+             {"kicker": "4.", "title": "Type specimen", "body": "Amostra no corpo real e ficha técnica."},
+             {"kicker": "5.", "title": "Swatch", "body": "Uma cor com hex, RGB e papel."},
+             {"kicker": "6.", "title": "Multi card", "body": "2 a 4 cards de mesma altura."},
+             {"kicker": "7.", "title": "Card grid", "body": "Grade densa, com caixa."},
+         ]})
+
+    add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 4,
+         "title": "O catálogo, 2 de 2",
+         "intro": "Os arquétipos de composição, regra e fecho.",
+         "items": [
+             {"kicker": "8.", "title": "Grid plain", "body": "A mesma grade, sem caixa."},
+             {"kicker": "9.", "title": "Zoned content", "body": "Zona superior e faixa inferior."},
+             {"kicker": "10.", "title": "Stat band", "body": "Faixa inferior de números."},
+             {"kicker": "11.", "title": "Quote side", "body": "Texto e painel de cor."},
+             {"kicker": "12.", "title": "Do e nunca", "body": "Duas colunas de regra."},
+             {"kicker": "13.", "title": "Diagram", "body": "Esquema desenhado em escala."},
+             {"kicker": "14.", "title": "Closing", "body": "Fecho do documento."},
          ]})
 
     add({"kind": "hero_cover", "bg": T.ROSA, "section": "ARQUÉTIPOS",
@@ -350,12 +351,12 @@ def build_spec():
          "title": "Uma frase que\nmarca a página.",
          "sub": "Statement 120 sobre fundo saturado: o texto vira branco e o ponto, rosa."})
 
-    add({"kind": "chapter_divider", "bg": T.BEGE, "number": "02",
+    add({"kind": "chapter_divider", "bg": T.BEGE, "number": "2.",
          "title": "Chapter divider\nsobre bege", "section": "ARQUÉTIPOS",
          "sub": "O mesmo arquétipo do bloco 01, com fundo claro: Big Number e "
                 "Manchete mantém a cor de tipo."})
 
-    add({"kind": "pillar_card_dense", "section": "ARQUÉTIPOS",
+    add({"kind": "zoned_content", "section": "ARQUÉTIPOS",
          "eyebrow": "ARQUÉTIPO 08", "title": "Pillar dense",
          "body": "Coluna de argumento à esquerda, desdobramento à direita. É o "
                  "layout de maior densidade que o sistema aceita sem virar "
@@ -393,17 +394,49 @@ def build_spec():
          "rows": [("FUNDO", "Branco"), ("TIPO", "Rosa e azul"),
                   ("CONTRASTE", "Não dispara"), ("USO", "Areas de respiro")]})
 
-    add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 3,
-         "title": "Card grid em três colunas",
-         "intro": "A mesma grade do catálogo, com menos colunas e mais corpo.",
+    add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 2,
+         "title": "Card grid em duas colunas",
+         "intro": "A mesma grade, com menos colunas e mais corpo por item.",
          "items": [
-             {"kicker": "VARIAÇÃO", "title": "Três colunas", "body": "464pt de largura cada."},
-             {"kicker": "VARIAÇÃO", "title": "Quatro colunas", "body": "343pt cada, para itens curtos."},
-             {"kicker": "VARIAÇÃO", "title": "Cinco colunas", "body": "270pt cada, só rotulo e número."},
+             {"kicker": "VARIAÇÃO", "title": "Duas colunas", "body": "Dois módulos de largura cada, para item com texto."},
+             {"kicker": "VARIAÇÃO", "title": "Quatro colunas", "body": "Uma coluna cada, para rótulo e número."},
+         ]})
+
+    add({"kind": "grid_plain", "section": "ARQUÉTIPOS", "cols": 4,
+         "title": "Grid plain",
+         "intro": "A mesma grade sem caixa. Quando o item é curto, a caixa não "
+                  "acrescenta informação, só peso.",
+         "items": [
+             {"kicker": "1.", "title": "Sem caixa", "body": "O alinhamento sustenta o agrupamento."},
+             {"kicker": "2.", "title": "Mesma grade", "body": "As colunas são as mesmas do card grid."},
+             {"kicker": "3.", "title": "Item curto", "body": "Rótulo, título e uma linha de apoio."},
+             {"kicker": "4.", "title": "Mais leve", "body": "Preferir quando houver seis itens ou mais."},
+         ]})
+
+    add({"kind": "stat_band", "section": "ARQUÉTIPOS",
+         "eyebrow": "ARQUÉTIPO 10", "title": "Stat band",
+         "body": "Variação da faixa inferior para números. A zona de cima "
+                 "sustenta o argumento e a faixa entrega a evidência, sem "
+                 "competir por atenção.",
+         "stats": [
+             {"value": "13", "label": "estilos na escala fechada"},
+             {"value": "5", "label": "cores na paleta"},
+             {"value": "20", "label": "pontos de módulo"},
+             {"value": "4", "label": "colunas na grade"},
+         ]})
+
+    add({"kind": "multi_card_grid", "section": "ARQUÉTIPOS", "bg": T.AZUL,
+         "card_bg": T.BRANCO, "eyebrow": "VARIAÇÃO DE FUNDO",
+         "title": "Multi card sobre azul",
+         "cards": [
+             {"title": "Fundo saturado", "body": "O título vira branco pela regra "
+              "de contraste, sem ninguém escolher."},
+             {"title": "Card claro", "body": "O card mantém o fundo branco e o "
+              "tipo volta às cores da marca."},
          ]})
 
     # ---------------------------------------------------------- 06 regras
-    add({"kind": "chapter_divider", "bg": T.ROSA, "number": "06",
+    add({"kind": "chapter_divider", "bg": T.ROSA, "number": "6.",
          "title": "Regras", "section": "REGRAS",
          "sub": "O que o sistema nunca emite, e para onde vai o que ficou de fora."})
 
@@ -423,12 +456,12 @@ def build_spec():
          "title": "Checklist de auditoria",
          "intro": "O que olhar antes de mandar um deck para fora.",
          "items": [
-             {"kicker": "01", "title": "Fonte", "body": "Toda run em Avenir Next."},
-             {"kicker": "02", "title": "Corpo", "body": "Todo corpo na escala dos treze."},
-             {"kicker": "03", "title": "Cor", "body": "Toda cor nos cinco slots."},
-             {"kicker": "04", "title": "Entrelinha", "body": "Bate com a do estilo."},
-             {"kicker": "05", "title": "Margem", "body": "Nada invade os 76pt."},
-             {"kicker": "06", "title": "Contraste", "body": "Nenhum texto na cor do fundo."},
+             {"kicker": "1.", "title": "Fonte", "body": "Toda run em Avenir Next."},
+             {"kicker": "2.", "title": "Corpo", "body": "Todo corpo na escala dos treze."},
+             {"kicker": "3.", "title": "Cor", "body": "Toda cor nos cinco slots."},
+             {"kicker": "4.", "title": "Entrelinha", "body": "Bate com a do estilo."},
+             {"kicker": "5.", "title": "Margem", "body": "Nada invade os 76pt."},
+             {"kicker": "6.", "title": "Contraste", "body": "Nenhum texto na cor do fundo."},
          ]})
 
     add({"kind": "spec_page", "section": "REGRAS",
@@ -437,12 +470,10 @@ def build_spec():
                   "botão Padronizar tipografia faz o arredondamento sozinho.",
          "rows": [("55 PT", "vira 60 pt"), ("36 E 32 PT", "vira 34 pt"),
                   ("22 PT", "vira 24 pt"), ("16 E 14 PT", "vira 15 pt"),
-                  ("ROTULO 60", "vira Título 60"), ("ACIMA DE 185 PT", "vira 250 pt")],
-         "note": "Atenção: com 250pt na escala, texto muito grande agora arredonda "
-                 "para cima, não mais para 120."})
+                  ("ROTULO 60", "vira Título 60"), ("ACIMA DE 185 PT", "vira 250 pt")]})
 
     # ---------------------------------------------------------- 07 outras mídias
-    add({"kind": "chapter_divider", "bg": T.AZUL, "number": "07",
+    add({"kind": "chapter_divider", "bg": T.AZUL, "number": "7.",
          "title": "Outras mídias", "section": "OUTRAS MÍDIAS",
          "sub": "Os tokens viajam. O que muda é a unidade."})
 
@@ -461,7 +492,7 @@ def build_spec():
     add({"kind": "quote_side_image", "section": "OUTRAS MÍDIAS",
          "eyebrow": "O QUE NAO MUDA",
          "title": "A hierarquia mora nas razões",
-         "body": "Se o layout não for 1920x1080, escale por proporção -- nunca "
+         "body": "Se o layout não for 1920x1080, escale por proporção: nunca "
                  "reescolha corpos.\n\nA diferenca entre Título 60 e Texto 24 não "
                  "está em 60 e 24: está na razão entre eles. Mantida a razão, o "
                  "sistema sobrevive a qualquer tamanho de tela ou papel.",
@@ -470,7 +501,7 @@ def build_spec():
                        "Espacamento em módulo.\nContraste automatico."})
 
     # ---------------------------------------------------------- 08 aplicação
-    add({"kind": "chapter_divider", "bg": T.ROSA, "number": "08",
+    add({"kind": "chapter_divider", "bg": T.ROSA, "number": "8.",
          "title": "Aplicação", "section": "APLICAÇÃO",
          "sub": "Onde este sistema vira um clique."})
 
@@ -496,12 +527,9 @@ def build_spec():
          "rows": [("PÁGINA", "Padroes > Abrir página"),
                   ("APLICAR", "Padroes > Aplicar config"),
                   ("FORMATO", "chave=valor separado por ;"),
-                  ("ESTILO", "s_<id> = corpo|bold|papel|entrelinha")],
-         "note": "Chave desconhecida é ignorada em silêncio: se uma configuração "
-                 "não surtir efeito, quase sempre é nome de chave errado."})
+                  ("ESTILO", "s_<id> = corpo|bold|papel|entrelinha")]})
 
     add({"kind": "closing", "bg": T.AZUL,
-         "title": "Treze estilos,\ncinco cores,\num módulo.",
-         "sub": "design.md  ·  tools/design-system  ·  CBA Studio v1.5.1"})
+         "title": "Treze estilos,\ncinco cores,\num módulo."})
 
     return S
