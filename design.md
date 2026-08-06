@@ -1,4 +1,4 @@
-# Design System CBA B+G: regras · 2.2
+# Design System CBA B+G: regras · 2.3
 
 > **Fonte da verdade:** o `SetDefaults` de
 > [`BG-DoodleStudio.bas`](v3-powerpoint-addin/assets/BG-DoodleStudio.bas). Este
@@ -86,6 +86,45 @@ Gap entre blocos escolhe um degrau, e o degrau tem significado:
 
 Estes são os únicos quatro. O degrau é escolhido pela **relação** entre os
 blocos, nunca pelo espaço que sobrou na página.
+
+### O vão é ÓPTICO, não numérico
+
+O número do degrau é medido da **base da letra de cima** até o topo da caixa de
+baixo, não de caixa a caixa. A diferença não é acadêmica: a caixa de uma linha
+desce até o pé do descendente, mas um número, uma caixa alta ou uma palavra sem
+`g` nem `p` param na base da letra. Essa sobra já é espaço branco, e ela cresce
+com o corpo.
+
+| Estilo | Caixa de 1 linha | Sobra abaixo da letra |
+|---|---|---|
+| Big Number 250 | 302,9 pt | **81,2 pt** |
+| Título 60 | 65,4 pt | 17,5 pt |
+| Tópico 28 | 33,9 pt | 9,1 pt |
+| CAPS 12 | 14,5 pt | 3,9 pt |
+
+Então quem desenha escolhe o degrau, e o construtor **desconta a sobra**. Um
+par número/título com 20 ópticos vira 2,5pt desenhados sob um Título 60 e
+18,6pt sob um CAPS 12: são valores diferentes que produzem o mesmo espaço visto.
+Sob um Big Number, o degrau de 40 vira **-41pt** e as caixas se sobrepõem, o que
+é o resultado certo: elas se sobrepõem no vazio.
+
+Aplicar o degrau literalmente era o defeito da 2.2, e aparecia justamente onde o
+corpo é grande: número e título nasciam desmontados.
+
+### A altura da linha não é corpo × entrelinha
+
+O PowerPoint aplica a entrelinha percentual sobre a altura **natural** da linha
+da fonte, que na Avenir Next é 1,366 × o corpo. Medido no próprio PowerPoint,
+pedindo que ele ajustasse a caixa ao texto: uma linha de 250pt com entrelinha
+1,0 ocupa **302,9pt**.
+
+```
+altura da linha = corpo × entrelinha × 1,2116
+base da letra   = 73,2% da altura da linha
+```
+
+Medir sem esse fator subestima toda caixa em ~21%. Era a causa do texto
+encostado no fundo do card e do padding inferior menor que o superior.
 
 **Raio** é um valor **visual constante**, não uma proporção: um card grande e um
 botão pequeno têm o mesmo arredondamento de 20pt. Em OOXML isso vira
@@ -213,8 +252,23 @@ O 1.0 tinha os tokens certos e compunha errado. Estas são as regras que faltava
 
 ### Altura de caixa vem do conteúdo
 
-Card ou bloco de cor = **padding (40) + o maior conteúdo do grupo + padding**.
-Todos os cards de uma linha têm a mesma altura, definida pelo mais alto.
+Card ou bloco de cor = **padding + o maior conteúdo do grupo + padding**.
+Todos os cards de uma linha têm a mesma altura, definida pelo mais alto. Card
+mais vazio que o vizinho é resultado correto; texto encostado no fundo, não.
+
+O padding sai do **tamanho** do card, não do gosto de quem desenha:
+
+| Cards na linha | Padding |
+|---|---|
+| 3 ou mais (grade) | **20 pt** — um módulo |
+| 1 ou 2 (card grande) e painéis | **40 pt** — dois módulos |
+
+Um card de uma coluna com 40 de padding vira moldura: sobra pouca largura para o
+texto e o bloco perde a proporção.
+
+O conteúdo é ancorado no **meio** da forma. Assim qualquer diferença entre o
+medido e o desenhado sobra igual em cima e embaixo, em vez de comer só o pé do
+card.
 
 Nunca esticar a caixa até o rodapé porque "sobrou espaço". Espaço vazio embaixo
 de um card curto é resultado correto; caixa alta com texto no topo é vício.
@@ -242,10 +296,22 @@ garantir.
 Se depois de encurtar ainda não couber, o conteúdo pede outro arquétipo ou dois
 slides. Nunca corpo fora da escala, nunca entrelinha apertada.
 
-### O vão vertical é igual ao horizontal
+### O vão entre linhas da grade depende de haver caixa
 
-Numa grade, a distância entre linhas é a **mesma** do gutter entre colunas: 40pt.
-Grade com 40 na horizontal e 120 na vertical não lê como grade.
+**Com card**, a borda já separa as linhas: o vão vertical é o **mesmo** do gutter
+entre colunas, 40pt. Grade com 40 na horizontal e 120 na vertical não lê como
+grade.
+
+**Sem card**, não há borda nenhuma e é o espaço que agrupa. O vão cresce com a
+altura do bloco:
+
+```
+vão óptico = max(80, 0,75 × altura do bloco)
+```
+
+Linha de bloco alto (número de 60pt + título + apoio) pede mais ar que linha de
+bloco baixo (rótulo + título + apoio), senão a primeira parece amontoada e a
+segunda parece solta.
 
 ### Não esticar para preencher
 
@@ -422,5 +488,6 @@ O Texto 34 também pede botão no `customUI14.xml`, ícone em
 | `tools/design-system/tokens.py` | Espelho em Python, para gerar e validar |
 | `tools/design-system/check-tokens.py` | Gate que compara os dois |
 | `config.html` | Página de Brand Standards, muda os tokens sem recompilar |
-| `docs/CBA-Studio-Design-System.pptx` | Este documento em slides |
+| `docs/CBA-Studio-Design-System-2.3.pptx` | Este documento em slides: 88 páginas, os 14 arquétipos com duas variações de cor cada |
+| `tools/design-system/measure.py` | Mede o texto com a fonte real; é dele que sai a altura de linha e o vão óptico |
 | `design.md` | Este arquivo |

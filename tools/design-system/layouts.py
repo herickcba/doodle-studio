@@ -100,6 +100,44 @@ def needed(style_id, text, w):
     return measure.block_height(text, style(style_id), w)
 
 
+# ------------------------------------------------------- vao optico (2.3)
+#
+# O numero que se escreve num gap NAO e' o espaco que se ve.
+#
+# A caixa de uma linha vai ate' o pe' do DESCENDENTE, mas a tinta de um
+# numero, de uma caixa alta ou de uma palavra sem 'g' nem 'p' para na base da
+# letra. Essa sobra ja' e' espaco branco -- e ela cresce com o corpo: 3pt num
+# rotulo de 12, mas 81pt num Big Number de 250.
+#
+# Entao o gap que se escreve e' OPTICO, medido da BASE da letra de cima ate' o
+# topo da caixa de baixo, e o construtor desconta a folga sozinho. E' o que
+# reproduz o que a revisao fez a mao:
+#
+#                            optico   folga   desenhado   a mao
+#   numero 60 -> titulo         20     17,5       2,5      +6
+#   CAPS 12   -> titulo         20      1,4      18,6     +14
+#   titulo 28 -> apoio          20      9,1      10,9     +20 (caixa menor)
+#   Manchete 80 -> Texto 34     40     16,6      23,4     +26
+
+def line_slack(style_id, text="", width_pt=None):
+    """Espaco vazio entre a base da ultima letra e o pe' da caixa."""
+    st = style(style_id)
+    w = width_pt if width_pt else 10 ** 6
+    return max(0.0, (measure.block_height(text or "x", st, w)
+                     - measure.ink_bottom(text or "x", st, w)))
+
+
+def optical(gap, style_id_above, text_above=""):
+    """Gap desenhado para um gap OPTICO, descontada a folga de cima.
+
+    Pode dar negativo: e' o certo quando a caixa de cima e' um Big Number,
+    cuja caixa tem 81pt de descendente vazio embaixo do algarismo.
+    """
+    if not gap:
+        return gap
+    return gap - line_slack(style_id_above, text_above)
+
+
 def add_text(slide, style_id, text, x, y, w, h=None, *, bg=None, color=None,
              align="left", anchor="top", space_after=0):
     """Caixa de texto num estilo do sistema. h=None mede a altura necessaria."""
@@ -182,16 +220,21 @@ class Stack:
     def __init__(self, slide, x, y, w, bg=None):
         self.slide, self.x, self.y, self.w, self.bg = slide, x, y, w, bg
         self.top = y
+        self.last = None        # (estilo, texto) do bloco de cima
 
     def add(self, style_id, text, gap=0, **kw):
+        """gap e' OPTICO: a pilha desconta sozinha a folga da caixa de cima."""
         if not text:
             return self
+        if self.last:
+            gap = optical(gap, *self.last)
         self.y += gap
         w = kw.pop("w", self.w)
         h = needed(style_id, text, w)
         add_text(self.slide, style_id, text, kw.pop("x", self.x), self.y, w, h,
                  bg=self.bg, **kw)
         self.y += h
+        self.last = (style_id, text)
         return self
 
     def fit(self, style_id, text, max_bottom, gap=0, **kw):
@@ -199,6 +242,8 @@ class Stack:
         estilo pedido, resto um degrau abaixo."""
         if not text:
             return self
+        if self.last:
+            gap = optical(gap, *self.last)
         self.y += gap
         w = kw.pop("w", self.w)
         parts = measure.fit_text(text, style_id, w, max_bottom - self.y)
@@ -207,8 +252,9 @@ class Stack:
             add_text(self.slide, sid, txt, kw.get("x", self.x), self.y, w, h,
                      bg=self.bg, **{k: v for k, v in kw.items() if k != "x"})
             self.y += h
+            self.last = (sid, txt)
             if i < len(parts) - 1:
-                self.y += TIGHT
+                self.y += optical(TIGHT, sid, txt)
         return self
 
 
@@ -245,28 +291,49 @@ def _kicker_style(text):
 
 
 def card_blocks(item, *, kicker_style=None):
-    """(estilo, texto, gap_antes) de um item de card.
+    """(estilo, texto, gap_OPTICO_antes) de um item de card.
 
-    O gap entre o titulo e o texto de apoio e' TIGHT: eles sao o mesmo bloco
-    de leitura. Gap maior desmancha o par.
+    Rotulo e titulo sao UM par de leitura: 20 opticos entre eles, que num
+    numero de 60pt viram 3pt desenhados. Titulo e apoio tambem sao 20, e ali
+    o optico e o desenhado coincidem porque texto corrido tem descendente.
     """
     out = []
     if item.get("kicker"):
         out.append((kicker_style or _kicker_style(item["kicker"]), item["kicker"], 0))
     if item.get("title"):
-        out.append(("dsH4", item["title"], ITEM if out else 0))
+        out.append(("dsH4", item["title"], TIGHT if out else 0))
     if item.get("body"):
         out.append(("dsCorpoPilar", item["body"], TIGHT if out else 0))
     return out
 
 
 def blocks_height(blocks, w):
+    """Altura do grupo, com os gaps ja' convertidos de optico para desenhado."""
     h = 0.0
     for i, (sid, txt, gap) in enumerate(blocks):
         if i:
-            h += gap
+            h += optical(gap, blocks[i - 1][0], blocks[i - 1][1])
         h += needed(sid, txt, w)
     return h
+
+
+# Folga sobre a medida, para o padding de baixo do card nunca sumir. NAO e'
+# mais a correcao da altura de linha -- essa agora esta' no measure.py e e'
+# exata. Isto aqui cobre so' a diferenca de QUEBRA: o medidor usa a metrica da
+# fonte, o PowerPoint faz o shaping, e uma palavra na fronteira pode cair para
+# a linha seguinte num e nao no outro. Junto com a ancora no MEIO, garante que
+# sobre espaco igual em cima e embaixo (itens 3 e 7 da revisao).
+CARD_SAFETY = 1.05
+
+
+def card_height(blocks_list, inner_w, pad):
+    """Altura de um CONJUNTO de cards: o maior conteudo manda nos outros.
+
+    Card mais vazio que o vizinho e' aceitavel; card com o texto encostado no
+    fundo, nao.
+    """
+    tallest = max(blocks_height(b, inner_w) for b in blocks_list)
+    return tallest * CARD_SAFETY + pad * 2
 
 
 def add_card(slide, x, y, w, h, blocks, *, fill=None, radius="std", line=None,
@@ -283,14 +350,19 @@ def add_card(slide, x, y, w, h, blocks, *, fill=None, radius="std", line=None,
     tf.word_wrap = True
     tf.margin_left = tf.margin_right = Pt(pad)
     tf.margin_top = tf.margin_bottom = Pt(pad)
-    tf.vertical_anchor = ANCHOR["top"]
+    # ancora no MEIO: o padding de cima e o de baixo ficam iguais sozinhos.
+    tf.vertical_anchor = ANCHOR["middle"]
     for i, (sid, txt, gap) in enumerate(blocks):
         st = style(sid)
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.alignment = ALIGN["left"]
         p.line_spacing = st["ent"]
-        if i and gap:
-            p.space_before = Pt(gap)
+        if i:
+            # espaco de paragrafo nao aceita negativo: o par que quer sobrepor
+            # (numero grande + titulo) so' existe em pilha, nao dentro de card.
+            g = optical(gap, blocks[i - 1][0], blocks[i - 1][1])
+            if g > 0:
+                p.space_before = Pt(g)
         _run(p, txt, st, _resolve_color(st, fill))
     return shp
 
@@ -339,13 +411,33 @@ def hero_cover(prs, spec):
 
 
 def chapter_divider(prs, spec):
-    """Abertura de bloco. Numero em '1.', nunca '01'."""
+    """Abertura de bloco. Numero em '1.', nunca '01'.
+
+    Numero, titulo e linha de apoio sao UM grupo, e o grupo centraliza na
+    altura util. Os tres blocos ficam a 40 opticos um do outro -- no Big
+    Number isso vira sobreposicao de caixa, que e' o certo: a caixa dele tem
+    70pt de descendente vazio embaixo do algarismo.
+    """
     bg = spec.get("bg", T.AZUL)
     sl = blank_slide(prs, bg)
-    s = Stack(sl, T.MARGIN_LEFT_PT, T.MARGIN_TOP_PT, T.col_span(3), bg)
-    s.add("dsBigNumber", spec.get("number"))
-    s.add("dsMega", spec["title"], gap=SECTION)
-    s.add("dsTexto34", spec.get("sub"), gap=SECTION, w=T.col_span(2))
+    w, sub_w = T.col_span(3), T.col_span(2)
+    blocks = []
+    if spec.get("number"):
+        blocks.append(("dsBigNumber", spec["number"], 0, w))
+    blocks.append(("dsMega", spec["title"], ITEM if blocks else 0, w))
+    if spec.get("sub"):
+        blocks.append(("dsTexto34", spec["sub"], ITEM, sub_w))
+
+    total = 0.0
+    for i, (sid, txt, gap, bw) in enumerate(blocks):
+        if i:
+            total += optical(gap, blocks[i - 1][0], blocks[i - 1][1])
+        total += needed(sid, txt, bw)
+    y0 = place_group(T.MARGIN_TOP_PT, CONTENT_END, total)
+
+    s = Stack(sl, T.MARGIN_LEFT_PT, y0, w, bg)
+    for i, (sid, txt, gap, bw) in enumerate(blocks):
+        s.add(sid, txt, gap=gap if i else 0, w=bw)
     return sl
 
 
@@ -370,7 +462,8 @@ def spec_page(prs, spec):
         per_col = (len(rows) + ncols - 1) // ncols
         lab_h = max(needed("dsCaps12", k, col_w) for k, _ in rows)
         val_h = max(needed("dsH4", v, col_w) for _, v in rows)
-        row_h = lab_h + TIGHT + val_h
+        pair_gap = optical(TIGHT, "dsCaps12")
+        row_h = lab_h + pair_gap + val_h
         # distribui as linhas ate' a base da area util
         top = s.y + BLOCK
         bottom = CONTENT_END
@@ -381,7 +474,7 @@ def spec_page(prs, spec):
             rx = T.col_x(col * span)
             ry = top + row * pitch
             add_text(sl, "dsCaps12", label, rx, ry, col_w, bg=bg)
-            add_text(sl, "dsH4", value, rx, ry + lab_h + TIGHT, col_w, bg=bg)
+            add_text(sl, "dsH4", value, rx, ry + lab_h + pair_gap, col_w, bg=bg)
     return sl
 
 
@@ -402,13 +495,14 @@ def type_specimen(prs, spec):
              ("PX @1080", "%dpx" % round(T.pt_to_px(st["size"])))]
     use_w = T.col_span(3)
     use_h = needed("dsCorpoPilar", st["use"], use_w)
-    band_h = 12 + TIGHT + 28
+    pair_gap = optical(TIGHT, "dsCaps12")
+    band_h = 12 + pair_gap + 28
     fy = CONTENT_END - use_h - BLOCK - band_h
     cw = T.CONTENT_W_PT / len(cells)
     for i, (k, v) in enumerate(cells):
         cx = T.MARGIN_LEFT_PT + i * cw
         add_text(sl, "dsCaps12", k, cx, fy, cw - ITEM, bg=bg)
-        add_text(sl, "dsH4", v, cx, fy + 12 + TIGHT, cw - ITEM, bg=bg)
+        add_text(sl, "dsH4", v, cx, fy + 12 + pair_gap, cw - ITEM, bg=bg)
     add_text(sl, "dsCorpoPilar", st["use"], T.MARGIN_LEFT_PT,
              fy + band_h + BLOCK, use_w, use_h, bg=bg)
 
@@ -462,11 +556,11 @@ def multi_card_grid(prs, spec):
     span = T.COLUMNS // n if T.COLUMNS % n == 0 else 1
     cw = T.col_span(span) if T.COLUMNS % n == 0 else \
         (T.CONTENT_W_PT - T.GUTTER_PT * (n - 1)) / n
-    pad = T.BOX_PAD_PT
+    pad = T.card_pad(n)
     inner = cw - pad * 2
     blocks = [card_blocks(c) for c in cards]
-    ch = max(blocks_height(b, inner) for b in blocks) + pad * 2
-    cy = s.y + BLOCK
+    ch = card_height(blocks, inner, pad)
+    cy = place_group(s.y + BLOCK, CONTENT_END, ch)
     card_bg = card_bg_for(bg, spec.get("card_bg"))
     for i, b in enumerate(blocks):
         cx = (T.col_x(i * span) if T.COLUMNS % n == 0
@@ -485,6 +579,24 @@ def grid_plain(prs, spec):
     return _grid(prs, spec, cards=False)
 
 
+def _row_gap(cards, block_h, blocks):
+    """Vao vertical entre as linhas de uma grade.
+
+    COM caixa: a borda do card ja' separa as linhas, entao o vao e' o mesmo
+    da horizontal (o gutter). Grade com 40 na horizontal e 120 na vertical
+    nao le' como grade.
+
+    SEM caixa: nao ha' borda nenhuma, e' o espaco que agrupa. O vao tem de
+    crescer com a ALTURA do bloco, senao linha alta parece amontoada e linha
+    baixa parece solta -- foi o que a revisao marcou a mao nas paginas 3 e 23,
+    onde blocos de 140 e de 100pt pediram vaos bem diferentes.
+    """
+    if cards:
+        return T.GUTTER_PT
+    last = blocks[0][-1] if blocks and blocks[0] else ("dsCorpoPilar", "")
+    return optical(max(SECTION, 0.75 * block_h), last[0], last[1])
+
+
 def _grid(prs, spec, cards):
     bg = spec.get("bg", T.BEGE)
     sl = blank_slide(prs, bg)
@@ -497,7 +609,7 @@ def _grid(prs, spec, cards):
     span = max(1, T.COLUMNS // cols)
     cw = T.col_span(span) if cols <= T.COLUMNS else \
         (T.CONTENT_W_PT - T.GUTTER_PT * (cols - 1)) / cols
-    pad = T.BOX_PAD_PT if cards else 0
+    pad = T.card_pad(cols) if cards else 0
     rows = (len(items) + cols - 1) // cols
     top = s.y + BLOCK
     bottom = CONTENT_END
@@ -511,13 +623,13 @@ def _grid(prs, spec, cards):
             for j, (sid, txt, gap) in enumerate(b):
                 if sid == "dsCorpoPilar":
                     b[j] = (candidate, txt, gap)
-        ch = max(blocks_height(b, inner) for b in blocks) + pad * 2
-        if top + rows * ch + (rows - 1) * T.GUTTER_PT <= bottom:
+        block_h = max(blocks_height(b, inner) for b in blocks)
+        ch = card_height(blocks, inner, pad) if cards else block_h
+        vgap = _row_gap(cards, block_h, blocks)
+        if top + rows * ch + (rows - 1) * vgap <= bottom:
             break
-    # o vao vertical e' o MESMO do horizontal. Grade com gutter 40 na
-    # horizontal e 120 na vertical nao le' como grade.
-    pitch = ch + T.GUTTER_PT
-    top = place_group(top, bottom, grid_height(rows, ch, T.GUTTER_PT))
+    pitch = ch + vgap
+    top = place_group(top, bottom, grid_height(rows, ch, vgap))
     card_bg = card_bg_for(bg, spec.get("card_bg"))
     for i, _it in enumerate(items):
         r, c = divmod(i, cols)
@@ -650,15 +762,17 @@ def do_dont(prs, spec):
     s.add("dsCorpoPilar", spec.get("intro"), gap=ITEM, w=T.col_span(3))
 
     cw = T.col_span(2)
-    pad = T.BOX_PAD_PT
+    pad = T.card_pad(2)
     inner = cw - pad * 2
     cols = [(spec.get("do_title", "Sim"), spec["do"], T.AZUL),
             (spec.get("dont_title", "Nunca"), spec["dont"], T.ROSA)]
     card_bg = card_bg_for(bg, spec.get("card_bg"))
-    ch = pad * 2 + max(needed("dsH3", h, inner) + BLOCK
-                       + list_height("dsCorpoPilar", it, inner)
-                       for h, it, _ in cols)
-    cy = s.y + BLOCK
+    head_gap = optical(ITEM, "dsH3")
+    ch = (pad * 2 + CARD_SAFETY
+          * max(needed("dsH3", h, inner) + head_gap
+                + list_height("dsCorpoPilar", it, inner)
+                for h, it, _ in cols))
+    cy = place_group(s.y + BLOCK, CONTENT_END, ch)
     for i, (head, items, tone) in enumerate(cols):
         cx = T.col_x(i * 2)
         shp = add_card(sl, cx, cy, cw, ch,
@@ -668,7 +782,7 @@ def do_dont(prs, spec):
         for j, it in enumerate(items):
             p = shp.text_frame.add_paragraph()
             p.line_spacing = style("dsCorpoPilar")["ent"]
-            p.space_before = Pt(BLOCK if j == 0 else ITEM)
+            p.space_before = Pt(head_gap if j == 0 else ITEM)
             _run(p, it, style("dsCorpoPilar"),
                  _resolve_color(style("dsCorpoPilar"), card_bg))
     return sl
@@ -715,14 +829,17 @@ def diagram_page(prs, spec):
 
 
 def closing(prs, spec):
-    """Fecho. Sem linha de versao: o 'ultimo slide' de verdade vira arquetipo
-    proprio mais adiante."""
+    """Fecho. Statement ancorado na margem de CIMA, como a capa.
+
+    Centralizar na vertical deixava a frase boiando no meio da pagina, sem
+    relacao com nenhuma margem. A revisao subiu o bloco a mao.
+    """
     bg = spec.get("bg", T.AZUL)
     sl = blank_slide(prs, bg)
     w = T.col_span(3)
     th = needed("dsHero", spec["title"], w)
-    add_text(sl, "dsHero", spec["title"], T.MARGIN_LEFT_PT,
-             (T.PAGE_H_PT - th) / 2, w, th, bg=bg)
+    add_text(sl, "dsHero", spec["title"], T.MARGIN_LEFT_PT, T.MARGIN_TOP_PT,
+             w, th, bg=bg)
     return sl
 
 

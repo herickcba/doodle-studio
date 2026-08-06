@@ -29,7 +29,7 @@ import tokens as T  # noqa: E402
 FOOTER_Y = T.CONTENT_BOTTOM_PT - FOOTER_H
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-    REPO, "docs", "CBA-Studio-Design-System-2.2.pptx")
+    REPO, "docs", "CBA-Studio-Design-System-2.3.pptx")
 
 
 def generate(path):
@@ -70,6 +70,7 @@ def validate(path):
     runs = 0
     for n, slide in enumerate(prs.slides, 1):
         content_bottom = 0.0
+        content_shapes, statement_only = 0, True
         try:
             slide_bg = str(slide.background.fill.fore_color.rgb).upper()
         except Exception:
@@ -174,6 +175,11 @@ def validate(path):
                 is_footer = abs(shape.top / 12700 - FOOTER_Y) < 2
                 if not is_footer:
                     content_bottom = max(content_bottom, bottom)
+                    content_shapes += 1
+                    r0 = next((r for p in shape.text_frame.paragraphs
+                               for r in p.runs if r.text.strip()), None)
+                    if r0 is None or not r0.font.size or r0.font.size.pt != 120:
+                        statement_only = False
                 if bottom > T.CONTENT_BOTTOM_PT + 1:
                     errs.append("slide %d: passa %.0fpt da margem inferior: %r"
                                 % (n, bottom - T.CONTENT_BOTTOM_PT,
@@ -216,7 +222,12 @@ def validate(path):
         # ---- ocupacao do canvas (item 14): conteudo amontoado no topo.
         # Aviso, nao erro: alguns arquetipos sao legitimamente curtos.
         used = (content_bottom - T.MARGIN_TOP_PT) / T.CONTENT_H_PT
-        if 0 < used < T.CANVAS_FILL_MIN:
+        # Capa e fecho sao um Statement so', ancorado na margem de cima: o
+        # espaco negativo E' o arquetipo. Cobrar ocupacao deles fazia o gate
+        # gritar a toa, e gate que grita a toa deixa de ser lido.
+        if content_shapes == 1 and statement_only:
+            pass
+        elif 0 < used < T.CANVAS_FILL_MIN:
             warns.append("slide %d: conteudo ocupa so' %.0f%% da altura util. "
                          "Vazio demais." % (n, used * 100))
         elif used > T.CANVAS_FILL_MAX:

@@ -173,10 +173,9 @@ def build_spec():
          "eyebrow": "REGRA DE CONTRASTE",
          "title": "Texto nunca some no fundo",
          "body": "Se a cor do texto for exatamente a cor do fundo, o texto vira "
-                 "branco.\n\nO fundo relevante é, nesta ordem: o preenchimento da "
-                 "própria forma; senão o do grupo que a contém; senão o do slide "
-                 "e isso inclui uma forma sólida cobrindo a página, que é como "
-                 "a maioria dos decks reais é montada.",
+                 "branco.\n\nO fundo relevante é, nesta ordem: o da própria "
+                 "forma, o do grupo que a contém, o do slide. Uma forma sólida "
+                 "cobrindo a página também conta.",
          "panel_bg": T.ROSA, "panel_style": "dsH1",
          "panel_text": "Título 60 é rosa.\nSobre fundo rosa,\nele nasce branco."})
 
@@ -224,20 +223,18 @@ def build_spec():
     add({"kind": "zoned_content", "section": "TIPOGRAFIA",
          "eyebrow": "ENTRELINHA",
          "title": "Quanto maior o corpo,\nmais apertada a linha",
-         "body": "Não é arbitrario. Em 250 e 120pt o espaço entre linhas já é "
-                 "enorme em valor absoluto: o multiplicador comprime para o bloco "
-                 "ler como uma massa só.\n\nEm 12 e 15pt acontece o inverso: a "
-                 "linha precisa de ar para o olho achar a proxima.",
+         "body": "Não é arbitrário. Em 250 e 120pt o espaço entre linhas já é "
+                 "enorme em valor absoluto, e o multiplicador comprime. Em 12 e "
+                 "15pt é o inverso: a linha precisa de ar.",
          "items": [
              {"title": "Sempre exata",
-              "body": "Multiplo do corpo, nunca 'simples' ou 'duplo', que variam "
-                      "com a fonte e quebram entre máquinas."},
+              "body": "Múltiplo do corpo, nunca 'simples' ou 'duplo'."},
              {"title": "Pertence ao estilo",
               "body": "Legenda 12 e CAPS 12 dividem o corpo e divergem na "
-                      "entrelinha. Uma tabela por tamanho não descreveria os dois."},
-             {"title": "Há uma tabela por tamanho",
-              "body": "Ela alimenta os botões de Entrelinha e age em texto sem "
-                      "estilo. Onde discordam, o estilo manda."},
+                      "entrelinha."},
+             {"title": "Tabela por tamanho",
+              "body": "Alimenta os botões de Entrelinha. Onde discordar do "
+                      "estilo, o estilo manda."},
          ]})
 
     ent_rows = [("%gPT" % s["size"], "%.2fx   =   %.1f pt" % (s["ent"], s["size"] * s["ent"]))
@@ -251,10 +248,9 @@ def build_spec():
          "eyebrow": "COMPORTAMENTO PROPRIO",
          "title": "O ponto final",
          "body": "O Statement 120 pinta o ponto final de azul. Só o ponto, e só "
-                 "se a frase terminar em ponto.\n\nSobre fundo azul, o texto vira "
-                 "branco e o ponto vira rosa: as duas regras agindo juntas sem "
-                 "se anular.\n\nÉ o único estilo com comportamento próprio. Os "
-                 "outros doze são declarativos.",
+                 "se a frase terminar em ponto.\n\nSobre fundo azul o texto vira "
+                 "branco e o ponto vira rosa: as duas regras agem juntas sem se "
+                 "anular. É o único estilo com comportamento próprio.",
          "panel_bg": T.AZUL, "panel_style": "dsHero",
          "panel_text": "Branco.\nPonto rosa."})
 
@@ -322,20 +318,22 @@ def build_spec():
          "sub": "Os layouts que o sistema aceita. Fora deles, é composição nova "
                 "e composição nova pede revisão."})
 
-    add({"kind": "grid_plain", "section": "ARQUÉTIPOS", "cols": 4,
+    # O sumário vai em CARD, não em grade limpa: são catorze itens de mesmo
+    # peso, e a caixa é o que separa um do outro sem depender de alinhamento.
+    add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 4,
          "title": "O catálogo, 1 de 2",
          "intro": "Abertura, especificação e amostra.",
          "items": [
              {"kicker": "1", "title": "Hero cover", "body": "Capa. Fundo saturado."},
              {"kicker": "2", "title": "Chapter divider", "body": "Abertura de bloco."},
              {"kicker": "3", "title": "Spec page", "body": "Título, intro e pares."},
-             {"kicker": "4", "title": "Type specimen", "body": "Amostra e ficha. Bloco 3."},
-             {"kicker": "5", "title": "Swatch", "body": "Uma cor. Bloco 2."},
-             {"kicker": "6", "title": "Multi card", "body": "2 a 4 cards."},
+             {"kicker": "4", "title": "Type specimen", "body": "Amostra e ficha."},
+             {"kicker": "5", "title": "Swatch", "body": "Uma cor por página."},
+             {"kicker": "6", "title": "Multi card", "body": "De dois a quatro cards."},
              {"kicker": "7", "title": "Card grid", "body": "Grade com caixa."},
          ]})
 
-    add({"kind": "grid_plain", "section": "ARQUÉTIPOS", "cols": 4,
+    add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 4,
          "title": "O catálogo, 2 de 2",
          "intro": "Composição, regra e fecho.",
          "items": [
@@ -343,67 +341,120 @@ def build_spec():
              {"kicker": "9", "title": "Zoned content", "body": "Zona e faixa."},
              {"kicker": "10", "title": "Stat band", "body": "Faixa de números."},
              {"kicker": "11", "title": "Quote side", "body": "Texto e painel."},
-             {"kicker": "12", "title": "Do e nunca", "body": "Duas colunas. Bloco 6."},
-             {"kicker": "13", "title": "Diagram", "body": "Esquema em escala. Bloco 1."},
-             {"kicker": "14", "title": "Closing", "body": "Fecho. Último slide."},
+             {"kicker": "12", "title": "Do e nunca", "body": "Duas colunas."},
+             {"kicker": "13", "title": "Diagram", "body": "Esquema em escala."},
+             {"kicker": "14", "title": "Closing", "body": "Fecho do documento."},
          ]})
 
-    add({"kind": "hero_cover", "bg": T.ROSA, "section": "ARQUÉTIPOS",
-         "eyebrow": "ARQUÉTIPO 01  ·  HERO COVER",
+    # ----------------------------------------- os 14, com duas variacoes
+    # Cada arquetipo aparece DUAS vezes, em tratamentos de cor diferentes.
+    # Nao e' repeticao: e' a prova de que a regra de contraste resolve o
+    # fundo sozinha, sem ninguem reescolher cor de tipo a cada slide.
+
+    # 1. hero cover
+    add({"kind": "hero_cover", "bg": T.AZUL, "section": "ARQUÉTIPOS",
+         "eyebrow": "ARQUÉTIPO 1  ·  VARIAÇÃO A  ·  AZUL",
          "title": "Uma frase que\nmarca a página.",
-         "sub": "Statement 120 sobre fundo saturado:\no texto vira branco e o ponto, rosa."})
+         "sub": "Statement 120 sobre azul: o texto vira branco e o ponto, rosa."})
+
+    add({"kind": "hero_cover", "bg": T.ROSA, "section": "ARQUÉTIPOS",
+         "eyebrow": "ARQUÉTIPO 1  ·  VARIAÇÃO B  ·  ROSA",
+         "title": "A mesma capa,\no outro fundo.",
+         "sub": "Sobre rosa o ponto final vira azul. Nada mais muda."})
+
+    # 2. chapter divider
+    add({"kind": "chapter_divider", "bg": T.AZUL, "number": "2.",
+         "title": "Chapter divider\nsobre azul", "section": "ARQUÉTIPOS",
+         "sub": "Número, título e apoio formam um grupo só, centralizado na "
+                "altura útil."})
 
     add({"kind": "chapter_divider", "bg": T.BEGE, "number": "2.",
          "title": "Chapter divider\nsobre bege", "section": "ARQUÉTIPOS",
-         "sub": "O mesmo arquétipo do bloco 01, com fundo claro: Big Number e "
-                "Manchete mantém a cor de tipo."})
+         "sub": "Em fundo claro o Big Number e a Manchete voltam às cores de "
+                "tipo da marca."})
 
-    add({"kind": "zoned_content", "section": "ARQUÉTIPOS",
-         "eyebrow": "ARQUÉTIPO 08", "title": "Pillar dense",
-         "body": "Coluna de argumento à esquerda, desdobramento à direita. É o "
-                 "layout de maior densidade que o sistema aceita sem virar "
-                 "poluição.\n\nUse quando o conteúdo tem uma tese e três a cinco "
-                 "consequências.",
-         "items": [
-             {"title": "Uma tese por slide", "body": "Se há duas, são dois slides."},
-             {"title": "Três a cinco itens", "body": "Menos que três não pede o layout; mais que cinco não cabe."},
-             {"title": "Título em Tópico 28", "body": "Corpo em Texto 15."},
-         ]})
-
-    add({"kind": "quote_side_image", "section": "ARQUÉTIPOS",
-         "eyebrow": "ARQUÉTIPO 09", "title": "Quote side",
-         "body": "Texto à esquerda, painel de cor à direita. O painel não é "
-                 "decoracao: ele carrega a citação, o número ou a amostra que "
-                 "sustenta o argumento do lado esquerdo.",
-         "panel_bg": T.ROSA, "panel_style": "dsCorpo",
-         "panel_text": "O painel carrega\no que o texto\nafirma."})
-
-    add({"kind": "multi_card_grid", "section": "ARQUÉTIPOS", "card_bg": T.BEGE,
-         "eyebrow": "ARQUÉTIPO 06", "title": "Multi card",
-         "cards": [
-             {"title": "Dois a quatro", "body": "Mais que quatro vira grade densa, "
-              "que é outro arquétipo."},
-             {"title": "Mesma altura", "body": "Cards de alturas diferentes "
-              "quebram a leitura horizontal."},
-             {"title": "Gap de 20pt", "body": "Sempre o módulo, nunca uma folga "
-              "escolhida no olho."},
-         ]})
+    # 3. spec page
+    add({"kind": "spec_page", "section": "ARQUÉTIPOS",
+         "eyebrow": "ARQUÉTIPO 3  ·  VARIAÇÃO A  ·  BEGE",
+         "title": "Spec page",
+         "intro": "Título, introdução e pares rótulo/valor. É o arquétipo de "
+                  "ficha técnica: quando o conteúdo é uma tabela curta, ele "
+                  "evita virar tabela de verdade.",
+         "rows": [("ATÉ 8 PARES", "Dois blocos de 2 colunas"),
+                  ("ACIMA DE 8", "Quatro blocos de 1 coluna"),
+                  ("RÓTULO", "CAPS 12"), ("VALOR", "Tópico 28")]})
 
     add({"kind": "spec_page", "section": "ARQUÉTIPOS", "bg": T.BRANCO,
-         "eyebrow": "ARQUÉTIPO 03", "title": "Spec page sobre branco",
-         "intro": "O mesmo arquétipo de especificacao, em fundo branco. Todos os "
-                  "arquétipos aceitam os quatro fundos permitidos sem ajuste.",
+         "eyebrow": "ARQUÉTIPO 3  ·  VARIAÇÃO B  ·  BRANCO",
+         "title": "Spec page sobre branco",
+         "intro": "O mesmo arquétipo em fundo branco. Todos os arquétipos "
+                  "aceitam os quatro fundos permitidos sem nenhum ajuste.",
          "rows": [("FUNDO", "Branco"), ("TIPO", "Rosa e azul"),
-                  ("CONTRASTE", "Não dispara"), ("USO", "Areas de respiro")]})
+                  ("CONTRASTE", "Não dispara"), ("USO", "Áreas de respiro")]})
 
-    add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 2,
-         "title": "Card grid em duas colunas",
-         "intro": "A mesma grade, com menos colunas e mais corpo por item.",
-         "items": [
-             {"kicker": "VARIAÇÃO", "title": "Duas colunas", "body": "Dois módulos de largura cada, para item com texto."},
-             {"kicker": "VARIAÇÃO", "title": "Quatro colunas", "body": "Uma coluna cada, para rótulo e número."},
+    # 4. type specimen
+    add({"kind": "type_specimen", "section": "ARQUÉTIPOS",
+         "eyebrow": "ARQUÉTIPO 4  ·  VARIAÇÃO A  ·  BEGE",
+         "style_id": "dsH1", "sample": SAMPLES["dsH1"]})
+
+    add({"kind": "type_specimen", "section": "ARQUÉTIPOS", "bg": T.BRANCO,
+         "eyebrow": "ARQUÉTIPO 4  ·  VARIAÇÃO B  ·  BRANCO",
+         "style_id": "dsCorpo", "sample": SAMPLES["dsCorpo"]})
+
+    # 5. swatch
+    add({"kind": "swatch_page", "section": "ARQUÉTIPOS",
+         "palette": T.PALETTE[0], "index": 0})
+
+    add({"kind": "swatch_page", "section": "ARQUÉTIPOS", "bg": T.BRANCO,
+         "palette": T.PALETTE[3], "index": 3})
+
+    # 6. multi card
+    add({"kind": "multi_card_grid", "section": "ARQUÉTIPOS", "card_bg": T.BRANCO,
+         "eyebrow": "ARQUÉTIPO 6  ·  VARIAÇÃO A  ·  BEGE",
+         "title": "Multi card",
+         "cards": [
+             {"title": "Dois a quatro", "body": "Mais que quatro vira grade "
+              "densa, que é outro arquétipo."},
+             {"title": "Mesma altura", "body": "O card de maior conteúdo dá a "
+              "altura; os outros ficam com mais espaço negativo."},
+             {"title": "Padding de 40", "body": "Card grande respira mais: "
+              "dois módulos de cada lado."},
          ]})
 
+    add({"kind": "multi_card_grid", "section": "ARQUÉTIPOS", "bg": T.AZUL,
+         "card_bg": T.BRANCO,
+         "eyebrow": "ARQUÉTIPO 6  ·  VARIAÇÃO B  ·  AZUL",
+         "title": "Multi card sobre azul",
+         "cards": [
+             {"title": "Fundo saturado", "body": "O título do slide vira "
+              "branco pela regra de contraste, sem ninguém escolher."},
+             {"title": "Card claro", "body": "Dentro do card o fundo é claro "
+              "de novo, e o tipo volta às cores da marca."},
+         ]})
+
+    # 7. card grid
+    add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 4,
+         "title": "Card grid",
+         "intro": "Grade densa em caixa, de quatro colunas.",
+         "items": [
+             {"kicker": "1", "title": "Item curto", "body": "Rótulo, título e uma linha."},
+             {"kicker": "2", "title": "Padding 20", "body": "Card de grade usa um módulo."},
+             {"kicker": "3", "title": "Vão de 40", "body": "O mesmo da horizontal."},
+             {"kicker": "4", "title": "Mesma altura", "body": "O maior manda nos outros."},
+         ]})
+
+    add({"kind": "card_grid_5", "section": "ARQUÉTIPOS", "cols": 2,
+         "bg": T.ROSA, "card_bg": T.BRANCO,
+         "title": "Card grid em duas colunas",
+         "intro": "A mesma grade sobre rosa, com menos colunas e mais corpo.",
+         "items": [
+             {"kicker": "DUAS COLUNAS", "title": "Dois módulos cada",
+              "body": "Para item com texto de verdade, não só rótulo."},
+             {"kicker": "PADDING", "title": "Volta para 40",
+              "body": "Com dois cards na linha o card é grande outra vez."},
+         ]})
+
+    # 8. grid plain
     add({"kind": "grid_plain", "section": "ARQUÉTIPOS", "cols": 4,
          "title": "Grid plain",
          "intro": "A mesma grade sem caixa. Quando o item é curto, a caixa não "
@@ -411,31 +462,125 @@ def build_spec():
          "items": [
              {"kicker": "1.", "title": "Sem caixa", "body": "O alinhamento sustenta o agrupamento."},
              {"kicker": "2.", "title": "Mesma grade", "body": "As colunas são as mesmas do card grid."},
-             {"kicker": "3.", "title": "Item curto", "body": "Rótulo, título e uma linha de apoio."},
+             {"kicker": "3.", "title": "Vão maior", "body": "Sem borda, o espaço é que separa as linhas."},
              {"kicker": "4.", "title": "Mais leve", "body": "Preferir quando houver seis itens ou mais."},
          ]})
 
+    add({"kind": "grid_plain", "section": "ARQUÉTIPOS", "cols": 3, "bg": T.AZUL,
+         "title": "Grid plain sobre azul",
+         "intro": "Sem caixa nenhuma, o fundo saturado passa por trás de tudo.",
+         "items": [
+             {"kicker": "1.", "title": "Tipo branco", "body": "A regra de contraste vale para os três blocos."},
+             {"kicker": "2.", "title": "Três colunas", "body": "Item mais largo aceita duas linhas de apoio."},
+             {"kicker": "3.", "title": "Sem borda", "body": "Nada de caixa clara para simular card."},
+         ]})
+
+    # 9. zoned content
+    add({"kind": "zoned_content", "section": "ARQUÉTIPOS",
+         "eyebrow": "ARQUÉTIPO 9  ·  VARIAÇÃO A  ·  BEGE", "title": "Zoned content",
+         "body": "Coluna de argumento em cima, desdobramento na faixa de baixo. "
+                 "É o layout de maior densidade que o sistema aceita sem virar "
+                 "poluição.\n\nUse quando o conteúdo tem uma tese e três a cinco "
+                 "consequências.",
+         "items": [
+             {"title": "Uma tese por slide", "body": "Se há duas, são dois slides."},
+             {"title": "Três a cinco itens", "body": "Menos que três não pede o layout; mais que cinco não cabe."},
+             {"title": "Título em Tópico 28", "body": "Corpo em Apoio 20 ou Texto 15."},
+         ]})
+
+    add({"kind": "zoned_content", "section": "ARQUÉTIPOS", "bg": T.BRANCO,
+         "eyebrow": "ARQUÉTIPO 9  ·  VARIAÇÃO B  ·  BRANCO",
+         "title": "Zoned content sobre branco",
+         "body": "O mesmo arquétipo em fundo branco. A zona de cima e a faixa "
+                 "de baixo são posicionadas como um grupo só, e o grupo "
+                 "centraliza na altura útil.",
+         "items": [
+             {"title": "Grupo, não zonas soltas", "body": "Ancorar a faixa na base joga tudo para o pé da página."},
+             {"title": "Faixa alinhada à grade", "body": "Cada item ocupa colunas inteiras."},
+         ]})
+
+    # 10. stat band
     add({"kind": "stat_band", "section": "ARQUÉTIPOS",
-         "eyebrow": "ARQUÉTIPO 10", "title": "Stat band",
+         "eyebrow": "ARQUÉTIPO 10  ·  VARIAÇÃO A  ·  BEGE", "title": "Stat band",
          "body": "Variação da faixa inferior para números. A zona de cima "
                  "sustenta o argumento e a faixa entrega a evidência, sem "
                  "competir por atenção.",
          "stats": [
-             {"value": "13", "label": "estilos na escala fechada"},
+             {"value": "14", "label": "arquétipos no catálogo"},
              {"value": "5", "label": "cores na paleta"},
              {"value": "20", "label": "pontos de módulo"},
              {"value": "4", "label": "colunas na grade"},
          ]})
 
-    add({"kind": "multi_card_grid", "section": "ARQUÉTIPOS", "bg": T.AZUL,
-         "card_bg": T.BRANCO, "eyebrow": "VARIAÇÃO DE FUNDO",
-         "title": "Multi card sobre azul",
-         "cards": [
-             {"title": "Fundo saturado", "body": "O título vira branco pela regra "
-              "de contraste, sem ninguém escolher."},
-             {"title": "Card claro", "body": "O card mantém o fundo branco e o "
-              "tipo volta às cores da marca."},
+    add({"kind": "stat_band", "section": "ARQUÉTIPOS", "bg": T.AZUL,
+         "eyebrow": "ARQUÉTIPO 10  ·  VARIAÇÃO B  ·  AZUL",
+         "title": "Stat band sobre azul",
+         "body": "Sobre fundo saturado o número e o rótulo ficam brancos. O "
+                 "contraste não é uma escolha de quem monta o slide.",
+         "stats": [
+             {"value": "13", "label": "estilos na faixa"},
+             {"value": "1", "label": "estilo ainda pendente"},
+             {"value": "3", "label": "dívidas registradas"},
          ]})
+
+    # 11. quote side
+    add({"kind": "quote_side_image", "section": "ARQUÉTIPOS",
+         "eyebrow": "ARQUÉTIPO 11  ·  VARIAÇÃO A", "title": "Quote side",
+         "body": "Texto à esquerda, painel de cor à direita. O painel não é "
+                 "decoração: ele carrega a citação, o número ou a amostra que "
+                 "sustenta o argumento do lado esquerdo.",
+         "panel_bg": T.AZUL, "panel_style": "dsCorpo",
+         "panel_text": "O painel carrega\no que o texto\nafirma."})
+
+    add({"kind": "quote_side_image", "section": "ARQUÉTIPOS", "bg": T.BRANCO,
+         "eyebrow": "ARQUÉTIPO 11  ·  VARIAÇÃO B", "title": "Quote side em rosa",
+         "body": "O painel aceita as duas cores de tipo como fundo. Sobre rosa "
+                 "o texto do painel vira branco, e o lado esquerdo continua nas "
+                 "cores da marca.",
+         "panel_bg": T.ROSA, "panel_style": "dsCorpo",
+         "panel_text": "A mesma peça,\noutra cor."})
+
+    # 12. do e nunca
+    add({"kind": "do_dont", "section": "ARQUÉTIPOS", "title": "Do e nunca",
+         "intro": "Duas colunas de mesma largura, cabeçalho em Subtítulo 34.",
+         "do": ["Uma regra por linha.",
+                "Verbo no infinitivo.",
+                "O par sim/nunca fala do mesmo assunto."],
+         "dont": ["Parágrafo dentro da coluna.",
+                  "Regra que só vale às vezes.",
+                  "Coluna com mais itens que a outra."]})
+
+    add({"kind": "do_dont", "section": "ARQUÉTIPOS", "bg": T.BRANCO,
+         "title": "Do e nunca sobre branco",
+         "intro": "Em fundo branco o card do arquétipo vira bege, para a caixa "
+                  "continuar existindo.",
+         "do": ["Card sempre de cor diferente do fundo.",
+                "Cabeçalho colorido, itens em Apoio 20."],
+         "dont": ["Card branco sobre fundo branco.",
+                  "Contorno para salvar um card invisível."]})
+
+    # 13. diagram
+    add({"kind": "diagram_page", "section": "ARQUÉTIPOS",
+         "title": "Diagram", "show_module": True,
+         "intro": "Esquema em escala: o retângulo do slide e a margem são "
+                  "proporcionais de verdade, medidos dos mesmos tokens.",
+         "legend": [("PÁGINA", "1583,13 x 890,63 pt"),
+                    ("MARGEM", "60 pt nos quatro lados"),
+                    ("MÓDULO", "20 pt")]})
+
+    add({"kind": "diagram_page", "section": "ARQUÉTIPOS", "bg": T.BRANCO,
+         "title": "Diagram sobre branco", "show_margin": True,
+         "intro": "O mesmo esquema em fundo branco. O retângulo interno é "
+                  "sempre branco e ganha contorno para não sumir.",
+         "legend": [("CONTORNO", "Azul, 1 pt"),
+                    ("MARGEM", "Rosa, 1 pt")]})
+
+    # 14. closing
+    add({"kind": "closing", "bg": T.AZUL, "section": "ARQUÉTIPOS",
+         "title": "O fecho é um\nStatement, e nada mais."})
+
+    add({"kind": "closing", "bg": T.ROSA, "section": "ARQUÉTIPOS",
+         "title": "O mesmo fecho,\nsobre rosa."})
 
     # ---------------------------------------------------------- 06 regras
     add({"kind": "chapter_divider", "bg": T.ROSA, "number": "6.",

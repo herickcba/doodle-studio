@@ -173,8 +173,21 @@ def col_span(n: int) -> float:
     return n * COL_W_PT + (n - 1) * GUTTER_PT
 
 
-# Padding interno de card/box: 2 modulos.
-BOX_PAD_PT = SPACING[2]
+# Padding interno de card/box. Dois valores, e o que decide e' o TAMANHO do
+# card, nao o gosto de quem desenha:
+#   grade (3 cards ou mais na linha) -> 1 modulo. Card pequeno com 40 de
+#                                       padding vira moldura, sobra pouco
+#                                       espaco para o texto.
+#   card grande (1 ou 2 na linha)    -> 2 modulos.
+CARD_PAD_PT = SPACING[1]            # 20 -- grade
+BOX_PAD_PT = SPACING[2]             # 40 -- card grande e painel
+
+
+def card_pad(per_row: int) -> float:
+    """Padding do card pela quantidade de cards na linha."""
+    return CARD_PAD_PT if per_row >= 3 else BOX_PAD_PT
+
+
 
 # Uma caixa nao pode ser muito mais alta que o conteudo que carrega. Acima
 # disto o build avisa -- era o vicio de esticar o card ate' o rodape.

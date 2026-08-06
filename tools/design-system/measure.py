@@ -72,15 +72,48 @@ def wrap_lines(text: str, size_pt: float, bold: bool, width_pt: float,
     return total
 
 
+# ---------------------------------------------------------------- a linha
+#
+# O PowerPoint NAO desenha a linha com "corpo x entrelinha". A entrelinha
+# percentual multiplica a altura NATURAL da linha da fonte, e na Avenir Next
+# essa altura e' 1,366 x o corpo (ascendente 1000 + descendente 366, em mil).
+#
+# Medido no proprio PowerPoint, e nao deduzido: pedindo a ele que ajustasse a
+# caixa ao texto, uma linha de 250pt com entrelinha 1,0 ficou com 302,9pt.
+#   302,9 / 250 = 1,2116
+#
+# Medir sem este fator subestimava toda caixa em ~21%. Era a causa de tres
+# defeitos que a revisao apontou: texto encostado no fundo do card, padding
+# inferior menor que o superior, e o par numero/titulo que abria demais
+# porque a folga real da caixa nao era a que o codigo calculava.
+LINE_FACTOR = 1.2116
+
+# A base da letra fica a 73,2% da altura da linha (ascendente sobre o total).
+# O que sobra abaixo dela e' o espaco do descendente: vazio num numero ou numa
+# caixa alta, e e' dele que sai a folga optica.
+BASELINE_RATIO = 1000.0 / 1366.0
+
+
+def line_height(style: dict) -> float:
+    """Altura de UMA linha, como o PowerPoint desenha."""
+    return style["size"] * style["ent"] * LINE_FACTOR
+
+
 def block_height(text: str, style: dict, width_pt: float) -> float:
-    """Altura que o bloco precisa, na entrelinha do estilo."""
+    """Altura que o bloco ocupa desenhado."""
     n = wrap_lines(text, style["size"], bool(style["bold"]), width_pt,
                    caps=bool(style.get("caps")),
                    spacing_pt=float(style.get("spacing") or 0))
-    # A entrelinha multiplica o corpo; a primeira linha ainda ocupa o corpo
-    # inteiro mesmo quando o multiplicador e' menor que 1 (0,8x do Statement).
-    lead = style["size"] * style["ent"]
-    return max(style["size"], lead) + lead * (n - 1)
+    line = line_height(style)
+    # Com entrelinha abaixo de 1 (o Statement usa 0,8x) a linha fica menor que
+    # o corpo, mas a primeira ainda precisa do corpo inteiro.
+    return max(style["size"], line) + line * (n - 1)
+
+
+def ink_bottom(text: str, style: dict, width_pt: float) -> float:
+    """Do topo da caixa ate' a BASE da ultima linha, onde a tinta acaba."""
+    line = line_height(style)
+    return block_height(text, style, width_pt) - line * (1 - BASELINE_RATIO)
 
 
 def fits(text: str, style_id: str, width_pt: float, height_pt: float) -> bool:
