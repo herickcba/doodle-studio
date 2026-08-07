@@ -20,7 +20,10 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
-sys.path.insert(0, HERE)
+
+# Os tokens moram na skill (fonte unica). Ver comentario no build_deck.py.
+sys.path.insert(0, os.path.join(REPO, ".claude", "skills", "cba-visual-v2",
+                                "scripts"))
 
 import tokens as T  # noqa: E402
 

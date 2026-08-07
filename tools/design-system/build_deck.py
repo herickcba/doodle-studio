@@ -16,14 +16,21 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
-sys.path.insert(0, HERE)
+
+# A FONTE UNICA do sistema e' a skill, nao este diretorio. Os tokens, o
+# medidor e os arquetipos moram em .claude/skills/cba-visual-v2/ para que a
+# skill seja completa sozinha (e zipavel), e este script apenas os usa. Manter
+# duas copias ja' custou um bug: o rodape divergiu entre elas.
+SKILL = os.path.join(REPO, ".claude", "skills", "cba-visual-v2")
+sys.path.insert(0, os.path.join(SKILL, "scripts"))
+sys.path.insert(0, os.path.join(SKILL, "examples"))
 
 from pptx import Presentation  # noqa: E402
 from pptx.util import Pt  # noqa: E402
 
 import layouts  # noqa: E402
 from layouts import CONTENT_END, FOOTER_H  # noqa: E402
-import spec as spec_mod  # noqa: E402
+import reference_deck as spec_mod  # noqa: E402
 import tokens as T  # noqa: E402
 
 FOOTER_Y = T.CONTENT_BOTTOM_PT - FOOTER_H
