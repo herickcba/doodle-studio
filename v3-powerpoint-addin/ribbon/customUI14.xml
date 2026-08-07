@@ -21,6 +21,7 @@
           <button id="dsH1"         label="Título 60"     image="sqH1"         onAction="ApplyStyle" screentip="Título · 60pt"    supertip="Título de página. Avenir Next Bold · 60pt · 0.9x · magenta."/>
           <button id="dsCorpo"      label="Destaque 44"   image="sqCorpo"      onAction="ApplyStyle" screentip="Destaque · 44pt" supertip="Corpo de destaque. Avenir Next Regular · 44pt · 1.15x · azul."/>
           <button id="dsH3"         label="Subtítulo 34"  image="sqH3"         onAction="ApplyStyle" screentip="Subtítulo · 34pt"    supertip="Subtítulo / descritivo. Avenir Next Bold · 34pt · 0.95x · magenta."/>
+          <button id="dsTexto34"    label="Texto 34"      image="sqTexto34"    onAction="ApplyStyle" screentip="Texto · 34pt"     supertip="Texto corrido grande: intro de página e parágrafo de argumento. Avenir Next Regular · 34pt · 1.3x · azul."/>
           <button id="dsH4"         label="Tópico 28"     image="sqH4"         onAction="ApplyStyle" screentip="Tópico · 28pt"    supertip="Título de tópico ou card. Avenir Next Bold · 28pt · azul."/>
           <button id="dsH5"         label="Texto 24"      image="sqH5"         onAction="ApplyStyle" screentip="Texto · 24pt"    supertip="Texto corrido. Avenir Next Regular · 24pt · azul."/>
           <button id="dsCorpoPilar" label="Apoio 20"      image="sqCorpoPilar" onAction="ApplyStyle" screentip="Apoio · 20pt" supertip="Texto de apoio (pilares, colunas). Avenir Next Regular · 20pt · azul."/>
@@ -87,15 +88,13 @@
             screentip="Tirar rounded (seleção)" supertip="Remove o arredondamento das formas selecionadas, ou de TODAS as formas dos slides selecionados no painel; sem seleção, do slide atual. Nunca da apresentação inteira."/>
           <gallery id="radiusPick" getLabel="GetRadiusLabel" image="radiusPick" size="large"
             columns="1" itemWidth="88" itemHeight="36" showItemImage="true" showItemLabel="false" onAction="SetRadiusPick"
-            screentip="Raio do arredondamento" supertip="Escolha o raio usado por Rounded, Padronizar e Rounded box. 'Padrão' segue os Padrões da marca; os demais são valores fixos em px (num canvas de 1080 de altura).">
+            screentip="Raio do arredondamento" supertip="Escolha o raio usado por Rounded, Padronizar e Rounded box. 'Padrão' segue os Padrões da marca; os demais são valores fixos em PONTOS, múltiplos do módulo de 20.">
             <item id="radDefault" image="radItemP" label="Padrão (config)"/>
-            <item id="rad10" image="radItem10" label="10 px"/>
-            <item id="rad15" image="radItem15" label="15 px"/>
-            <item id="rad20" image="radItem20" label="20 px"/>
-            <item id="rad25" image="radItem25" label="25 px"/>
-            <item id="rad30" image="radItem30" label="30 px"/>
-            <item id="rad40" image="radItem40" label="40 px"/>
-            <item id="rad50" image="radItem50" label="50 px"/>
+            <item id="rad10" image="radItem10" label="10 pt"/>
+            <item id="rad20" image="radItem20" label="20 pt"/>
+            <item id="rad30" image="radItem30" label="30 pt"/>
+            <item id="rad40" image="radItem40" label="40 pt"/>
+            <item id="rad60" image="radItem60" label="60 pt"/>
           </gallery>
         </group>
         <group id="dsGrpAlinhar" label="Alinhar">

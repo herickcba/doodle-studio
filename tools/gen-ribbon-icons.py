@@ -9,7 +9,8 @@ Uso: python3 tools/gen-ribbon-icons.py
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-ROSA = (252, 94, 109, 255)   # FC5E6D
+ROSA = (253, 94, 109, 255)   # FD5E6D -- o rosa da marca. Ate' aqui os
+                             # icones usavam FC5E6D, um digito fora do padrao.
 AZUL = (67, 106, 225, 255)    # 436AE1
 SIZE = 32
 
@@ -78,6 +79,7 @@ GLYPHS = {
     "dsLabelSec": ("L", ROSA, None),
     "dsCorpo": ("B", AZUL, None),
     "dsH3": ("H3", ROSA, None),
+    "dsTexto34": ("T34", AZUL, None),
     "dsH4": ("H4", AZUL, None),
     "dsH5": ("H5", AZUL, None),
     "dsCorpoPilar": ("P", AZUL, None),
@@ -556,10 +558,11 @@ def draw_rad_item(label, rpx):
     return img
 
 
-for _rid, _lab, _rv in (("radItemP", "Padrão", 0), ("radItem10", "10 px", 10),
-                        ("radItem15", "15 px", 15), ("radItem20", "20 px", 20),
-                        ("radItem25", "25 px", 25), ("radItem30", "30 px", 30),
-                        ("radItem40", "40 px", 40), ("radItem50", "50 px", 50)):
+# Raio em PONTOS (nao mais px): multiplos do modulo de 20, mais o 10 para
+# quem quer um arredondamento discreto.
+for _rid, _lab, _rv in (("radItemP", "Padrão", 0), ("radItem10", "10 pt", 10),
+                        ("radItem20", "20 pt", 20), ("radItem30", "30 pt", 30),
+                        ("radItem40", "40 pt", 40), ("radItem60", "60 pt", 60)):
     draw_rad_item(_lab, _rv).save(os.path.join(OUT, _rid + ".png"))
 
 

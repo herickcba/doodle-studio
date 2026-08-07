@@ -63,13 +63,13 @@ def parse_bas(path):
         ents[int(sz)] = float(mult.rstrip("#"))
 
     fonte = re.search(r'gFonte\s*=\s*"([^"]+)"', body)
-    radius = re.search(r"gRadiusPx\s*=\s*([\d.]+)", body)
+    radius = re.search(r"gRadiusPt\s*=\s*([\d.]+)", body)
     return {
         "palette": pal,
         "styles": styles,
         "ents": ents,
         "font": fonte.group(1) if fonte else None,
-        "radius_px": float(radius.group(1)) if radius else None,
+        "radius_pt": float(radius.group(1)) if radius else None,
     }
 
 
@@ -77,7 +77,7 @@ def parse_consts(path):
     """Constantes de layout declaradas no topo do modulo."""
     src = open(path, encoding="utf-8", errors="replace").read()
     out = {}
-    for name in ("ANCHOR_DEFAULT_CM", "GUIDE_MARGIN_CM", "PT_PER_CM", "MAX_DEPTH"):
+    for name in ("ANCHOR_DEFAULT_CM", "GUIDE_MARGIN_PT", "PT_PER_CM", "MAX_DEPTH"):
         m = re.search(r"Const\s+%s\s+As\s+\w+\s*=\s*([\d.]+)" % name, src)
         if m:
             out[name] = float(m.group(1))
@@ -165,37 +165,20 @@ def main():
                 errs.append("entrelinha do corpo %s: .bas=%r tokens=%r" % (sz, a, c))
 
     # ---- raio e constantes de layout
-    # O raio canonico do 2.0 e' 20pt; o .bas ainda guarda 25px (20,62pt).
-    # Divida registrada no design.md -- avisa, nao bloqueia. So' bloqueia se o
-    # .bas sair do valor que a documentacao DIZ que ele tem hoje.
-    if bas["radius_px"] != T.RADIUS_PX_BAS:
-        errs.append("raio no .bas mudou: agora %rpx, documentado %rpx"
-                    % (bas["radius_px"], T.RADIUS_PX_BAS))
+    # Desde a v1.6.0 o raio e' um valor visual constante em PONTOS, e tem de
+    # ser o mesmo dos dois lados. Nao ha' mais tolerancia aqui.
+    if bas["radius_pt"] != T.RADIUS_PT_BAS:
+        errs.append("raio: .bas=%rpt tokens=%rpt"
+                    % (bas["radius_pt"], T.RADIUS_PT_BAS))
     if consts.get("ANCHOR_DEFAULT_CM") != T.ANCHOR_DEFAULT_CM:
         errs.append("ancora padrao: .bas=%rcm tokens=%rcm"
                     % (consts.get("ANCHOR_DEFAULT_CM"), T.ANCHOR_DEFAULT_CM))
-    if consts.get("GUIDE_MARGIN_CM") != T.GUIDE_MARGIN_CM:
-        errs.append("margem das guias: .bas=%rcm tokens=%rcm"
-                    % (consts.get("GUIDE_MARGIN_CM"), T.GUIDE_MARGIN_CM))
+    if consts.get("GUIDE_MARGIN_PT") != T.GUIDE_MARGIN_PT:
+        errs.append("margem das guias: .bas=%rpt tokens=%rpt"
+                    % (consts.get("GUIDE_MARGIN_PT"), T.GUIDE_MARGIN_PT))
     if consts.get("MAX_DEPTH") != T.MAX_DEPTH:
         errs.append("MAX_DEPTH: .bas=%r tokens=%r"
                     % (consts.get("MAX_DEPTH"), T.MAX_DEPTH))
-
-    # ---- divida conhecida: a margem de seguranca documentada (76pt) ainda nao
-    #      e' a que a faixa desenha. Avisa sem bloquear -- esta' registrado no
-    #      design.md e depende de um ciclo do VBE.
-    if abs(T.GUIDE_MARGIN_PT - T.MARGIN_PT) > 0.5:
-        warns.append(
-            "margem: design 2.0 usa %.0fpt (%.2fcm), a faixa desenha as guias em "
-            "%.1fpt (%.2fcm).\n       Proxima leva do .bas: GUIDE_MARGIN_CM = %.2f."
-            % (T.MARGIN_PT, T.MARGIN_PT / T.PT_PER_CM,
-               T.GUIDE_MARGIN_PT, T.GUIDE_MARGIN_CM, T.MARGIN_PT / T.PT_PER_CM))
-    if abs(T.RADIUS_PT - T.RADIUS_PT_BAS) > 0.05:
-        warns.append(
-            "raio: design 2.0 usa %.0fpt, a faixa aplica %.2fpt (%dpx no canvas 1080).\n"
-            "       Proxima leva do .bas: gRadiusPx = %d (= %.2fpt)."
-            % (T.RADIUS_PT, T.RADIUS_PT_BAS, T.RADIUS_PX_BAS,
-               round(T.pt_to_px(T.RADIUS_PT)), T.px_to_pt(round(T.pt_to_px(T.RADIUS_PT)))))
 
     if warns:
         print("AVISOS (nao bloqueiam):")

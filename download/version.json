@@ -1,5 +1,5 @@
 {
-  "version": "1.5.1",
-  "date": "2026-08-05",
-  "notes": "Tipografia: 13 estilos (novos Big Number 250, Legenda 12 e CAPS 12; Legenda 16 virou Texto 15; Rótulo 60 saiu por ser idêntico ao Título 60). Clicar num estilo sem nada selecionado cria a caixa já formatada, e o texto vira branco quando a cor dele seria igual à do fundo."
+  "version": "1.6.0",
+  "date": "2026-08-06",
+  "notes": "A faixa passa a bater exatamente com o design system: as linhas-guia usam a margem de 60pt (antes 3,15cm) e o raio vira um valor visual constante de 20pt (antes 25px, que mudava de tamanho junto com a página). Novo estilo Texto 34, texto corrido grande para intro de página e parágrafo de argumento. Config antiga com radiusPx continua funcionando: é convertida para pontos na leitura."
 }

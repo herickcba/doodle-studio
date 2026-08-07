@@ -10,7 +10,8 @@ Uso: python3 tools/gen-style-previews.py
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-ROSA = (252, 94, 109, 255)   # FC5E6D
+ROSA = (253, 94, 109, 255)   # FD5E6D -- o rosa da marca. Ate' aqui os
+                             # icones usavam FC5E6D, um digito fora do padrao.
 AZUL = (67, 106, 225, 255)    # 436AE1
 W, H = 88, 52                 # tamanho da miniatura (landscape)
 
@@ -41,6 +42,7 @@ STYLES = [
     ("prevH1",          60, True,  ROSA, False, "Aa"),
     ("prevCorpo",       44, False, AZUL, False, "Aa"),
     ("prevH3",          34, True,  ROSA, False, "Aa"),
+    ("prevTexto34",     34, False, AZUL, False, "Aa"),
     ("prevH4",          28, True,  AZUL, False, "Aa"),
     ("prevH5",          24, False, AZUL, False, "Aa"),
     ("prevCorpoPilar",  20, False, AZUL, False, "Aa"),

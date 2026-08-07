@@ -284,7 +284,7 @@
   // O painel sempre roda a versão publicada (web); quem fica pra trás é a
   // FAIXA (.ppam instalado). O version.json diz a última versão lançada —
   // se este painel for mais antigo (webview cacheado), avisa pra recarregar.
-  const CBA_VERSION = '1.5.1';
+  const CBA_VERSION = '1.6.0';
   (function versionLine() {
     const el = $('verLine');
     if (!el) return;

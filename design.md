@@ -459,22 +459,34 @@ cada execução e já imprime o valor a aplicar.
 
 | # | O que | Hoje na faixa | Deve virar |
 |---|---|---|---|
-| 1 | Margem das linhas-guia | `GUIDE_MARGIN_CM = 3.15` (89,3pt) | `2.12` (60pt) |
-| 2 | Raio | `gRadiusPx = 25` (20,62pt) | `24` (19,79pt) |
-| 3 | Estilo Texto 34 | não existe | `AddStyle "dsTexto34", 34, False, 1, 1.3` |
+| — | — | — | **Nenhuma.** As três foram quitadas na v1.6.0 |
 
-O Texto 34 também pede botão no `customUI14.xml`, ícone em
-`gen-style-previews.py`, entrada na lista `STYLES` do `config.html` e a
-`<Relationship>` do ícone no `.rels`.
+O que era dívida virou isto:
+
+| Era | Virou |
+|---|---|
+| `GUIDE_MARGIN_CM = 3.15` (89,3pt) | `GUIDE_MARGIN_PT = 60` |
+| `gRadiusPx = 25`, fração da altura do slide | `gRadiusPt = 20`, valor visual constante |
+| Texto 34 não existia | `AddStyle "dsTexto34", 34, False, 1, 1.3` |
+
+O raio deixou de ser proporcional à página. Era isso que impedia fechar em 20pt
+exatos: guardado como `px @1080` ele valia 20,62pt na página da marca e mudava
+de tamanho junto com qualquer outro formato. Config gravada até a 1.5.1 guarda
+`radiusPx`; a faixa continua lendo essa chave e a converte para pontos, então
+ninguém perde o ajuste na atualização.
+
+O `check-tokens.py` deixou de ter tolerância nesses três pontos: agora eles
+**bloqueiam** se divergirem, em vez de avisar.
 
 ### As demais
 
 1. **A grade de colunas já existe na faixa.** As linhas-guia desenham 4 colunas
    com gutter de 2 raios, que é a mesma regra daqui. Depois de ajustar margem e
    raio, as duas grades passam a coincidir exatamente.
-2. **O rosa em outras mídias.** A landing (`--coral: #FC5E6D`) e a skill
-   `cba-bg-design-system-v3` usam `FC5E6D`; o padrão é **`FD5E6D`**. Um dígito de
-   diferença, invisível a olho nu e detectável em auditoria.
+2. **O rosa em outras mídias.** Os dois geradores de ícone da faixa usavam
+   `FC5E6D` e foram corrigidos para **`FD5E6D`** na v1.6.0. Ainda usam o hex
+   errado: a landing (`--coral: #FC5E6D`) e a skill `cba-bg-design-system-v3`.
+   Um dígito de diferença, invisível a olho nu e detectável em auditoria.
 3. **Corpos herdados do v3.** 55, 36, 32, 22, 16 e 14pt aparecem em decks
    antigos. A tabela de migração acima resolve.
 

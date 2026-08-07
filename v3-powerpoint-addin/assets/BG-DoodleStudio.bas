@@ -21,12 +21,13 @@ Option Explicit
 
 ' Versao do produto (faixa + extensao + landing andam juntas).
 ' Ao lancar: atualizar tambem download/version.json, manifest.xml e index.html.
-Public Const CBA_VERSION As String = "1.5.1"
+Public Const CBA_VERSION As String = "1.6.0"
 
 ' ---- Constantes de layout (fonte unica destes numeros) ----
 Private Const PT_PER_CM As Single = 28.3465    ' pontos por cm (72 pt/in / 2,54 cm/in)
 Private Const ANCHOR_DEFAULT_CM As Single = 1.27 ' ancora padrao (esq. e topo)
-Private Const GUIDE_MARGIN_CM As Single = 3.15 ' margem das linhas-guia
+Private Const GUIDE_MARGIN_PT As Single = 60   ' margem das linhas-guia
+                                               ' (= margem do design 2.x)
 Private Const MAX_DEPTH As Long = 12           ' recursao maxima em grupos aninhados
 Private Const STYLE_INSERT As String = "dsH5"  ' estilo das caixas inseridas: Texto 24
 Private Const SAMPLE_MAX As Long = 24          ' formas amostradas no Page Size
@@ -34,7 +35,7 @@ Private Const SAMPLE_MAX As Long = 24          ' formas amostradas no Page Size
 Private gRibbon As IRibbonUI
 Private gAnchorCm As Single   ' ancora esq. (cm); 0 = nao setado -> usa default
 Private gAnchorTopCm As Single ' ancora topo (cm); 0 = nao setado -> usa default
-Private gRadiusOverridePx As Single   ' raio escolhido no dropdown (px @1080); 0 = Padrao (config)
+Private gRadiusOverridePt As Single   ' raio escolhido no dropdown (pt); 0 = Padrao (config)
 Private gCfgWarned As Boolean         ' aviso de config quebrada ja' mostrado?
 Private Const C_TRANSP As Long = 5         ' indice da cor = transparente (nao e' cor)
 
@@ -44,7 +45,11 @@ Private Const C_TRANSP As Long = 5         ' indice da cor = transparente (nao e
 '   pal0 (rosa) e pal1 (azul) — fonte unica de verdade da marca.
 Private gFonte As String
 Private gPal(0 To 4) As Long
-Private gRadiusPx As Single            ' raio padrao em px @ canvas de 1080 de altura
+' O raio e' um valor VISUAL CONSTANTE, em PONTOS: um card grande e um botao
+' pequeno tem o mesmo arredondamento. Ate' a 1.5.1 ele era uma fracao da
+' altura do slide (px num canvas de 1080), o que fazia o raio mudar de
+' tamanho junto com a pagina e nunca fechava com os 20 pt do design.
+Private gRadiusPt As Single            ' raio padrao em pontos
 Private gStyle As Object               ' Collection: id -> Array(size, bold, role[0=rosa/1=azul], ent)
 Private gEnt As Object                 ' Collection: CStr(size) -> entrelinha (multiplo)
 
@@ -90,7 +95,7 @@ Private Sub SetDefaults()
     gPal(2) = RGB(238, 236, 230)   ' bege  EEECE6
     gPal(3) = RGB(255, 255, 255)   ' branco
     gPal(4) = RGB(0, 0, 0)         ' preto
-    gRadiusPx = 25
+    gRadiusPt = 20
     Set gStyle = New Collection
     '                id             pt   bold  cor  entrelinha
     AddStyle "dsBigNumber", 250, True, 0, 1#
@@ -99,6 +104,7 @@ Private Sub SetDefaults()
     AddStyle "dsH1", 60, True, 0, 0.9
     AddStyle "dsCorpo", 44, False, 1, 1.15
     AddStyle "dsH3", 34, True, 0, 0.95
+    AddStyle "dsTexto34", 34, False, 1, 1.3   ' divide o corpo com o dsH3
     AddStyle "dsH4", 28, True, 1, 1#
     AddStyle "dsH5", 24, False, 1, 1#
     AddStyle "dsCorpoPilar", 20, False, 1, 1.3
@@ -221,8 +227,13 @@ Private Sub ApplyKV(ByVal k As String, ByVal v As String)
     Dim pi As Long, id As String, a() As String, sz As Long, ent As Single
     If k = "fonte" Then
         If Len(v) > 0 Then gFonte = v
+    ElseIf k = "radiusPt" Then
+        If Val(v) > 0 Then gRadiusPt = CSng(Val(v))
     ElseIf k = "radiusPx" Then
-        If Val(v) > 0 Then gRadiusPx = CSng(Val(v))
+        ' compatibilidade: config gravada ate' a 1.5.1 guardava px num canvas
+        ' de 1080. Converte para pontos em vez de ignorar, senao quem ja' tem
+        ' cba-config.txt perde o raio na atualizacao.
+        If Val(v) > 0 Then gRadiusPt = CSng(Val(v) * 890.63 / 1080#)
     ElseIf Left$(k, 3) = "pal" Then
         pi = CLng(Val(Mid$(k, 4)))
         If pi >= 0 And pi <= 4 Then
@@ -626,11 +637,11 @@ Private Sub DrawGuides(ByVal sld As Object)
     EnsureCfg
     sw = ActivePresentation.PageSetup.SlideWidth
     sh = ActivePresentation.PageSetup.SlideHeight
-    mpt = GUIDE_MARGIN_CM * PT_PER_CM             ' 3,15 cm -> pontos
+    mpt = GUIDE_MARGIN_PT                         ' 60 pt nos quatro lados
     Wi = sw - 2 * mpt
     Hi = sh - 2 * mpt
     If Wi <= 0 Or Hi <= 0 Then Exit Sub
-    g = 2 * (CDbl(gRadiusPx) / 1080#) * sh        ' gutter = 2x o raio padrao (config)
+    g = 2 * gRadiusPt                             ' gutter = 2x o raio padrao (config)
     c = (Wi - 3 * g) / 4                          ' largura de cada coluna
     col = GuideColor(sld)                         ' vermelha (fundo claro) ou branca (escuro/colorido)
     wpt = 0.75
@@ -638,7 +649,7 @@ Private Sub DrawGuides(ByVal sld As Object)
     ReDim names(0 To 6)
     cnt = 0
 
-    ' moldura (margem de 3,15 cm)
+    ' moldura (margem de 60 pt)
     On Error Resume Next
     Set box = sld.Shapes.AddShape(msoShapeRectangle, mpt, mpt, Wi, Hi)
     box.Fill.Visible = msoFalse
@@ -1173,19 +1184,21 @@ Private Function ZeroInsets(ByVal shp As Object, Optional ByVal depth As Long = 
 End Function
 
 ' ============================================================
-'  ROUNDED CORNERS (raio ~25px num canvas 1920x1080)
+'  ROUNDED CORNERS (raio padrao 20 pt, valor visual constante)
 ' ============================================================
 Private Function StdRadiusPts() As Single
-    Dim px As Single
     EnsureCfg
-    If gRadiusOverridePx > 0 Then px = gRadiusOverridePx Else px = gRadiusPx
-    StdRadiusPts = (CDbl(px) / 1080#) * ActivePresentation.PageSetup.SlideHeight
+    If gRadiusOverridePt > 0 Then
+        StdRadiusPts = gRadiusOverridePt
+    Else
+        StdRadiusPts = gRadiusPt
+    End If
 End Function
 
-' ---- Dropdown "Raio" (grupo Formas): Padrao (config) ou um valor fixo ----
+' ---- Dropdown "Raio" (grupo Formas): Padrao (config) ou um valor fixo, em pt ----
 Private Function RadiusLabel() As String
-    If gRadiusOverridePx > 0 Then
-        RadiusLabel = CStr(CLng(gRadiusOverridePx)) & " px"
+    If gRadiusOverridePt > 0 Then
+        RadiusLabel = CStr(CLng(gRadiusOverridePt)) & " pt"
     Else
         RadiusLabel = "Padrao"
     End If
@@ -1196,12 +1209,12 @@ Public Sub GetRadiusLabel(control As IRibbonControl, ByRef returnedVal)
     returnedVal = "Raio: " & RadiusLabel()
 End Sub
 
-' onAction do gallery — id do item = "radDefault" ou "rad<px>".
+' onAction do gallery — id do item = "radDefault" ou "rad<pt>".
 Public Sub SetRadiusPick(control As IRibbonControl, id As String, index As Integer)
     If id = "radDefault" Then
-        gRadiusOverridePx = 0
+        gRadiusOverridePt = 0
     Else
-        gRadiusOverridePx = CSng(Val(Mid$(id, 4)))
+        gRadiusOverridePt = CSng(Val(Mid$(id, 4)))
     End If
     On Error Resume Next
     gRibbon.InvalidateControl "radiusPick"
