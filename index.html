@@ -14,7 +14,7 @@
   --blue:#436AE1;       /* primária: heroes, botões */
   --navy:#264BB9;       /* títulos e blocos escuros */
   --navy-2:#3A53C6;     /* cards sobre fundo escuro */
-  --coral:#FC5E6D;      /* accent */
+  --coral:#FD5E6D;      /* accent: o rosa da marca */
   --coral-btn:#FB3E50;  /* CTA */
   --ice:#E4EBFF; --ice-2:#C6D4FF;
   --gray:#F2F2F2; --white:#FFFFFF; --ink:#3A4668; --maxw:1120px;
@@ -147,7 +147,7 @@ footer .cr{font-size:13.5px;opacity:.6}
   <div class="strip">
     <div class="wrap">
       <div class="grid">
-        <div class="kpi"><div class="n">Tipografia</div><div class="l">11 estilos da escala B+G, num clique</div></div>
+        <div class="kpi"><div class="n">Tipografia</div><div class="l">14 estilos da escala B+G, num clique</div></div>
         <div class="kpi"><div class="n">Layout</div><div class="l">Cores, âncoras, rounded e linhas-guia</div></div>
         <div class="kpi"><div class="n">Doodle</div><div class="l">Rabisco da marca sobre o slide</div></div>
         <div class="kpi"><div class="n">Imagens</div><div class="l">Deck mais leve em poucos cliques</div></div>
@@ -207,7 +207,7 @@ footer .cr{font-size:13.5px;opacity:.6}
       <div class="cards">
         <div class="linkcard">
           <h3>Faixa CBA Studio</h3>
-          <p>Aba própria no PowerPoint: os 11 estilos da escala, entrelinha, paleta, alinhamento e âncoras,
+          <p>Aba própria no PowerPoint: os 14 estilos da escala, entrelinha, paleta, alinhamento e âncoras,
             cantos arredondados, linhas-guia e auditoria do deck.</p>
         </div>
         <div class="linkcard">
@@ -224,6 +224,56 @@ footer .cr{font-size:13.5px;opacity:.6}
       </div>
     </div>
   </section>
+
+  <section id="skill">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="eyebrow">Para quem usa IA</span>
+          <h2>O mesmo sistema, dentro do Claude.</h2>
+          <p>A skill <b>CBA visual v2</b> ensina ao Claude a tipografia, a paleta e a grade
+            que a faixa aplica no PowerPoint. Não é um resumo: são os mesmos tokens.</p>
+        </div>
+        <a class="btn" href="/download/cba-visual-v2.zip" download>Baixar a skill</a>
+      </div>
+
+      <div class="cards">
+        <div class="linkcard">
+          <h3>Monta o deck</h3>
+          <p>Descreva os slides e ele gera o PPTX pronto, nos 14 arquétipos do sistema.
+            Depois confere o próprio arquivo e avisa se algo saiu fora do padrão.</p>
+        </div>
+        <div class="linkcard">
+          <h3>Audita o que já existe</h3>
+          <p>Aponte um deck e ele lista o que está fora: corpo fora da escala, cor fora da
+            paleta, entrelinha errada, texto passando da margem.</p>
+        </div>
+        <div class="linkcard">
+          <h3>Critica um layout</h3>
+          <p>As regras de composição são específicas o bastante para dizer o que está errado
+            num slide, num site ou num post. Serve sem gerar nada.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:22px">
+        <ol class="steps">
+          <li><b>No Claude do computador (Claude Code):</b> descompacte a pasta
+            <b>cba-visual-v2</b> dentro de <b>~/.claude/skills/</b> e reinicie. Ela passa a
+            ser chamada sozinha quando você pedir algo no padrão CBA.</li>
+          <li><b>No Claude do navegador:</b> abra as configurações de <b>Capabilities</b> e
+            envie o .zip em <b>Skills</b>. Vale para todas as suas conversas.</li>
+          <li><b>Para a equipe:</b> mande o mesmo .zip. Ele não depende de nenhum arquivo da
+            sua máquina, nem de um PowerPoint de referência: gera tudo do zero.</li>
+        </ol>
+        <p class="note"><b>Quer ver o sistema antes?</b> A documentação em slides tem 88 páginas
+          e foi gerada pela própria skill, a partir dos tokens.
+          <a href="/download/CBA-Design-System.pptx" download><b>Baixar em PPTX</b></a>.</p>
+        <p class="note"><b>O que vai dentro:</b> a página de 1583×891pt, a grade de 4 colunas,
+          os 14 estilos com peso, cor e entrelinha, os 14 arquétipos e as regras de composição
+          e de escrita. Tudo em texto, mais os scripts que geram e auditam.</p>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -234,7 +284,7 @@ footer .cr{font-size:13.5px;opacity:.6}
       <a href="/v2.html" target="_blank" rel="noopener">Usar online</a>
       <a href="/config.html" target="_blank" rel="noopener">Padrões da marca</a>
       <a href="/download/LEIA-ME.txt" target="_blank" rel="noopener">Guia</a>
-      <a href="/download/cba-visual-v2.zip" download>Skill de design</a>
+      <a href="#skill">Skill de design</a>
     </div>
     <span class="cr">© 2026 CBA B+G</span>
   </div>

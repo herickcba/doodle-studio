@@ -1147,7 +1147,7 @@
 
     // background-aware override (Hero on a blue object -> white text)
     let textColor = style.color, periodColor = style.periodColor;
-    if (style.bgAware && await _selectionBgIsBlue()) { textColor = '#FFFFFF'; periodColor = '#FC5E6D'; }
+    if (style.bgAware && await _selectionBgIsBlue()) { textColor = '#FFFFFF'; periodColor = '#FD5E6D'; }
 
     return await PowerPoint.run(async (context) => {
       const sel = context.presentation.getSelectedTextRangeOrNullObject();
