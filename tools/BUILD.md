@@ -121,6 +121,7 @@ que a análise de risco do sócio exige (resposta completa em
 | 5 | Integridade + manifesto | `bash tools/verify-ppam.sh` | fonte do binário ≠ `.bas` do repo, callback sem procedimento, ou repo sujo |
 | 5b | Documentação em dia | `python3 tools/design-system/check-tokens.py` | mexeu num estilo, cor ou constante e esqueceu o `design.md` / `tokens.py` |
 | 6 | Smoke test ao vivo | percorrer os grupos da faixa **num deck descartável** | regressão funcional |
+| 6b | Skill de design | `bash tools/pack-skill.sh` | zip da skill desatualizado em `download/` |
 | 7 | Commit + push | `git add -A && git commit && git push` | — |
 | 8 | Deploy | `vercel --prod --yes` (§4) | — |
 
@@ -142,6 +143,13 @@ Notas:
   (estilos, paleta, entrelinhas, raio, âncora) e com os rótulos do
   `customUI14.xml`. Se falhar, atualize `tokens.py` + `design.md` e regenere o
   deck: `python3 tools/design-system/build_deck.py`.
+- O gate 6b reempacota `download/cba-visual-v2.zip` a partir de
+  `.claude/skills/cba-visual-v2/`, que é a **fonte única** dos tokens (o
+  `tools/design-system/` importa de lá). A skill é publicada junto com a
+  ferramenta em todo release: quem baixa o add-in leva o mesmo sistema visual
+  para o Claude. O script confere que o zip gera e audita antes de substituir o
+  antigo.
+
 - **O projeto VBA não é assinado digitalmente.** Não é um passo esquecido: é uma
   decisão registrada (o VBE do macOS não assina e não há certificado corporativo).
   Justificativa em `docs/SECURITY-REVIEW-v1.5.0B.md` §6. Se um dia houver
