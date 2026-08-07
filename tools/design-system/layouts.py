@@ -39,7 +39,10 @@ SATURATED = (T.AZUL, T.ROSA)   # fundos que exigem tipo branco
 # O rodape (secao + numero) mora na ultima linha da area util. Nenhum conteudo
 # chega perto dele: a faixa livre acima da tag e' de 3 modulos. Com 2 o texto
 # de apoio ainda encostava visualmente na etiqueta.
-FOOTER_H = 16
+# A altura do rodape sai da MEDIDA da Legenda 12, nao de um 16 chutado. Com 16
+# o texto do rodape estourava a propria caixa em 3pt e passava da margem
+# inferior: invisivel na tela, mas errado, e a auditoria pega.
+FOOTER_H = measure.line_height(T.STYLE_BY_ID["dsLegenda12"])    # 18,9pt
 FOOTER_CLEARANCE = T.SPACING[3]
 CONTENT_END = T.CONTENT_BOTTOM_PT - FOOTER_H - FOOTER_CLEARANCE
 
@@ -369,11 +372,12 @@ def add_card(slide, x, y, w, h, blocks, *, fill=None, radius="std", line=None,
 
 def footer(slide, section, number, bg=None):
     """Rodape de localizacao. Fica na ultima linha da area util."""
-    y = T.CONTENT_BOTTOM_PT - 16
+    y = T.CONTENT_BOTTOM_PT - FOOTER_H
     if section:
-        add_text(slide, "dsCaps12", section, T.MARGIN_LEFT_PT, y, 700, 16, bg=bg)
+        add_text(slide, "dsCaps12", section, T.MARGIN_LEFT_PT, y, 700,
+                 FOOTER_H, bg=bg)
     add_text(slide, "dsLegenda12", str(number), T.MARGIN_RIGHT_PT - 100, y, 100,
-             16, bg=bg, align="right")
+             FOOTER_H, bg=bg, align="right")
 
 
 def place_group(top, bottom, group_h):

@@ -134,10 +134,12 @@ def validate(path):
                     inner_h -= (tf.margin_top + tf.margin_bottom) / 12700
                 except Exception:
                     pass
-                # altura = soma de (linhas x entrelinha) de cada paragrafo,
-                # mais a correcao da PRIMEIRA linha do quadro quando a
-                # entrelinha e' menor que o corpo (Statement usa 0,8x).
-                need, known, first = 0.0, True, None
+                # Altura pelo modelo DESENHADO (measure.LINE_FACTOR), nao
+                # por corpo x entrelinha: o gate media com o modelo antigo e
+                # sobrava 21% de folga imaginaria, entao nao pegava nada.
+                # A correcao da primeira linha vale para a primeira linha do
+                # QUADRO, nao de cada paragrafo.
+                need, known, first = 0.0, True, True
                 for para in tf.paragraphs:
                     r0 = para.runs[0] if para.runs else None
                     if r0 is None or not r0.font.size or not para.line_spacing:
@@ -148,20 +150,18 @@ def validate(path):
                         known = False
                         break
                     ptxt = "".join(r.text for r in para.runs)
-                    lines = measure.wrap_lines(
-                        ptxt, st["size"], bool(st["bold"]), inner_w,
-                        caps=bool(st.get("caps")),
-                        spacing_pt=float(st.get("spacing") or 0))
-                    lead = st["size"] * st["ent"]
-                    need += lines * lead
-                    if first is None:
-                        first = st
+                    if first:
+                        need += measure.block_height(ptxt, st, inner_w)
+                        first = False
+                    else:
+                        need += measure.line_height(st) * measure.wrap_lines(
+                            ptxt, st["size"], bool(st["bold"]), inner_w,
+                            caps=bool(st.get("caps")),
+                            spacing_pt=float(st.get("spacing") or 0))
                     if para.space_before:
                         need += para.space_before.pt
                     if para.space_after:
                         need += para.space_after.pt
-                if first is not None:
-                    need += max(0.0, first["size"] - first["size"] * first["ent"])
                 if known and need > inner_h + 2:
                     errs.append(
                         "slide %d: texto transborda %.0fpt (precisa %.0f, "
